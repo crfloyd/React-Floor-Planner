@@ -42,7 +42,6 @@ import { useHistory } from "./hooks/useHistory";
 import WallTools from "./components/WallTools";
 import ObjectTools from "./components/ObjectTools";
 import DoorWindowTools from "./components/DoorWindowTools";
-import RoomTools from "./components/RoomTools";
 
 interface LayerSettings {
 	showSurfaces: boolean;
@@ -228,7 +227,7 @@ function App() {
 	const [showReportTools, setShowReportTools] = useState(false);
 	const [showRoomTools, setShowRoomTools] = useState(false);
 	const [selectedRoomData, setSelectedRoomData] = useState({
-		size: 0,
+		size: "",
 		roomIndex: 0,
 		surface: "",
 		showSurface: true,
@@ -437,13 +436,6 @@ function App() {
 	};
 
 	// Wall Tools
-	const onWallModeClicked = () => {
-		setCursor("crosshair");
-		setBoxInfoText("Wall creation");
-		setAction(false);
-		applyMode(Mode.Line);
-	};
-
 	const onWallWidthChanged = (value: number) => {
 		binder.wall.thick = value;
 		binder.wall.type = "normal";
@@ -493,67 +485,6 @@ function App() {
 		rib(wallMeta);
 		setMode(Mode.Select);
 		setShowMainPanel(true);
-	};
-
-	const splitWall = (wallToSplit: WallMetaData) => {
-		var eqWall = editor.createEquationFromWall(wallToSplit);
-		var wallToSplitLength = qSVG.gap(wallToSplit.start, wallToSplit.end);
-		var newWalls: { distance: number; coords: Point2D }[] = [];
-
-		wallMeta.forEach((wall) => {
-			var eq = editor.createEquationFromWall(wall);
-			var inter = intersectionOfEquations(eqWall, eq);
-			// let inter = intersectionResult as Point2D
-			if (
-				inter &&
-				qSVG.btwn(inter.x, binder.wall.start.x, binder.wall.end.x, true) &&
-				qSVG.btwn(inter.y, binder.wall.start.y, binder.wall.end.y, true) &&
-				qSVG.btwn(inter.x, wall.start.x, wall.end.x, true) &&
-				qSVG.btwn(inter.y, wall.start.y, wall.end.y, true)
-			) {
-				var distance = qSVG.gap(wallToSplit.start, inter);
-				if (distance > 5 && distance < wallToSplitLength)
-					newWalls.push({ distance: distance, coords: inter });
-			}
-		});
-
-		newWalls.sort((a: { distance: number }, b: { distance: number }) => {
-			return a.distance - b.distance;
-		});
-
-		var initCoords = wallToSplit.start;
-		var initThick = wallToSplit.thick;
-
-		// CLEAR THE WALL BEFORE PIECES RE-BUILDER
-		wallMeta.forEach((wall) => {
-			if (wall.child === wallToSplit.id)
-				wallMeta = setWallMeta([
-					...wallMeta.filter((w) => w !== wall),
-					{ ...wall, child: null },
-				]);
-			if (wall.parent === wallToSplit.id) {
-				wallMeta = setWallMeta([
-					...wallMeta.filter((w) => w.id !== wall.id),
-					{ ...wall, parent: null },
-				]);
-			}
-		});
-
-		wallMeta = setWallMeta([...wallMeta.filter((w) => w.id != wallToSplit.id)]);
-
-		newWalls.forEach((newWall) => {
-			const wall = new Wall(initCoords, newWall.coords, "normal", initThick);
-			wall.child = wallMeta[wallMeta.length - 1].id;
-			initCoords = newWall.coords;
-			wallMeta = setWallMeta([...wallMeta, wall]);
-		});
-
-		// LAST WALL ->
-		const wall = new Wall(initCoords, wallToSplit.end, "normal", initThick);
-		wallMeta = setWallMeta([...wallMeta, wall]);
-		editor.architect(wallMeta, setRooms, roomMeta, setRoomMeta, wallEquations);
-		save(objectMeta, wallMeta, roomMeta);
-		return true;
 	};
 
 	// Object Tools
@@ -641,39 +572,72 @@ function App() {
 		wallBind.inWallRib(objectMeta);
 	};
 
-	// Room Tools
-	const onRoomConfigurationComplete = (
-		size: number,
-		name: string,
-		color: string
-	) => {
-		setShowRoomTools(false);
-		setShowMainPanel(true);
-
-		setSelectedRoomData((prev) => ({
-			...prev,
-			size: size,
-			name: name,
-			background: color,
-		}));
-		onApplySurfaceClicked(
-			editor,
-			rooms,
-			roomMeta,
-			setRoomMeta,
-			binder,
-			setBinder
-		);
+	const onWallModeClicked = () => {
+		setCursor("crosshair");
+		setBoxInfoText("Wall creation");
+		setAction(false);
+		applyMode(Mode.Line);
 	};
 
-	const onRoomConfigurationCancelled = () => {
-		setShowRoomTools(false);
-		setShowMainPanel(true);
-		setBoxInfoText("Room modified");
-		applyMode(Mode.Select);
-		if (binder && binder.remove) {
-			binder.remove();
-		}
+	const splitWall = (wallToSplit: WallMetaData) => {
+		var eqWall = editor.createEquationFromWall(wallToSplit);
+		var wallToSplitLength = qSVG.gap(wallToSplit.start, wallToSplit.end);
+		var newWalls: { distance: number; coords: Point2D }[] = [];
+
+		wallMeta.forEach((wall) => {
+			var eq = editor.createEquationFromWall(wall);
+			var inter = intersectionOfEquations(eqWall, eq);
+			// let inter = intersectionResult as Point2D
+			if (
+				inter &&
+				qSVG.btwn(inter.x, binder.wall.start.x, binder.wall.end.x, true) &&
+				qSVG.btwn(inter.y, binder.wall.start.y, binder.wall.end.y, true) &&
+				qSVG.btwn(inter.x, wall.start.x, wall.end.x, true) &&
+				qSVG.btwn(inter.y, wall.start.y, wall.end.y, true)
+			) {
+				var distance = qSVG.gap(wallToSplit.start, inter);
+				if (distance > 5 && distance < wallToSplitLength)
+					newWalls.push({ distance: distance, coords: inter });
+			}
+		});
+
+		newWalls.sort((a: { distance: number }, b: { distance: number }) => {
+			return a.distance - b.distance;
+		});
+
+		var initCoords = wallToSplit.start;
+		var initThick = wallToSplit.thick;
+
+		// CLEAR THE WALL BEFORE PIECES RE-BUILDER
+		wallMeta.forEach((wall) => {
+			if (wall.child === wallToSplit.id)
+				wallMeta = setWallMeta([
+					...wallMeta.filter((w) => w !== wall),
+					{ ...wall, child: null },
+				]);
+			if (wall.parent === wallToSplit.id) {
+				wallMeta = setWallMeta([
+					...wallMeta.filter((w) => w.id !== wall.id),
+					{ ...wall, parent: null },
+				]);
+			}
+		});
+
+		wallMeta = setWallMeta([...wallMeta.filter((w) => w.id != wallToSplit.id)]);
+
+		newWalls.forEach((newWall) => {
+			const wall = new Wall(initCoords, newWall.coords, "normal", initThick);
+			wall.child = wallMeta[wallMeta.length - 1].id;
+			initCoords = newWall.coords;
+			wallMeta = setWallMeta([...wallMeta, wall]);
+		});
+
+		// LAST WALL ->
+		const wall = new Wall(initCoords, wallToSplit.end, "normal", initThick);
+		wallMeta = setWallMeta([...wallMeta, wall]);
+		editor.architect(wallMeta, setRooms, roomMeta, setRoomMeta, wallEquations);
+		save(objectMeta, wallMeta, roomMeta);
+		return true;
 	};
 
 	const enterSelectMode = () => {
@@ -1365,13 +1329,533 @@ function App() {
 
 			{showRoomTools && (
 				<div id="roomTools" className="leftBox">
-					<RoomTools
-						roomName={selectedRoomData.name}
-						roomSize={+selectedRoomData.size}
-						roomColor={selectedRoomData.background}
-						onComplete={onRoomConfigurationComplete}
-						onCancel={onRoomConfigurationCancelled}
+					<span style={{ color: "#08d" }}>React Floor Planner</span> estimated a
+					surface of :<br />
+					<b>
+						<span className="size">{`${selectedRoomData.size} m²`}</span>
+					</b>
+					<br />
+					<br />
+					<p>If you know the actual area, you enter it here</p>
+					<div className="input-group">
+						<input
+							type="text"
+							className="form-control"
+							id="roomSurface"
+							placeholder="actual area"
+							aria-describedby="basic-addon2"
+							value={selectedRoomData.surface}
+							onChange={(e) =>
+								setSelectedRoomData((prev) => ({
+									...prev,
+									surface: e.target.value,
+								}))
+							}
+						/>
+						<span className="input-group-addon" id="basic-addon2">
+							m²
+						</span>
+					</div>
+					<br />
+					<input
+						type="hidden"
+						id="roomName"
+						value={selectedRoomData.name != "" ? selectedRoomData.name : ""}
 					/>
+					Select Room Type :<br />
+					<div className="btn-group">
+						<button
+							className="btn dropdown-toggle btn-default"
+							data-toggle="dropdown"
+							id="roomLabel"
+						>
+							{selectedRoomData.name != "" ? selectedRoomData.name : "None "}
+							{/* <span className="caret">{roomType}</span> */}
+						</button>
+						<ul className="dropdown-menu">
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({ ...selectedRoomData, name: "None" });
+								}}
+							>
+								<a href="#">None</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Living Room",
+									});
+								}}
+							>
+								<a href="#">Living Room</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({ ...selectedRoomData, name: "Kitchen" });
+								}}
+							>
+								<a href="#">Kitchen</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Bathroom",
+									});
+								}}
+							>
+								<a href="#">Bathroom</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Bathroom 2",
+									});
+								}}
+							>
+								<a href="#">Bathroom 2</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Bedroom 1",
+									});
+								}}
+							>
+								<a href="#">Bedroom 1</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Bedroom 2",
+									});
+								}}
+							>
+								<a href="#">Bedroom 2</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Bedroom 3",
+									});
+								}}
+							>
+								<a href="#">Bedroom 3</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Bedroom 4",
+									});
+								}}
+							>
+								<a href="#">Bedroom 4</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Bedroom 5",
+									});
+								}}
+							>
+								<a href="#">Bedroom 5</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Closet",
+									});
+								}}
+							>
+								<a href="#">Closet</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Office",
+									});
+								}}
+							>
+								<a href="#">Office</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Hall",
+									});
+								}}
+							>
+								<a href="#">Hall</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Foyer",
+									});
+								}}
+							>
+								<a href="#">Foyer</a>
+							</li>
+							<li className="divider"></li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Balcony",
+									});
+								}}
+							>
+								<a href="#">Balcony</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Terrace",
+									});
+								}}
+							>
+								<a href="#">Terrace</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Garage",
+									});
+								}}
+							>
+								<a href="#">Garage</a>
+							</li>
+							<li
+								onClick={(e) => {
+									setSelectedRoomData({
+										...selectedRoomData,
+										name: "Clearance",
+									});
+								}}
+							>
+								<a href="#">clearance</a>
+							</li>
+						</ul>
+					</div>
+					<br />
+					<br />
+					Meter :
+					<div className="funkyradio">
+						<div className="funkyradio-success">
+							<input
+								type="checkbox"
+								name="roomShow"
+								value="showSurface"
+								id="seeArea"
+								checked={showSurface}
+								onChange={() => setShowSurface(!showSurface)}
+							/>
+							<label htmlFor="seeArea">Show the surface</label>
+						</div>
+					</div>
+					<div className="funkyradio">
+						<div className="funkyradio-success">
+							<input
+								type="radio"
+								name="roomAction"
+								id="addAction"
+								value="add"
+								checked={selectedRoomData.action == "add" || addSurface}
+								onChange={() => setAddSurface(!addSurface)}
+							/>
+							<label htmlFor="addAction">Add the surface</label>
+						</div>
+						<div className="funkyradio-warning">
+							<input
+								type="radio"
+								name="roomAction"
+								id="passAction"
+								value="pass"
+								checked={selectedRoomData.action == "pass" || ignoreSurface}
+								onChange={() => setIgnoreSurface(!ignoreSurface)}
+							/>
+							<label htmlFor="passAction">Ignore the surface</label>
+						</div>
+					</div>
+					<hr />
+					<p>Colors</p>
+					<div
+						className="roomColor"
+						data-type="roomGradientRed"
+						style={{
+							background: `linear-gradient(30deg, ${constants.COLOR_ROOM_RED}, ${constants.COLOR_ROOM_RED})`,
+						}}
+						onClick={() => {
+							setRoomColor("roomGradientRed");
+							onRoomColorClicked("roomGradientRed", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="roomGradientGreen"
+						style={{
+							background: `linear-gradient(30deg, ${constants.COLOR_ROOM_GREEN}, ${constants.COLOR_ROOM_GREEN})`,
+						}}
+						onClick={() => {
+							setRoomColor("roomGradientGreen");
+							onRoomColorClicked("roomGradientGreen", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="roomGradientOrange"
+						style={{
+							background: `linear-gradient(30deg, ${constants.COLOR_ROOM_ORANGE}, ${constants.COLOR_ROOM_ORANGE})`,
+						}}
+						onClick={() => {
+							setRoomColor("roomGradientOrange");
+							onRoomColorClicked("roomGradientOrange", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="roomGradientBlue"
+						style={{
+							background: `linear-gradient(30deg, ${constants.COLOR_ROOM_BLUE}, ${constants.COLOR_ROOM_BLUE})`,
+						}}
+						onClick={() => {
+							setRoomColor("roomGradientBlue");
+							onRoomColorClicked("roomGradientBlue", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="roomGradientGray"
+						style={{
+							background: `linear-gradient(30deg, ${constants.COLOR_ROOM_GRAY}, ${constants.COLOR_ROOM_GRAY})`,
+						}}
+						onClick={() => {
+							setRoomColor("roomGradientGray");
+							onRoomColorClicked("roomGradientGray", binder);
+						}}
+					></div>
+					{/* <div
+						className="roomColor"
+						data-type="roomGradientBlack"
+						style={{
+							background: `linear-gradient(30deg, ${constants.COLOR_ROOM_BLACK}, ${constants.COLOR_ROOM_BLACK})`,
+						}}
+						onClick={() => {
+							setRoomColor("roomGradientBlack");
+							onRoomColorClicked("roomGradientBlack", binder);
+						}}
+					></div> */}
+					{/* <div
+						className="roomColor"
+						data-type="gradientYellow"
+						style={{ background: "linear-gradient(30deg,#e4c06e, #ffb000)" }}
+						onClick={() => {
+							setRoomColor("gradientYellow");
+							onRoomColorClicked("gradientYellow", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="gradientGreen"
+						style={{ background: "linear-gradient(30deg,#88cc6c, #60c437)" }}
+						onClick={() => {
+							setRoomColor("gradientGreen");
+							onRoomColorClicked("gradientGreen", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="gradientSky"
+						style={{ background: "linear-gradient(30deg,#77e1f4, #00d9ff)" }}
+						onClick={() => {
+							setRoomColor("gradientSky");
+							onRoomColorClicked("gradientSky", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="gradientBlue"
+						style={{ background: "linear-gradient(30deg,#4f72a6, #284d7e)" }}
+						onClick={() => {
+							setRoomColor("gradientBlue");
+							onRoomColorClicked("gradientBlue", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="gradientGrey"
+						style={{ background: "linear-gradient(30deg,#666666, #aaaaaa)" }}
+						onClick={() => {
+							setRoomColor("gradientGrey");
+							onRoomColorClicked("gradientGrey", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="gradientWhite"
+						style={{ background: "linear-gradient(30deg,#fafafa, #eaeaea)" }}
+						onClick={() => {
+							setRoomColor("gradientWhite");
+							onRoomColorClicked("gradientWhite", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="gradientOrange"
+						style={{ background: "linear-gradient(30deg, #f9ad67, #f97f00)" }}
+						onClick={() => {
+							setRoomColor("gradientOrange");
+							onRoomColorClicked("gradientOrange", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="gradientPurple"
+						style={{ background: "linear-gradient(30deg,#a784d9, #8951da)" }}
+						onClick={() => {
+							setRoomColor("gradientPurple");
+							onRoomColorClicked("gradientPurple", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="gradientPink"
+						style={{ background: "linear-gradient(30deg,#df67bd, #e22aae)" }}
+						onClick={() => {
+							setRoomColor("gradientPink");
+							onRoomColorClicked("gradientPink", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="gradientBlack"
+						style={{ background: "linear-gradient(30deg,#3c3b3b, #000000)" }}
+						onClick={() => {
+							setRoomColor("gradientBlack");
+							onRoomColorClicked("gradientBlack", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="gradientNeutral"
+						style={{ background: "linear-gradient(30deg,#e2c695, #c69d56)" }}
+						onClick={() => {
+							setRoomColor("gradientNeutral");
+							onRoomColorClicked("gradientNeutral", binder);
+						}}
+					></div> */}
+					<br />
+					<br />
+					{/* <p>Matérials</p>
+					<div
+						className="roomColor"
+						data-type="wood"
+						style={{
+							background:
+								"url('https://orig00.deviantart.net/e1f2/f/2015/164/8/b/old_oak_planks___seamless_texture_by_rls0812-d8x6htl.jpg')",
+						}}
+						onClick={() => {
+							setRoomColor("wood");
+							onRoomColorClicked("wood", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="tiles"
+						style={{
+							background:
+								"url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrkoI2Eiw8ya3J_swhfpZdi_ug2sONsI6TxEd1xN5af3DX9J3R')",
+						}}
+						onClick={() => {
+							setRoomColor("tiles");
+							onRoomColorClicked("tiles", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="granite"
+						style={{
+							background:
+								"url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9_nEMhnWVV47lxEn5T_HWxvFwkujFTuw6Ff26dRTl4rDaE8AdEQ')",
+						}}
+						onClick={() => {
+							setRoomColor("granite");
+							onRoomColorClicked("granite", binder);
+						}}
+					></div>
+					<div
+						className="roomColor"
+						data-type="grass"
+						style={{
+							background:
+								"url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRWh5nEP_Trwo96CJjev6lnKe0_dRdA63RJFaoc3-msedgxveJd')",
+						}}
+						onClick={() => {
+							setRoomColor("grass");
+							onRoomColorClicked("grass", binder);
+						}}
+					></div> */}
+					<div data-type="#ff008a" style={{ clear: "both" }}></div>
+					<br />
+					<br />
+					<input type="hidden" id="roomBackground" value={roomColor} />
+					<input
+						type="hidden"
+						id="roomIndex"
+						value={selectedRoomData.roomIndex}
+					/>
+					<button
+						type="button"
+						className="btn btn-primary"
+						id="applySurface"
+						onClick={() => {
+							setShowRoomTools(false);
+							setShowMainPanel(true);
+							onApplySurfaceClicked(
+								editor,
+								rooms,
+								roomMeta,
+								setRoomMeta,
+								binder,
+								setBinder
+							);
+							setBoxInfoText("Room modified");
+							applyMode(Mode.Select);
+						}}
+					>
+						Apply
+					</button>
+					<button
+						type="button"
+						className="btn btn-danger"
+						id="resetRoomTools"
+						onClick={() => {
+							setShowRoomTools(false);
+							setShowMainPanel(true);
+							setBoxInfoText("Room modified");
+							applyMode(Mode.Select);
+							if (binder && binder.remove) {
+								binder.remove();
+							}
+							// onResetRoomToolsClicked(binder, setBinder);
+						}}
+					>
+						Cancel
+					</button>
+					<br />
 				</div>
 			)}
 

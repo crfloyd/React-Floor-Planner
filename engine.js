@@ -2205,7 +2205,7 @@ export const _MOUSEUP = (
 		binder.attr({ fill: "none", stroke: "#ddf00a", "stroke-width": 7 });
 		const room = roomMeta[binder.id];
 		showRoomTools({
-			size: +area.toFixed(2),
+			size: area.toFixed(2),
 			roomIndex: binder.id,
 			surface: room.surface ?? "",
 			showSurface: room.showSurface,
