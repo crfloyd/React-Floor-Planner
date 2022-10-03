@@ -1,402 +1,19 @@
 import { qSVG } from "./qSVG";
 import { constants } from "./constants";
-import {
-	findById,
-	intersectionOfEquations,
-	isObjectsEquals,
-} from "./src/utils";
-import { createSvgElement } from "./src/svgTools";
+import { findById, isObjectsEquals } from "./src/utils";
+import { createSvgElement, wallsComputing } from "./src/svgTools";
 import { v4 as uuid } from "uuid";
 import { Wall } from "./src/wall";
 
 export const editor = {
 	colorWall: "#666",
 
-	// RETURN OBJECTS ARRAY INDEX OF WALLS [WALL1, WALL2, n...] WALLS WITH THIS NODE, EXCEPT PARAM = OBJECT WALL
-	getWallNodes: function (coords, wallMeta, except = null) {
-		var nodes = [];
-		for (var k in wallMeta) {
-			if (isObjectsEquals(wallMeta[k], except)) continue;
-
-			if (isObjectsEquals(wallMeta[k].start, coords)) {
-				nodes.push({ wall: wallMeta[k], type: "start" });
-			}
-			if (isObjectsEquals(wallMeta[k].end, coords)) {
-				nodes.push({ wall: wallMeta[k], type: "end" });
-			}
-		}
-		return nodes.length == 0 ? false : nodes;
-	},
-
-	wallsComputing: function (wallMeta, wallEquations, action = null) {
-		// IF ACTION == MOVE -> equation2 exist !!!!!
-		$("#boxwall").empty();
-		$("#boxArea").empty();
-
-		for (var vertice = 0; vertice < wallMeta.length; vertice++) {
-			var wall = wallMeta[vertice];
-			if (wall.parent != null) {
-				const parent = findById(wall.parent, wallMeta);
-				if (
-					!parent ||
-					// (parent.start !== wall.start && parent.end !== wall.start)
-					(!isObjectsEquals(parent.start, wall.start) &&
-						!isObjectsEquals(parent.end, wall.start))
-				) {
-					wall.parent = null;
-				}
-				// if (
-				// 	!isObjectsEquals(wall.parent.start, wall.start) &&
-				// 	!isObjectsEquals(wall.parent.end, wall.start)
-				// ) {
-				// 	wall.parent = null;
-				// }
-			}
-
-			const child = findById(wall.child, wallMeta);
-			if (
-				!child ||
-				// (child.start !== wall.end && child.end !== wall.end)
-				(!isObjectsEquals(child.start, wall.end) &&
-					!isObjectsEquals(wall.child.end, wall.end))
-			) {
-				wall.child = null;
-			}
-		}
-
-		for (var vertice = 0; vertice < wallMeta.length; vertice++) {
-			var wall = wallMeta[vertice];
-			if (wall.parent != null) {
-				const parent = findById(wall.parent, wallMeta);
-				if (isObjectsEquals(parent.start, wall.start)) {
-					var previousWall = parent;
-					var previousWallStart = previousWall.end;
-					var previousWallEnd = previousWall.start;
-				}
-				if (isObjectsEquals(parent.end, wall.start)) {
-					var previousWall = parent;
-					var previousWallStart = previousWall.start;
-					var previousWallEnd = previousWall.end;
-				}
-			} else {
-				var nearestNodesToStart = editor.getWallNodes(
-					wall.start,
-					wallMeta,
-					wall
-				);
-				// if (wallInhibation && isObjectsEquals(wall, wallInhibation)) S = false;
-				for (var k in nearestNodesToStart) {
-					var eqInter = editor.createEquationFromWall(
-						nearestNodesToStart[k].wall
-					);
-					var angleInter = 90; // TO PASS TEST
-					if (action == "move") {
-						angleInter = qSVG.angleBetweenEquations(
-							eqInter.A,
-							wallEquations.equation2.A
-						);
-					}
-					if (
-						nearestNodesToStart[k].type == "start" &&
-						nearestNodesToStart[k].wall.parent == null &&
-						angleInter > 20 &&
-						angleInter < 160
-					) {
-						wall.parent = nearestNodesToStart[k].wall.id;
-						nearestNodesToStart[k].wall.parent = wall.id;
-						var previousWall = findById(wall.parent, wallMeta);
-						var previousWallStart = previousWall.end;
-						var previousWallEnd = previousWall.start;
-					}
-					if (
-						nearestNodesToStart[k].type == "end" &&
-						nearestNodesToStart[k].wall.child == null &&
-						angleInter > 20 &&
-						angleInter < 160
-					) {
-						wall.parent = nearestNodesToStart[k].wall.id;
-						nearestNodesToStart[k].wall.child = wall.id;
-						var previousWall = findById(wall.parent, wallMeta);
-						var previousWallStart = previousWall.start;
-						var previousWallEnd = previousWall.end;
-					}
-				}
-			}
-
-			if (wall.child != null) {
-				const child = findById(wall.child, wallMeta);
-				if (isObjectsEquals(child.end, wall.end)) {
-					var nextWall = child;
-					var nextWallStart = nextWall.end;
-					var nextWallEnd = nextWall.start;
-				} else {
-					var nextWall = child;
-					var nextWallStart = nextWall.start;
-					var nextWallEnd = nextWall.end;
-				}
-			} else {
-				var nearestNodesToEnd = editor.getWallNodes(wall.end, wallMeta, wall);
-				// if (wallInhibation && isObjectsEquals(wall, wallInhibation)) E = false;
-				for (var k in nearestNodesToEnd) {
-					var eqInter = editor.createEquationFromWall(
-						nearestNodesToEnd[k].wall
-					);
-					var angleInter = 90; // TO PASS TEST
-					if (action == "move") {
-						angleInter = qSVG.angleBetweenEquations(
-							eqInter.A,
-							wallEquations.equation2.A
-						);
-					}
-					if (
-						nearestNodesToEnd[k].type == "end" &&
-						nearestNodesToEnd[k].wall.child == null &&
-						angleInter > 20 &&
-						angleInter < 160
-					) {
-						wall.child = nearestNodesToEnd[k].wall.id;
-						nearestNodesToEnd[k].wall.child = wall.id;
-						var nextWall = findById(wall.child, wallMeta);
-						var nextWallStart = nextWall.end;
-						var nextWallEnd = nextWall.start;
-					}
-					if (
-						nearestNodesToEnd[k].type == "start" &&
-						nearestNodesToEnd[k].wall.parent == null &&
-						angleInter > 20 &&
-						angleInter < 160
-					) {
-						wall.child = nearestNodesToEnd[k].wall.id;
-						nearestNodesToEnd[k].wall.parent = wall.id;
-						var nextWall = findById(wall.child, wallMeta);
-						var nextWallStart = nextWall.start;
-						var nextWallEnd = nextWall.end;
-					}
-				}
-			}
-
-			var angleWall = Math.atan2(
-				wall.end.y - wall.start.y,
-				wall.end.x - wall.start.x
-			);
-			wall.angle = angleWall;
-			var wallThickX = (wall.thick / 2) * Math.sin(angleWall);
-			var wallThickY = (wall.thick / 2) * Math.cos(angleWall);
-			var eqWallUp = qSVG.createEquation(
-				wall.start.x + wallThickX,
-				wall.start.y - wallThickY,
-				wall.end.x + wallThickX,
-				wall.end.y - wallThickY
-			);
-			var eqWallDw = qSVG.createEquation(
-				wall.start.x - wallThickX,
-				wall.start.y + wallThickY,
-				wall.end.x - wallThickX,
-				wall.end.y + wallThickY
-			);
-			var eqWallBase = qSVG.createEquation(
-				wall.start.x,
-				wall.start.y,
-				wall.end.x,
-				wall.end.y
-			);
-			wall.equations = { up: eqWallUp, down: eqWallDw, base: eqWallBase };
-			var dWay;
-
-			// WALL STARTED
-			if (wall.parent == null) {
-				var eqP = qSVG.perpendicularEquation(
-					eqWallUp,
-					wall.start.x,
-					wall.start.y
-				);
-				var interUp = intersectionOfEquations(eqWallUp, eqP);
-				var interDw = intersectionOfEquations(eqWallDw, eqP);
-				wall.coords = [interUp, interDw];
-				dWay =
-					"M" +
-					interUp.x +
-					"," +
-					interUp.y +
-					" L" +
-					interDw.x +
-					"," +
-					interDw.y +
-					" ";
-			} else {
-				var eqP = qSVG.perpendicularEquation(
-					eqWallUp,
-					wall.start.x,
-					wall.start.y
-				);
-				// var previousWall = wall.parent;
-				//   var previousWallStart = previousWall.start;
-				//   var previousWallEnd = previousWall.end;
-				var anglePreviousWall = Math.atan2(
-					previousWallEnd.y - previousWallStart.y,
-					previousWallEnd.x - previousWallStart.x
-				);
-				var previousWallThickX =
-					(previousWall.thick / 2) * Math.sin(anglePreviousWall);
-				var previousWallThickY =
-					(previousWall.thick / 2) * Math.cos(anglePreviousWall);
-				var eqPreviousWallUp = qSVG.createEquation(
-					previousWallStart.x + previousWallThickX,
-					previousWallStart.y - previousWallThickY,
-					previousWallEnd.x + previousWallThickX,
-					previousWallEnd.y - previousWallThickY
-				);
-				var eqPreviousWallDw = qSVG.createEquation(
-					previousWallStart.x - previousWallThickX,
-					previousWallStart.y + previousWallThickY,
-					previousWallEnd.x - previousWallThickX,
-					previousWallEnd.y + previousWallThickY
-				);
-				if (Math.abs(anglePreviousWall - angleWall) > 0.09) {
-					var interUp = intersectionOfEquations(eqWallUp, eqPreviousWallUp);
-					var interDw = intersectionOfEquations(eqWallDw, eqPreviousWallDw);
-
-					if (eqWallUp.A == eqPreviousWallUp.A) {
-						interUp = {
-							x: wall.start.x + wallThickX,
-							y: wall.start.y - wallThickY,
-						};
-						interDw = {
-							x: wall.start.x - wallThickX,
-							y: wall.start.y + wallThickY,
-						};
-					}
-
-					var miter = qSVG.gap(interUp, {
-						x: previousWallEnd.x,
-						y: previousWallEnd.y,
-					});
-					if (miter > 1000) {
-						var interUp = intersectionOfEquations(eqP, eqWallUp);
-						var interDw = intersectionOfEquations(eqP, eqWallDw);
-					}
-				}
-				if (Math.abs(anglePreviousWall - angleWall) <= 0.09) {
-					var interUp = intersectionOfEquations(eqP, eqWallUp);
-					var interDw = intersectionOfEquations(eqP, eqWallDw);
-				}
-				wall.coords = [interUp, interDw];
-				dWay =
-					"M" +
-					interUp.x +
-					"," +
-					interUp.y +
-					" L" +
-					interDw.x +
-					"," +
-					interDw.y +
-					" ";
-			}
-
-			// WALL FINISHED
-			if (wall.child == null) {
-				var eqP = qSVG.perpendicularEquation(eqWallUp, wall.end.x, wall.end.y);
-				var interUp = intersectionOfEquations(eqWallUp, eqP);
-				var interDw = intersectionOfEquations(eqWallDw, eqP);
-				wall.coords.push(interDw, interUp);
-				dWay =
-					dWay +
-					"L" +
-					interDw.x +
-					"," +
-					interDw.y +
-					" L" +
-					interUp.x +
-					"," +
-					interUp.y +
-					" Z";
-			} else {
-				var eqP = qSVG.perpendicularEquation(eqWallUp, wall.end.x, wall.end.y);
-				// var nextWall = wall.child;
-				//   var nextWallStart = nextWall.start;
-				//   var nextWallEnd = nextWall.end;
-				var angleNextWall = Math.atan2(
-					nextWallEnd.y - nextWallStart.y,
-					nextWallEnd.x - nextWallStart.x
-				);
-				var nextWallThickX = (nextWall.thick / 2) * Math.sin(angleNextWall);
-				var nextWallThickY = (nextWall.thick / 2) * Math.cos(angleNextWall);
-				var eqNextWallUp = qSVG.createEquation(
-					nextWallStart.x + nextWallThickX,
-					nextWallStart.y - nextWallThickY,
-					nextWallEnd.x + nextWallThickX,
-					nextWallEnd.y - nextWallThickY
-				);
-				var eqNextWallDw = qSVG.createEquation(
-					nextWallStart.x - nextWallThickX,
-					nextWallStart.y + nextWallThickY,
-					nextWallEnd.x - nextWallThickX,
-					nextWallEnd.y + nextWallThickY
-				);
-				if (Math.abs(angleNextWall - angleWall) > 0.09) {
-					var interUp = intersectionOfEquations(eqWallUp, eqNextWallUp);
-					var interDw = intersectionOfEquations(eqWallDw, eqNextWallDw);
-
-					if (eqWallUp.A == eqNextWallUp.A) {
-						interUp = {
-							x: wall.end.x + wallThickX,
-							y: wall.end.y - wallThickY,
-						};
-						interDw = {
-							x: wall.end.x - wallThickX,
-							y: wall.end.y + wallThickY,
-						};
-					}
-
-					var miter = qSVG.gap(interUp, {
-						x: nextWallStart.x,
-						y: nextWallStart.y,
-					});
-					if (miter > 1000) {
-						var interUp = intersectionOfEquations(eqWallUp, eqP);
-						var interDw = intersectionOfEquations(eqWallDw, eqP);
-					}
-				}
-				if (Math.abs(angleNextWall - angleWall) <= 0.09) {
-					var interUp = intersectionOfEquations(eqWallUp, eqP);
-					var interDw = intersectionOfEquations(eqWallUp, eqP);
-				}
-
-				wall.coords.push(interDw, interUp);
-				dWay =
-					dWay +
-					"L" +
-					interDw.x +
-					"," +
-					interDw.y +
-					" L" +
-					interUp.x +
-					"," +
-					interUp.y +
-					" Z";
-			}
-
-			wall.graph = editor.makeWall(dWay);
-			$("#boxwall").append(wall.graph);
-		}
-	},
-
-	makeWall: function (way) {
-		var wallScreen = qSVG.create("none", "path", {
-			d: way,
-			stroke: "none",
-			fill: constants.COLOR_WALL,
-			"stroke-width": 1,
-			"stroke-linecap": "butt",
-			"stroke-linejoin": "miter",
-			"stroke-miterlimit": 4,
-			"fill-rule": "nonzero",
-		});
-		return wallScreen;
-	},
-
 	architect: function (walls, setRooms, roomMeta, setRoomMeta, wallEquations) {
-		editor.wallsComputing(walls, wallEquations);
+		wallsComputing(walls, wallEquations);
+		walls.forEach((wall) => {
+			wall.addToScene();
+		});
+
 		const rooms = qSVG.polygonize(walls);
 		setRooms(rooms);
 		editor.roomMaker(rooms, roomMeta, setRoomMeta);
@@ -540,7 +157,7 @@ export const editor = {
 		return wallSelected;
 	},
 
-	// RETURN OBJDATA INDEX LIST FROM AN WALL
+	// RETURN OBJDATA INDEX LIST FROM A WALL
 	objFromWall: function (wall, objectMeta) {
 		var objList = [];
 		for (var scan = 0; scan < objectMeta.length; scan++) {
@@ -553,14 +170,9 @@ export const editor = {
 					wall.end.y
 				);
 				search = qSVG.nearPointOnEquation(eq, objectMeta[scan]);
-				if (
-					search.distance < 0.01 &&
-					qSVG.btwn(objectMeta[scan].x, wall.start.x, wall.end.x) &&
-					qSVG.btwn(objectMeta[scan].y, wall.start.y, wall.end.y)
-				)
+				if (search.distance < 0.01 && wall.pointInsideWall(objectMeta[scan])) {
 					objList.push(objectMeta[scan]);
-				// WARNING 0.01 TO NO COUNT OBJECT ON LIMITS OF THE EDGE !!!!!!!!!!!! UGLY CODE( MOUSE PRECISION)
-				// TRY WITH ANGLE MAYBE ???
+				}
 			}
 		}
 		return objList;
@@ -1055,8 +667,7 @@ export const editor = {
 			result = qSVG.nearPointOnEquation(eq, snap);
 			if (
 				result.distance < wallDistance &&
-				qSVG.btwn(result.x, wallMeta[e].start.x, wallMeta[e].end.x) &&
-				qSVG.btwn(result.y, wallMeta[e].start.y, wallMeta[e].end.y)
+				wallMeta[e].pointInsideWall(result)
 			) {
 				wallDistance = result.distance;
 				wallSelected = {

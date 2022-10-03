@@ -21,6 +21,8 @@ export class Wall implements WallMetaData {
 	graph: any;
 	coords = [];
 	backUp: any = false;
+	dPath: string | null = null;
+
 	constructor(
 		public start: Point2D,
 		public end: Point2D,
@@ -203,5 +205,44 @@ export class Wall implements WallMetaData {
 				}
 			}
 		}
+	};
+
+	getEquation = () => {
+		return qSVG.createEquation(
+			this.start.x,
+			this.start.y,
+			this.end.x,
+			this.end.y
+		);
+	};
+
+	addToScene = () => {
+		this.graph = qSVG.create("none", "path", {
+			d: this.dPath,
+			stroke: "none",
+			fill: constants.COLOR_WALL,
+			"stroke-width": 1,
+			"stroke-linecap": "butt",
+			"stroke-linejoin": "miter",
+			"stroke-miterlimit": 4,
+			"fill-rule": "nonzero",
+		});
+		$("#boxwall").append(this.graph);
+	};
+
+	pointInsideWall = (point: Point2D, round = false) => {
+		let p = { ...point };
+		let start = { ...this.start };
+		let end = { ...this.end };
+		if (round) {
+			p = { x: Math.round(p.x), y: Math.round(p.y) };
+			start = { x: Math.round(start.x), y: Math.round(start.y) };
+			end = { x: Math.round(end.x), y: Math.round(end.y) };
+		}
+
+		return (
+			((p.x >= start.x && p.x <= end.x) || (p.x >= end.x && p.x <= start.x)) &&
+			((p.y >= start.y && p.y <= end.y) || (p.y >= end.y && p.y <= start.y))
+		);
 	};
 }

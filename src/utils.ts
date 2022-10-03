@@ -140,3 +140,28 @@ export const calculateSnap = (
 		yMouse: y_mouse,
 	};
 };
+
+export const perpendicularEquation = (
+	equation: WallEquation,
+	x1: number,
+	y1: number
+): WallEquation => {
+	if (typeof equation.A != "string") {
+		return {
+			A: -1 / equation.A,
+			B: y1 - (-1 / equation.A) * x1,
+		};
+	}
+	if (equation.A == "h") {
+		return {
+			A: "v",
+			B: x1,
+		};
+	}
+
+	// equation.A == 'v'
+	return {
+		A: "h",
+		B: y1,
+	};
+};

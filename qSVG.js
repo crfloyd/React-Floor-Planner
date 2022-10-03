@@ -243,46 +243,6 @@ export const qSVG = {
 		return (360 * angleRad) / (2 * Math.PI);
 	},
 
-	// type array return [x,y] ---- type object return {x:x, y:y}
-	// intersectionOfEquations: function (equation1, equation2) {
-	// 	var retArray;
-	// 	var retObj;
-	// 	if (equation1.A == equation2.A) {
-	// 		retObj = false;
-	// 	}
-	// 	if (equation1.A == "v" && equation2.A == "h") {
-	// 		retObj = { x: equation1.B, y: equation2.B };
-	// 	}
-	// 	if (equation1.A == "h" && equation2.A == "v") {
-	// 		retObj = { x: equation2.B, y: equation1.B };
-	// 	}
-	// 	if (equation1.A == "h" && equation2.A != "v" && equation2.A != "h") {
-	// 		retObj = { x: (equation1.B - equation2.B) / equation2.A, y: equation1.B };
-	// 	}
-	// 	if (equation1.A == "v" && equation2.A != "v" && equation2.A != "h") {
-	// 		retObj = { x: equation1.B, y: equation2.A * equation1.B + equation2.B };
-	// 	}
-	// 	if (equation2.A == "h" && equation1.A != "v" && equation1.A != "h") {
-	// 		retObj = { x: (equation2.B - equation1.B) / equation1.A, y: equation2.B };
-	// 	}
-	// 	if (equation2.A == "v" && equation1.A != "v" && equation1.A != "h") {
-	// 		retObj = { x: equation2.B, y: equation1.A * equation2.B + equation1.B };
-	// 	}
-	// 	if (
-	// 		equation1.A != "h" &&
-	// 		equation1.A != "v" &&
-	// 		equation2.A != "v" &&
-	// 		equation2.A != "h"
-	// 	) {
-	// 		var xT = (equation2.B - equation1.B) / (equation1.A - equation2.A);
-	// 		var yT = equation1.A * xT + equation1.B;
-	// 		retArray = [xT, yT];
-	// 		retObj = { x: xT, y: yT };
-	// 	}
-	// 	if (type == "array") return retArray;
-	// 	else return retObj;
-	// },
-
 	vectorXY: function (obj1, obj2) {
 		return {
 			x: obj2.x - obj1.x,
@@ -300,19 +260,13 @@ export const qSVG = {
 		return v1.x * v2.y - v1.y * v2.x;
 	},
 
-	btwn: function (a, b1, b2, round = false) {
+	btwn: function (a, p1, p2, round = false) {
 		if (round) {
 			a = Math.round(a);
-			b1 = Math.round(b1);
-			b2 = Math.round(b2);
+			p1 = Math.round(p1);
+			p2 = Math.round(p2);
 		}
-		if (a >= b1 && a <= b2) {
-			return true;
-		}
-		if (a >= b2 && a <= b1) {
-			return true;
-		}
-		return false;
+		return (a >= p1 && a <= p2) || (a >= p2 && a <= p1);
 	},
 
 	nearPointFromPath: function (Pathsvg, point, range = Infinity) {
@@ -612,10 +566,8 @@ export const qSVG = {
 							}
 						} else {
 							if (
-								qSVG.btwn(intersec.x, walls[i].start.x, walls[i].end.x, true) &&
-								qSVG.btwn(intersec.y, walls[i].start.y, walls[i].end.y, true) &&
-								qSVG.btwn(intersec.x, walls[v].start.x, walls[v].end.x, true) &&
-								qSVG.btwn(intersec.y, walls[v].start.y, walls[v].end.y, true)
+								walls[i].pointInsideWall(intersec, true) &&
+								walls[v].pointInsideWall(intersec, true)
 							) {
 								// intersec[0] = intersec[0];
 								// intersec[1] = intersec[1];

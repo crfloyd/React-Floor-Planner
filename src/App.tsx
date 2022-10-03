@@ -557,10 +557,8 @@ function App() {
 		}
 		var limits = computeLimit(wallBind.equations.base, val, objTarget);
 		if (
-			qSVG.btwn(limits[1].x, wallBind.start.x, wallBind.end.x) &&
-			qSVG.btwn(limits[1].y, wallBind.start.y, wallBind.end.y) &&
-			qSVG.btwn(limits[0].x, wallBind.start.x, wallBind.end.x) &&
-			qSVG.btwn(limits[0].y, wallBind.start.y, wallBind.end.y)
+			wallBind.pointInsideWall(limits[0]) &&
+			wallBind.pointInsideWall(limits[1])
 		) {
 			objTarget.size = val;
 			objTarget.limit = limits;
@@ -580,24 +578,24 @@ function App() {
 	};
 
 	const splitWall = (wallToSplit: WallMetaData) => {
-		var eqWall = editor.createEquationFromWall(wallToSplit);
+		console.log("started with: ", wallMeta);
+		var eqWall = wallToSplit.getEquation();
 		var wallToSplitLength = qSVG.gap(wallToSplit.start, wallToSplit.end);
 		var newWalls: { distance: number; coords: Point2D }[] = [];
 
 		wallMeta.forEach((wall) => {
-			var eq = editor.createEquationFromWall(wall);
+			var eq = wall.getEquation();
 			var inter = intersectionOfEquations(eqWall, eq);
-			// let inter = intersectionResult as Point2D
 			if (
 				inter &&
-				qSVG.btwn(inter.x, binder.wall.start.x, binder.wall.end.x, true) &&
-				qSVG.btwn(inter.y, binder.wall.start.y, binder.wall.end.y, true) &&
-				qSVG.btwn(inter.x, wall.start.x, wall.end.x, true) &&
-				qSVG.btwn(inter.y, wall.start.y, wall.end.y, true)
+				binder.wall.pointInsideWall(inter, true) &&
+				wall.pointInsideWall(inter, true)
 			) {
 				var distance = qSVG.gap(wallToSplit.start, inter);
-				if (distance > 5 && distance < wallToSplitLength)
+				if (distance > 5 && distance < wallToSplitLength) {
+					console.log("Pushing new wall");
 					newWalls.push({ distance: distance, coords: inter });
+				}
 			}
 		});
 
@@ -608,21 +606,16 @@ function App() {
 		var initCoords = wallToSplit.start;
 		var initThick = wallToSplit.thick;
 
-		// CLEAR THE WALL BEFORE PIECES RE-BUILDER
+		// Clear the wall to split from its parents and children
 		wallMeta.forEach((wall) => {
-			if (wall.child === wallToSplit.id)
-				wallMeta = setWallMeta([
-					...wallMeta.filter((w) => w !== wall),
-					{ ...wall, child: null },
-				]);
-			if (wall.parent === wallToSplit.id) {
-				wallMeta = setWallMeta([
-					...wallMeta.filter((w) => w.id !== wall.id),
-					{ ...wall, parent: null },
-				]);
+			if (wall.child === wallToSplit.id) {
+				wall.child = null;
+			} else if (wall.parent === wallToSplit.id) {
+				wall.parent = null;
 			}
 		});
 
+		// Remove the wall to split from the list of walls
 		wallMeta = setWallMeta([...wallMeta.filter((w) => w.id != wallToSplit.id)]);
 
 		newWalls.forEach((newWall) => {
@@ -635,6 +628,7 @@ function App() {
 		// LAST WALL ->
 		const wall = new Wall(initCoords, wallToSplit.end, "normal", initThick);
 		wallMeta = setWallMeta([...wallMeta, wall]);
+		console.log("Split into: ", wallMeta);
 		editor.architect(wallMeta, setRooms, roomMeta, setRoomMeta, wallEquations);
 		save(objectMeta, wallMeta, roomMeta);
 		return true;

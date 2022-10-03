@@ -408,11 +408,7 @@ export const rib = (wallMeta, shift = 5) => {
 						wallMeta[i].equations.base,
 						wallMeta[p].equations.base
 					);
-					if (
-						cross &&
-						qSVG.btwn(cross.x, wallMeta[i].start.x, wallMeta[i].end.x, true) &&
-						qSVG.btwn(cross.y, wallMeta[i].start.y, wallMeta[i].end.y, true)
-					) {
+					if (cross && wallMeta[i].pointInsideWall(cross, true)) {
 						inter = intersectionOfEquations(
 							wallMeta[i].equations.up,
 							wallMeta[p].equations.up

@@ -22,7 +22,7 @@ import {
 	isObjectsEquals,
 	calculateSnap,
 } from "./src/utils";
-import { Object2D } from "./src/svgTools";
+import { Object2D, wallsComputing } from "./src/svgTools";
 import { Wall } from "./src/wall";
 
 const Rcirclebinder = 8;
@@ -479,10 +479,8 @@ export const _MOUSEMOVE = (
 						wallSelect
 					);
 					if (
-						qSVG.btwn(limits[0].x, wall.start.x, wall.end.x) &&
-						qSVG.btwn(limits[0].y, wall.start.y, wall.end.y) &&
-						qSVG.btwn(limits[1].x, wall.start.x, wall.end.x) &&
-						qSVG.btwn(limits[1].y, wall.start.y, wall.end.y)
+						wall.pointInsideWall(limits[0]) &&
+						wall.pointInsideWall(limits[1])
 					) {
 						binder.x = wallSelect.x;
 						binder.y = wallSelect.y;
@@ -496,17 +494,11 @@ export const _MOUSEMOVE = (
 						(wallSelect.x == wall.start.x && wallSelect.y == wall.start.y) ||
 						(wallSelect.x == wall.end.x && wallSelect.y == wall.end.y)
 					) {
-						if (
-							qSVG.btwn(limits[0].x, wall.start.x, wall.end.x) &&
-							qSVG.btwn(limits[0].y, wall.start.y, wall.end.y)
-						) {
+						if (wall.pointInsideWall(limits[0])) {
 							binder.x = limits[0].x;
 							binder.y = limits[0].y;
 						}
-						if (
-							qSVG.btwn(limits[1].x, wall.start.x, wall.end.x) &&
-							qSVG.btwn(limits[1].y, wall.start.y, wall.end.y)
-						) {
+						if (wall.pointInsideWall(limits[1])) {
 							binder.x = limits[1].x;
 							binder.y = limits[1].y;
 						}
@@ -1184,7 +1176,11 @@ export const _MOUSEMOVE = (
 				}
 			}
 			binder.data = coords;
-			editor.wallsComputing(wallMeta, wallEquations); // UPDATE FALSE
+
+			wallsComputing(wallMeta, wallEquations); // UPDATE FALSE
+			wallMeta.forEach((wall) => {
+				wall.addToScene();
+			});
 
 			for (var k in wallListObj) {
 				var wall = wallListObj[k].wall;
@@ -1201,11 +1197,7 @@ export const _MOUSEMOVE = (
 					wallListObj[k].from
 				); // COORDS OBJ AFTER ROTATION
 				var indexLimits = 0;
-				if (
-					qSVG.btwn(limits[1].x, wall.start.x, wall.end.x) &&
-					qSVG.btwn(limits[1].y, wall.start.y, wall.end.y)
-				)
-					indexLimits = 1;
+				if (wall.pointInsideWall(limits[1])) indexLimits = 1;
 				// NEW COORDS OBJDATA[obj]
 				objTarget.x = limits[indexLimits].x;
 				objTarget.y = limits[indexLimits].y;
@@ -1219,10 +1211,8 @@ export const _MOUSEMOVE = (
 				); // OBJ SIZE OK BTWN xy1/xy2
 
 				if (
-					qSVG.btwn(limitBtwn[0].x, wall.start.x, wall.end.x) &&
-					qSVG.btwn(limitBtwn[0].y, wall.start.y, wall.end.y) &&
-					qSVG.btwn(limitBtwn[1].x, wall.start.x, wall.end.x) &&
-					qSVG.btwn(limitBtwn[1].y, wall.start.y, wall.end.y)
+					wall.pointInsideWall(limitBtwn[0]) &&
+					wall.pointInsideWall(limitBtwn[1])
 				) {
 					objTarget.limit = limitBtwn;
 					objTarget.update();
@@ -1358,18 +1348,7 @@ export const _MOUSEMOVE = (
 				);
 				if (
 					followerData.intersection &&
-					qSVG.btwn(
-						followerData.intersection.x,
-						binder.wall.start.x,
-						binder.wall.end.x,
-						true
-					) &&
-					qSVG.btwn(
-						followerData.intersection.y,
-						binder.wall.start.y,
-						binder.wall.end.y,
-						true
-					)
+					binder.wall.pointInsideWall(followerData.intersection, true)
 				) {
 					var size = qSVG.measure(
 						followerData.equations[i].wall.start,
@@ -1402,7 +1381,10 @@ export const _MOUSEMOVE = (
 				}
 			}
 			// WALL COMPUTING, BLOCK FAMILY OF BINDERWALL IF NULL (START OR END) !!!!!
-			editor.wallsComputing(wallMeta, wallEquations, "move");
+			wallsComputing(wallMeta, wallEquations, true);
+			wallMeta.forEach((wall) => {
+				wall.addToScene();
+			});
 			rooms = setRooms(qSVG.polygonize(wallMeta));
 
 			// OBJDATA(s) FOLLOW 90° EDGE SELECTED
@@ -1421,10 +1403,8 @@ export const _MOUSEMOVE = (
 					objTarget
 				);
 				if (
-					qSVG.btwn(limits[0].x, binder.wall.start.x, binder.wall.end.x) &&
-					qSVG.btwn(limits[0].y, binder.wall.start.y, binder.wall.end.y) &&
-					qSVG.btwn(limits[1].x, binder.wall.start.x, binder.wall.end.x) &&
-					qSVG.btwn(limits[1].y, binder.wall.start.y, binder.wall.end.y)
+					binder.wall.pointInsideWall(limits[0]) &&
+					binder.wall.pointInsideWall(limits[1])
 				) {
 					objTarget.limit = limits;
 					objTarget.update();
@@ -1435,13 +1415,11 @@ export const _MOUSEMOVE = (
 				var objWall = editor.objFromWall(wallMeta[k], objectMeta); // LIST OBJ ON EDGE
 				for (var ob in objWall) {
 					var objTarget = objWall[ob];
-					var eq = editor.createEquationFromWall(wallMeta[k]);
+					var eq = wallMeta[k].getEquation();
 					var limits = computeLimit(eq, objTarget.size, objTarget);
 					if (
-						!qSVG.btwn(limits[0].x, wallMeta[k].start.x, wallMeta[k].end.x) ||
-						!qSVG.btwn(limits[0].y, wallMeta[k].start.y, wallMeta[k].end.y) ||
-						!qSVG.btwn(limits[1].x, wallMeta[k].start.x, wallMeta[k].end.x) ||
-						!qSVG.btwn(limits[1].y, wallMeta[k].start.y, wallMeta[k].end.y)
+						!wallMeta[k].pointInsideWall(limits[0]) ||
+						!wallMeta[k].pointInsideWall(limits[1])
 					) {
 						objTarget.graph.remove();
 						objTarget = null;
@@ -1520,10 +1498,8 @@ export const _MOUSEMOVE = (
 						wallSelect
 					);
 					if (
-						qSVG.btwn(limits[0].x, wall.start.x, wall.end.x) &&
-						qSVG.btwn(limits[0].y, wall.start.y, wall.end.y) &&
-						qSVG.btwn(limits[1].x, wall.start.x, wall.end.x) &&
-						qSVG.btwn(limits[1].y, wall.start.y, wall.end.y)
+						wall.pointInsideWall(limits[0]) &&
+						wall.pointInsideWall(limits[1])
 					) {
 						binder.x = wallSelect.x;
 						binder.y = wallSelect.y;
@@ -1542,20 +1518,14 @@ export const _MOUSEMOVE = (
 						(wallSelect.x == wall.start.x && wallSelect.y == wall.start.y) ||
 						(wallSelect.x == wall.end.x && wallSelect.y == wall.end.y)
 					) {
-						if (
-							qSVG.btwn(limits[0].x, wall.start.x, wall.end.x) &&
-							qSVG.btwn(limits[0].y, wall.start.y, wall.end.y)
-						) {
+						if (wall.pointInsideWall(limits[0])) {
 							binder.x = limits[0].x;
 							binder.y = limits[0].y;
 							objTarget.x = limits[0].x;
 							objTarget.y = limits[0].y;
 							objTarget.limit = limits;
 						}
-						if (
-							qSVG.btwn(limits[1].x, wall.start.x, wall.end.x) &&
-							qSVG.btwn(limits[1].y, wall.start.y, wall.end.y)
-						) {
+						if (wall.pointInsideWall(limits[1])) {
 							binder.x = limits[1].x;
 							binder.y = limits[1].y;
 							objTarget.x = limits[1].x;
@@ -1754,10 +1724,10 @@ export const _MOUSEDOWN = (
 				$("#boxScale").hide(100);
 				var wall = { ...binder.wall };
 				binder.before = binder.wall.start;
-				wallEquations.equation2 = editor.createEquationFromWall(wall);
+				wallEquations.equation2 = wall.getEquation();
 				if (wall.parent != null) {
 					const parent = findById(wall.parent, wallMeta);
-					wallEquations.equation1 = editor.createEquationFromWall(parent);
+					wallEquations.equation1 = parent.getEquation();
 					var angle12 = qSVG.angleBetweenEquations(
 						wallEquations.equation1.A,
 						wallEquations.equation2.A
@@ -1856,9 +1826,7 @@ export const _MOUSEDOWN = (
 								wallEquations.equation2.A
 							);
 							if (angleFollow < 20 || angleFollow > 160) break;
-							wallEquations.equation1 = editor.createEquationFromWall(
-								wallMeta[k]
-							);
+							wallEquations.equation1 = wallMeta[k].getEquation();
 							wallEquations.equation1.follow = wallMeta[k];
 							wallEquations.equation1.backUp = {
 								coords: wallMeta[k].coords,
@@ -1881,7 +1849,7 @@ export const _MOUSEDOWN = (
 
 				if (wall.child != null) {
 					const child = findById(wall.child, wallMeta);
-					wallEquations.equation3 = editor.createEquationFromWall(child);
+					wallEquations.equation3 = child.getEquation();
 					var angle23 = qSVG.angleBetweenEquations(
 						wallEquations.equation3.A,
 						wallEquations.equation2.A
@@ -1974,9 +1942,7 @@ export const _MOUSEDOWN = (
 								wallEquations.equation2.A
 							);
 							if (angleFollow < 20 || angleFollow > 160) break;
-							wallEquations.equation3 = editor.createEquationFromWall(
-								wallMeta[k]
-							);
+							wallEquations.equation3 = wallMeta[k].getEquation();
 							wallEquations.equation3.follow = wallMeta[k];
 							wallEquations.equation3.backUp = {
 								coords: wallMeta[k].coords,
@@ -2006,7 +1972,7 @@ export const _MOUSEDOWN = (
 					) {
 						followerData.equations.push({
 							wall: wallMeta[k],
-							eq: editor.createEquationFromWall(wallMeta[k]),
+							eq: wallMeta[k].getEquation(),
 							type: "end",
 						});
 					}
@@ -2017,7 +1983,7 @@ export const _MOUSEDOWN = (
 					) {
 						followerData.equations.push({
 							wall: wallMeta[k],
-							eq: editor.createEquationFromWall(wallMeta[k]),
+							eq: wallMeta[k].getEquation(),
 							type: "start",
 						});
 					}

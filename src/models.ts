@@ -74,6 +74,10 @@ export interface WallMetaData {
 	graph: any;
 	parent?: string | null;
 	child?: string | null;
+	dPath?: string | null;
+
+	getEquation: () => WallEquation;
+	pointInsideWall: (point: Point2D, round: boolean) => boolean;
 }
 
 export interface BoundingBox {
