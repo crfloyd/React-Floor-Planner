@@ -4,6 +4,7 @@ import {
 	createSvgElement,
 	wallsComputing,
 	createEquation,
+	pointInPolygon,
 } from "./src/svgTools";
 
 export const editor = {
@@ -180,7 +181,7 @@ export const editor = {
 					y: wall.coords[pp].y,
 				}); // FOR Z
 			}
-			if (qSVG.rayCasting(snap, polygon)) {
+			if (pointInPolygon(snap, polygon)) {
 				wallList.push(wall); // Return EDGES Index
 			}
 		});
@@ -579,7 +580,7 @@ export const editor = {
 	rayCastingRoom: function (point, roomMeta) {
 		var roomGroup = [];
 		for (var polygon = 0; polygon < roomMeta.length; polygon++) {
-			var inside = qSVG.rayCasting(point, roomMeta[polygon].coords);
+			var inside = pointInPolygon(point, roomMeta[polygon].coords);
 
 			if (inside) {
 				roomGroup.push(polygon);

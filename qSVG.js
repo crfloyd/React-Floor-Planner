@@ -5,8 +5,8 @@
 
 // 'use strict';
 
-import { intersectionOfEquations } from "./src/utils";
-import { createEquation } from "./src/svgTools";
+import { intersectionOfEquations, isObjectsEquals } from "./src/utils";
+import { createEquation, getAngle, pointInPolygon } from "./src/svgTools";
 
 export const qSVG = {
 	create: function (id, shape, attrs) {
@@ -20,60 +20,6 @@ export const qSVG = {
 			$("#" + id).append(shape);
 		}
 		return shape;
-	},
-
-	angleDeg: function (cx, cy, ex, ey) {
-		var dy = ey - cy;
-		var dx = ex - cx;
-		var theta = Math.atan2(dy, dx); // range (-PI, PI]
-		theta *= 180 / Math.PI; // rads to degs, range (-180, 180]
-		if (theta < 0) theta = 360 + theta; // range [0, 360)
-		return theta;
-	},
-
-	angle: function (x1, y1, x2, y2, x3, y3) {
-		var x1 = parseInt(x1);
-		var y1 = parseInt(y1);
-		var x2 = parseInt(x2);
-		var y2 = parseInt(y2);
-		var anglerad;
-		if (!x3) {
-			if (x1 - x2 == 0) anglerad = Math.PI / 2;
-			else {
-				anglerad = Math.atan((y1 - y2) / (x1 - x2));
-			}
-			var angledeg = (anglerad * 180) / Math.PI;
-		} else {
-			var x3 = parseInt(x3);
-			var y3 = parseInt(y3);
-			var a = Math.sqrt(
-				Math.pow(Math.abs(x2 - x1), 2) + Math.pow(Math.abs(y2 - y1), 2)
-			);
-			var b = Math.sqrt(
-				Math.pow(Math.abs(x2 - x3), 2) + Math.pow(Math.abs(y2 - y3), 2)
-			);
-			var c = Math.sqrt(
-				Math.pow(Math.abs(x3 - x1), 2) + Math.pow(Math.abs(y3 - y1), 2)
-			);
-			if (a == 0 || b == 0) anglerad = Math.PI / 2;
-			else {
-				anglerad = Math.acos(
-					(Math.pow(a, 2) + Math.pow(b, 2) - Math.pow(c, 2)) / (2 * a * b)
-				);
-			}
-			angledeg = (360 * anglerad) / (2 * Math.PI);
-		}
-		return {
-			rad: anglerad,
-			deg: angledeg,
-		};
-	},
-
-	getAngle: function (p1, p2) {
-		return {
-			rad: Math.atan2(p2.y - p1.y, p2.x - p1.x),
-			deg: (Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180) / Math.PI,
-		};
 	},
 
 	middle: function (xo, yo, xd, yd) {
@@ -446,7 +392,7 @@ export const qSVG = {
 			}
 
 			for (var ii = 0; ii < inter.length; ii++) {
-				if (qSVG.rayCasting(inter[ii], polygon)) inside.push(inter[ii]);
+				if (pointInPolygon(inter[ii], polygon)) inside.push(inter[ii]);
 				else outside.push(inter[ii]);
 			}
 		}
@@ -538,7 +484,7 @@ export const qSVG = {
 						if (vertCompare.segment[scg] == vertSegment) {
 							vertChildren.push({
 								id: sc,
-								angle: Math.floor(qSVG.getAngle(vert, vertCompare).deg),
+								angle: Math.floor(getAngle(vert, vertCompare, "deg").deg),
 							});
 						}
 					}
@@ -876,7 +822,7 @@ export const qSVG = {
 					var countCoords = polygonFree.length;
 					var found = true;
 					for (var pf = 0; pf < countCoords; pf++) {
-						found = qSVG.rayCasting(polygonFree[pf], polygons[pp].coords);
+						found = pointInPolygon(polygonFree[pf], polygons[pp].coords);
 						if (!found) {
 							break;
 						}
@@ -902,7 +848,7 @@ export const qSVG = {
 		var count = 0;
 		for (var k = 0; k < arr1.length - 1; k++) {
 			for (var n = 0; n < arr2.length - 1; n++) {
-				if (qSVG.isObjectsEquals(arr1[k], arr2[n])) {
+				if (isObjectsEquals(arr1[k], arr2[n])) {
 					count++;
 				}
 			}
@@ -910,24 +856,6 @@ export const qSVG = {
 		var waiting = arr1.length - 1;
 		if (waiting < arr2.length - 1) waiting = arr2.length;
 		return waiting - count;
-	},
-
-	rayCasting: function (point, polygon) {
-		var x = point.x,
-			y = point.y;
-		var inside = false;
-		for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-			var xi = polygon[i].x,
-				yi = polygon[i].y;
-			var xj = polygon[j].x,
-				yj = polygon[j].y;
-			var intersect =
-				yi > y != yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-			if (intersect) {
-				inside = !inside;
-			}
-		}
-		return inside;
 	},
 
 	//polygon = [{x1,y1}, {x2,y2}, ...]
@@ -954,11 +882,11 @@ export const qSVG = {
 			for (var ww = 0; ww < sample; ww++) {
 				var posX = minX + ww * sampleWidth;
 				var posY = minY + hh * sampleHeight;
-				if (qSVG.rayCasting({ x: posX, y: posY }, polygon)) {
+				if (pointInPolygon({ x: posX, y: posY }, polygon)) {
 					var found = true;
 					for (var ii = 0; ii < insideArray.length; ii++) {
 						if (
-							qSVG.rayCasting(
+							pointInPolygon(
 								{ x: posX, y: posY },
 								roomMeta[insideArray[ii]].coordsOutside
 							)
@@ -1014,18 +942,6 @@ export const qSVG = {
 			text.textContent = label;
 			document.getElementById(div).appendChild(text);
 		}
-	},
-
-	isObjectsEquals: function (a, b, message = false) {
-		if (message) console.log(message);
-		var isOK = true;
-		for (var prop in a) {
-			if (a[prop] !== b[prop]) {
-				isOK = false;
-				break;
-			}
-		}
-		return isOK;
 	},
 };
 

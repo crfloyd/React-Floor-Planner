@@ -16,9 +16,7 @@ import { qSVG } from "../qSVG";
 import { editor } from "../editor";
 import {
 	computeLimit,
-	findById,
 	intersectionOfEquations,
-	isObjectsEquals,
 } from "./utils";
 
 import "./App.css";

@@ -2055,7 +2055,7 @@ const addWallMeasurementsToScene = (
 							y: wallMeta[crossEdge].coords[pp].y,
 						});
 					}
-					if (qSVG.rayCasting(measureData[0].coords, polygon)) {
+					if (pointInPolygon(measureData[0].coords, polygon)) {
 						continue;
 					}
 				} else if (n == measureData.length - 1) {
@@ -2066,7 +2066,7 @@ const addWallMeasurementsToScene = (
 						});
 					}
 					if (
-						qSVG.rayCasting(measureData[measureData.length - 1].coords, polygon)
+						pointInPolygon(measureData[measureData.length - 1].coords, polygon)
 					) {
 						continue;
 					}
@@ -2228,4 +2228,39 @@ export const angleBetweenThreePoints = (
 			  );
 	const deg = (360 * rad) / (2 * Math.PI);
 	return { rad, deg };
+};
+
+export const getAngle = (
+	p1: Point2D,
+	p2: Point2D,
+	format: "deg" | "rad" | "both" = "both"
+): { deg: number; rad: number } => {
+	var dy = p2.y - p1.y;
+	var dx = p2.x - p1.x;
+
+	const result = { deg: 0, rad: 0 };
+	result.rad = Math.atan2(dy, dx);
+	if (format === "deg" || format == "both") {
+		result.deg = (result.rad * 180) / Math.PI;
+	}
+
+	return result;
+};
+
+// Point in polygon algorithm
+export const pointInPolygon = (point: Point2D, polygon: Point2D[]) => {
+	var inside = false;
+	for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+		var xi = polygon[i].x,
+			yi = polygon[i].y;
+		var xj = polygon[j].x,
+			yj = polygon[j].y;
+		var intersect =
+			yi > point.y != yj > point.y &&
+			point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
+		if (intersect) {
+			inside = !inside;
+		}
+	}
+	return inside;
 };

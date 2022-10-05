@@ -28,6 +28,8 @@ import {
 	updateMeasurementText,
 	setInWallMeasurementText,
 	angleBetweenPoints,
+	getAngle,
+	pointInPolygon,
 } from "./src/svgTools";
 import { Wall } from "./src/wall";
 
@@ -225,12 +227,7 @@ export const _MOUSEMOVE = (
 				pos = editor.stickOnWall(snap, wallMeta);
 				binder.oldX = pos.x;
 				binder.oldY = pos.y;
-				var angleWall = qSVG.angleDeg(
-					pos.wall.start.x,
-					pos.wall.start.y,
-					pos.wall.end.x,
-					pos.wall.end.y
-				);
+				let angleWall = getAngle(pos.wall.start, pos.wall.end, "deg").deg;
 				var v1 = qSVG.vectorXY(
 					{ x: pos.wall.start.x, y: pos.wall.start.y },
 					{ x: pos.wall.end.x, y: pos.wall.end.y }
@@ -433,12 +430,8 @@ export const _MOUSEMOVE = (
 							viewbox
 						)
 					);
-					var angleWall = qSVG.angleDeg(
-						wall.start.x,
-						wall.start.y,
-						wall.end.x,
-						wall.end.y
-					);
+
+					let angleWall = getAngle(wall.start, wall.end, "deg").deg;
 					var v1 = qSVG.vectorXY(
 						{ x: wall.start.x, y: wall.start.y },
 						{ x: wall.end.x, y: wall.end.y }
@@ -461,12 +454,7 @@ export const _MOUSEMOVE = (
 					binder.update();
 					$("#boxbind").append(binder.graph);
 				} else {
-					var angleWall = qSVG.angleDeg(
-						wall.start.x,
-						wall.start.y,
-						wall.end.x,
-						wall.end.y
-					);
+					let angleWall = getAngle(wall.start, wall.end, "deg").deg;
 					var v1 = qSVG.vectorXY(
 						{ x: wall.start.x, y: wall.start.y },
 						{ x: wall.end.x, y: wall.end.y }
@@ -608,7 +596,7 @@ export const _MOUSEMOVE = (
 			var objTarget = false;
 			objectMeta.forEach((objMeta) => {
 				var realBboxCoords = objMeta.realBbox;
-				if (qSVG.rayCasting(snap, realBboxCoords)) {
+				if (pointInPolygon(snap, realBboxCoords)) {
 					objTarget = objMeta;
 				}
 			});
@@ -1194,12 +1182,8 @@ export const _MOUSEMOVE = (
 			for (var k in wallListObj) {
 				var wall = wallListObj[k].wall;
 				var objTarget = wallListObj[k].obj;
-				var angleWall = qSVG.angleDeg(
-					wall.start.x,
-					wall.start.y,
-					wall.end.x,
-					wall.end.y
-				);
+
+				const angleWall = getAngle(wall.start, wall.end, "deg").deg;
 				var limits = computeLimit(
 					wall.equations.base,
 					2 * wallListObj[k].distance,
@@ -1298,7 +1282,7 @@ export const _MOUSEMOVE = (
 			// THE EQ FOLLOWED BY eq (PARENT EQ1 --- CHILD EQ3)
 			if (wallEquations.equation1.follow != undefined) {
 				if (
-					!qSVG.rayCasting(intersection1, wallEquations.equation1.backUp.coords)
+					!pointInPolygon(intersection1, wallEquations.equation1.backUp.coords)
 				) {
 					// IF OUT OF WALL FOLLOWED
 					var distanceFromStart = qSVG.gap(
@@ -1324,7 +1308,7 @@ export const _MOUSEMOVE = (
 			}
 			if (wallEquations.equation3.follow != undefined) {
 				if (
-					!qSVG.rayCasting(intersection2, wallEquations.equation3.backUp.coords)
+					!pointInPolygon(intersection2, wallEquations.equation3.backUp.coords)
 				) {
 					// IF OUT OF WALL FOLLOWED
 					var distanceFromStart = qSVG.gap(
@@ -1483,12 +1467,7 @@ export const _MOUSEMOVE = (
 					setInWallMeasurementText(wallSelect.wall, objectMeta);
 					var objTarget = binder.obj;
 					var wall = wallSelect.wall;
-					var angleWall = qSVG.angleDeg(
-						wall.start.x,
-						wall.start.y,
-						wall.end.x,
-						wall.end.y
-					);
+					let angleWall = getAngle(wall.start, wall.end, "both").deg;
 					var v1 = qSVG.vectorXY(
 						{ x: wall.start.x, y: wall.start.y },
 						{ x: wall.end.x, y: wall.end.y }
@@ -1733,7 +1712,7 @@ export const _MOUSEDOWN = (
 						var found = true;
 						for (var k in wallMeta) {
 							if (
-								qSVG.rayCasting(wall.start, wallMeta[k].coords) &&
+								pointInPolygon(wall.start, wallMeta[k].coords) &&
 								wallMeta[k].id !== parent.id &&
 								// !isObjectsEquals(wallMeta[k], wall.parent) &&
 								!isObjectsEquals(wallMeta[k], wall)
@@ -1815,7 +1794,7 @@ export const _MOUSEDOWN = (
 					var foundEq = false;
 					for (var k in wallMeta) {
 						if (
-							qSVG.rayCasting(wall.start, wallMeta[k].coords) &&
+							pointInPolygon(wall.start, wallMeta[k].coords) &&
 							!isObjectsEquals(wallMeta[k].coords, wall.coords)
 						) {
 							var angleFollow = qSVG.angleBetweenEquations(
@@ -1855,7 +1834,7 @@ export const _MOUSEDOWN = (
 						var found = true;
 						for (var k in wallMeta) {
 							if (
-								qSVG.rayCasting(wall.end, wallMeta[k].coords) &&
+								pointInPolygon(wall.end, wallMeta[k].coords) &&
 								wallMeta[k].id !== wall.child &&
 								// !isObjectsEquals(wallMeta[k], wall.child) &&
 								!isObjectsEquals(wallMeta[k], wall)
@@ -1931,7 +1910,7 @@ export const _MOUSEDOWN = (
 					var foundEq = false;
 					for (var k in wallMeta) {
 						if (
-							qSVG.rayCasting(wall.end, wallMeta[k].coords) &&
+							pointInPolygon(wall.end, wallMeta[k].coords) &&
 							!isObjectsEquals(wallMeta[k].coords, wall.coords, "4")
 						) {
 							var angleFollow = qSVG.angleBetweenEquations(
@@ -1964,7 +1943,7 @@ export const _MOUSEDOWN = (
 				for (var k in wallMeta) {
 					if (
 						wallMeta[k].child == null &&
-						qSVG.rayCasting(wallMeta[k].end, wall.coords) &&
+						pointInPolygon(wallMeta[k].end, wall.coords) &&
 						!isObjectsEquals(wall, wallMeta[k])
 					) {
 						followerData.equations.push({
@@ -1975,7 +1954,7 @@ export const _MOUSEDOWN = (
 					}
 					if (
 						wallMeta[k].parent == null &&
-						qSVG.rayCasting(wallMeta[k].start, wall.coords) &&
+						pointInPolygon(wallMeta[k].start, wall.coords) &&
 						!isObjectsEquals(wall, wallMeta[k])
 					) {
 						followerData.equations.push({
