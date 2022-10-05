@@ -5,6 +5,12 @@ export interface Point2D {
 	y: number;
 }
 
+export interface PointDistance {
+	x: number;
+	y: number;
+	distance: number;
+}
+
 export const Mode = {
 	Select: "select_mode",
 	Text: "text_mode",
@@ -37,6 +43,13 @@ export interface RoomMetaData {
 	action: string;
 }
 
+export interface WallEquation {
+	A: number | "h" | "v";
+	B: number;
+	follow?: WallMetaData | null;
+	backup?: WallMetaData | null;
+}
+
 export interface WallSideEquationParams {
 	A: string;
 	B: string | number;
@@ -48,19 +61,12 @@ export interface WallSideEquations {
 	base: WallSideEquationParams;
 }
 
-// export interface GraphData {
-// 	0: {};
-// 	context: {};
-// 	length: number;
-// }
-
-// export interface WallMetaBase {
-// }
-
-// export interface WallMetaHistoryData extends WallMetaBase {
-// 	parent?: number;
-// 	child?: number;
-// }
+export interface WallJunction {
+	segment: number;
+	child: number;
+	values: number[];
+	type: "natural" | "intersection";
+}
 
 export interface WallMetaData {
 	id: string;
@@ -78,6 +84,11 @@ export interface WallMetaData {
 
 	getEquation: () => WallEquation;
 	pointInsideWall: (point: Point2D, round: boolean) => boolean;
+	pointBetweenCoords: (
+		point: Point2D,
+		coordSet: 1 | 2,
+		round: boolean
+	) => boolean;
 }
 
 export interface BoundingBox {
@@ -111,16 +122,8 @@ export interface ObjectMetaData {
 	height: number;
 	bbox: BoundingBox;
 	realBbox: Point2D[];
-	// params: {
-	// 	bindBox: boolean;
-	// 	move: boolean;
-	// 	resize: boolean;
-	// 	resizeLimit: {
-	// 		width: { min: number; max: number };
-	// 		height: { min: boolean; max: boolean };
-	// 	};
-	// 	rotate: boolean;
-	// };
+	up: PointDistance[];
+	down: PointDistance[];
 	params: SVGCreationData;
 }
 
@@ -128,13 +131,6 @@ export interface HistorySnapshot {
 	objData: ObjectMetaData[];
 	wallData: WallMetaData[];
 	roomData: RoomMetaData[];
-}
-
-export interface WallEquation {
-	A: number | string;
-	B: number;
-	follow?: WallMetaData | null;
-	backup?: WallMetaData | null;
 }
 
 export interface ObjectEquationData {

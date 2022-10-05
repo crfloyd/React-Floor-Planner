@@ -6,6 +6,7 @@
 // 'use strict';
 
 import { intersectionOfEquations } from "./src/utils";
+import { createEquation } from "./src/svgTools";
 
 export const qSVG = {
 	create: function (id, shape, attrs) {
@@ -68,10 +69,10 @@ export const qSVG = {
 		};
 	},
 
-	getAngle: function (el1, el2) {
+	getAngle: function (p1, p2) {
 		return {
-			rad: Math.atan2(el2.y - el1.y, el2.x - el1.x),
-			deg: (Math.atan2(el2.y - el1.y, el2.x - el1.x) * 180) / Math.PI,
+			rad: Math.atan2(p2.y - p1.y, p2.x - p1.x),
+			deg: (Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180) / Math.PI,
 		};
 	},
 
@@ -192,25 +193,6 @@ export const qSVG = {
 			r * 2 +
 			",0"
 		);
-	},
-
-	createEquation: function (x0, y0, x1, y1) {
-		if (x1 - x0 == 0) {
-			return {
-				A: "v",
-				B: x0,
-			};
-		} else if (y1 - y0 == 0) {
-			return {
-				A: "h",
-				B: y0,
-			};
-		} else {
-			return {
-				A: (y1 - y0) / (x1 - x0),
-				B: y1 - x1 * ((y1 - y0) / (x1 - x0)),
-			};
-		}
 	},
 
 	perpendicularEquation: function (equation, x1, y1) {
@@ -421,25 +403,25 @@ export const qSVG = {
 				(walls[nextEdge.segment].thick / 2) * Math.sin(angleNextEdge);
 			var nextEdgeThicknessY =
 				(walls[nextEdge.segment].thick / 2) * Math.cos(angleNextEdge);
-			var eqEdgeUp = qSVG.createEquation(
+			var eqEdgeUp = createEquation(
 				edge.x1 + edgeThicknessX,
 				edge.y1 - edgeThicknessY,
 				edge.x2 + edgeThicknessX,
 				edge.y2 - edgeThicknessY
 			);
-			var eqEdgeDw = qSVG.createEquation(
+			var eqEdgeDw = createEquation(
 				edge.x1 - edgeThicknessX,
 				edge.y1 + edgeThicknessY,
 				edge.x2 - edgeThicknessX,
 				edge.y2 + edgeThicknessY
 			);
-			var eqNextEdgeUp = qSVG.createEquation(
+			var eqNextEdgeUp = createEquation(
 				nextEdge.x1 + nextEdgeThicknessX,
 				nextEdge.y1 - nextEdgeThicknessY,
 				nextEdge.x2 + nextEdgeThicknessX,
 				nextEdge.y2 - nextEdgeThicknessY
 			);
-			var eqNextEdgeDw = qSVG.createEquation(
+			var eqNextEdgeDw = createEquation(
 				nextEdge.x1 - nextEdgeThicknessX,
 				nextEdge.y1 + nextEdgeThicknessY,
 				nextEdge.x2 - nextEdgeThicknessX,
@@ -512,128 +494,25 @@ export const qSVG = {
 		return roughRoom.toFixed(digit);
 	},
 
-	// H && V PROBLEM WHEN TWO SEGMENT ARE v/-> == I/->
-	junctionList: function (walls) {
-		// var junction = [];
-		const junctions = [];
-		// var segmentJunction = [];
-		// var junctionChild = [];
-		// JUNCTION ARRAY LIST ALL SEGMENT INTERSECTIONS
-		for (var i = 0; i < walls.length; i++) {
-			var equation1 = qSVG.createEquation(
-				walls[i].start.x,
-				walls[i].start.y,
-				walls[i].end.x,
-				walls[i].end.y
-			);
-			for (var v = 0; v < walls.length; v++) {
-				if (v != i) {
-					var equation2 = qSVG.createEquation(
-						walls[v].start.x,
-						walls[v].start.y,
-						walls[v].end.x,
-						walls[v].end.y
-					);
-					var intersec = intersectionOfEquations(equation1, equation2);
-					if (intersec) {
-						if (
-							(walls[i].end.x == walls[v].start.x &&
-								walls[i].end.y == walls[v].start.y) ||
-							(walls[i].start.x == walls[v].end.x &&
-								walls[i].start.y == walls[v].end.y)
-						) {
-							if (
-								walls[i].end.x == walls[v].start.x &&
-								walls[i].end.y == walls[v].start.y
-							) {
-								junctions.push({
-									segment: i,
-									child: v,
-									values: [walls[v].start.x, walls[v].start.y],
-									type: "natural",
-								});
-							}
-							if (
-								walls[i].start.x == walls[v].end.x &&
-								walls[i].start.y == walls[v].end.y
-							) {
-								junctions.push({
-									segment: i,
-									child: v,
-									values: [walls[i].start.x, walls[i].start.y],
-									type: "natural",
-								});
-							}
-						} else {
-							if (
-								walls[i].pointInsideWall(intersec, true) &&
-								walls[v].pointInsideWall(intersec, true)
-							) {
-								// intersec[0] = intersec[0];
-								// intersec[1] = intersec[1];
-								junctions.push({
-									segment: i,
-									child: v,
-									values: [intersec.x, intersec.y],
-									type: "intersection",
-								});
-							}
-						}
-					}
-					// IF EQ1 == EQ 2 FIND IF START OF SECOND SEG == END OF FIRST seg (eq.A maybe values H ou V)
-					if (
-						(Math.abs(equation1.A) == Math.abs(equation2.A) ||
-							equation1.A == equation2.A) &&
-						equation1.B == equation2.B
-					) {
-						if (
-							walls[i].end.x == walls[v].start.x &&
-							walls[i].end.y == walls[v].start.y
-						) {
-							junctions.push({
-								segment: i,
-								child: v,
-								values: [walls[v].start.x, walls[v].start.y],
-								type: "natural",
-							});
-						}
-						if (
-							walls[i].start.x == walls[v].end.x &&
-							walls[i].start.y == walls[v].end.y
-						) {
-							junctions.push({
-								segment: i,
-								child: v,
-								values: [walls[i].start.x, walls[i].start.y],
-								type: "natural",
-							});
-						}
-					}
-				}
-			}
-		}
-		return junctions;
-	},
-
 	vertexList: function (junction) {
-		var vertex = [];
+		var verticies = [];
 		// var vertextest = [];
 		for (var jj = 0; jj < junction.length; jj++) {
 			var found = true;
-			for (var vv = 0; vv < vertex.length; vv++) {
+			for (var vv = 0; vv < verticies.length; vv++) {
 				if (
-					Math.round(junction[jj].values[0]) == Math.round(vertex[vv].x) &&
-					Math.round(junction[jj].values[1]) == Math.round(vertex[vv].y)
+					Math.round(junction[jj].values[0]) == Math.round(verticies[vv].x) &&
+					Math.round(junction[jj].values[1]) == Math.round(verticies[vv].y)
 				) {
 					found = false;
-					vertex[vv].segment.push(junction[jj].segment);
+					verticies[vv].segment.push(junction[jj].segment);
 					break;
 				} else {
 					found = true;
 				}
 			}
 			if (found) {
-				vertex.push({
+				verticies.push({
 					x: Math.round(junction[jj].values[0]),
 					y: Math.round(junction[jj].values[1]),
 					segment: [junction[jj].segment],
@@ -644,40 +523,44 @@ export const qSVG = {
 		}
 
 		var toClean = [];
-		for (var ss = 0; ss < vertex.length; ss++) {
-			vertex[ss].child = [];
-			vertex[ss].removed = [];
-			for (var sg = 0; sg < vertex[ss].segment.length; sg++) {
-				for (var sc = 0; sc < vertex.length; sc++) {
-					if (sc != ss) {
-						for (var scg = 0; scg < vertex[sc].segment.length; scg++) {
-							if (vertex[sc].segment[scg] == vertex[ss].segment[sg]) {
-								vertex[ss].child.push({
-									id: sc,
-									angle: Math.floor(qSVG.getAngle(vertex[ss], vertex[sc]).deg),
-								});
-							}
+		for (var ss = 0; ss < verticies.length; ss++) {
+			const vert = verticies[ss];
+			const vertChildren = [];
+			const vertRemoved = [];
+			vert.child = vertChildren;
+			vert.removed = vertRemoved;
+			for (var sg = 0; sg < vert.segment.length; sg++) {
+				const vertSegment = vert.segment[sg];
+				for (var sc = 0; sc < verticies.length; sc++) {
+					if (sc === ss) continue;
+					const vertCompare = verticies[sc];
+					for (var scg = 0; scg < vertCompare.segment.length; scg++) {
+						if (vertCompare.segment[scg] == vertSegment) {
+							vertChildren.push({
+								id: sc,
+								angle: Math.floor(qSVG.getAngle(vert, vertCompare).deg),
+							});
 						}
 					}
 				}
 			}
 			toClean = [];
-			for (var fr = 0; fr < vertex[ss].child.length - 1; fr++) {
-				for (var ft = fr + 1; ft < vertex[ss].child.length; ft++) {
-					if (fr != ft && typeof vertex[ss].child[fr] != "undefined") {
+			for (var fr = 0; fr < vertChildren.length - 1; fr++) {
+				for (var ft = fr + 1; ft < vertChildren.length; ft++) {
+					if (fr != ft && typeof vertChildren[fr] != "undefined") {
 						found = true;
 
 						if (
 							qSVG.btwn(
-								vertex[ss].child[ft].angle,
-								vertex[ss].child[fr].angle + 3,
-								vertex[ss].child[fr].angle - 3,
+								vertChildren[ft].angle,
+								vertChildren[fr].angle + 3,
+								vertChildren[fr].angle - 3,
 								true
 							) &&
 							found
 						) {
-							var dOne = qSVG.gap(vertex[ss], vertex[vertex[ss].child[ft].id]);
-							var dTwo = qSVG.gap(vertex[ss], vertex[vertex[ss].child[fr].id]);
+							var dOne = qSVG.gap(vert, verticies[vertChildren[ft].id]);
+							var dTwo = qSVG.gap(vert, verticies[vertChildren[fr].id]);
 							if (dOne > dTwo) {
 								toClean.push(ft);
 							} else {
@@ -693,13 +576,13 @@ export const qSVG = {
 			toClean.push(-1);
 			for (var cc = 0; cc < toClean.length - 1; cc++) {
 				if (toClean[cc] > toClean[cc + 1]) {
-					vertex[ss].removed.push(vertex[ss].child[toClean[cc]].id);
-					vertex[ss].child.splice(toClean[cc], 1);
+					vert.removed.push(vertChildren[toClean[cc]].id);
+					vertChildren.splice(toClean[cc], 1);
 				}
 			}
 		}
 		// vertexTest = vertex;
-		return vertex;
+		return verticies;
 	},
 
 	//*******************************************************
@@ -850,10 +733,16 @@ export const qSVG = {
 		}
 	},
 
-	polygonize: function (segment) {
-		const junction = qSVG.junctionList(segment);
+	polygonize: function (walls) {
+		let junction = [];
+		walls.forEach((wall, idx) => {
+			const wallJunctions = wall
+				.getJunctions(walls)
+				.map((junction) => ({ ...junction, segment: idx }));
+			junction = junction.concat(wallJunctions);
+		});
+
 		const vertex = qSVG.vertexList(junction);
-		// var vertexCopy = qSVG.vertexList(junction, segment);
 
 		var edgesChild = [];
 		for (var j = 0; j < vertex.length; j++) {
@@ -910,7 +799,7 @@ export const qSVG = {
 				}
 				if (vertex[bestVertex].bypass == 0) {
 					// <-------- TO REVISE IMPORTANT !!!!!!!! bestArea Control ???
-					var realCoords = qSVG.polygonIntoWalls(vertex, tempSurface, segment);
+					var realCoords = qSVG.polygonIntoWalls(vertex, tempSurface, walls);
 					var realArea = qSVG.area(realCoords.inside);
 					var outsideArea = qSVG.area(realCoords.outside);
 					var coords = [];

@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
 	onWindowLoad,
 	flush_button,
-	rib,
 	onRoomColorClicked,
 	onApplySurfaceClicked,
 	modalToggle,
@@ -36,7 +35,11 @@ import {
 	ViewboxData,
 } from "./models";
 import { constants } from "../constants";
-import { Object2D } from "./svgTools";
+import {
+	Object2D,
+	setInWallMeasurementText,
+	updateMeasurementText,
+} from "./svgTools";
 import { Wall } from "./wall";
 import { useHistory } from "./hooks/useHistory";
 import WallTools from "./components/WallTools";
@@ -432,7 +435,7 @@ function App() {
 		editor.architect(wallData, setRooms, roomData, setRoomMeta, wallEquations);
 
 		editor.showScaleBox(roomData, wallData);
-		rib(wallMeta);
+		updateMeasurementText(wallMeta);
 	};
 
 	// Wall Tools
@@ -445,7 +448,7 @@ function App() {
 			objWall[w].thick = value;
 			objWall[w].update();
 		}
-		rib(wallMeta);
+		updateMeasurementText(wallMeta);
 	};
 
 	const onWallSplitClicked = () => {
@@ -482,7 +485,7 @@ function App() {
 		wall.graph.remove();
 		binder.graph.remove();
 		editor.architect(wallMeta, setRooms, roomMeta, setRoomMeta, wallEquations);
-		rib(wallMeta);
+		updateMeasurementText(wallMeta);
 		setMode(Mode.Select);
 		setShowMainPanel(true);
 	};
@@ -537,7 +540,7 @@ function App() {
 		setObjectMeta([...objectMeta.filter((o) => o != obj)]);
 		binder.graph.remove();
 		setBinder(null);
-		rib(wallMeta);
+		updateMeasurementText(wallMeta);
 	};
 
 	// Door/Window Tools
@@ -567,7 +570,8 @@ function App() {
 			binder.limit = limits;
 			binder.update();
 		}
-		wallBind.inWallRib(objectMeta);
+		// wallBind.inWallRib(objectMeta);
+		setInWallMeasurementText(wallBind, objectMeta);
 	};
 
 	const onWallModeClicked = () => {
@@ -578,7 +582,6 @@ function App() {
 	};
 
 	const splitWall = (wallToSplit: WallMetaData) => {
-		console.log("started with: ", wallMeta);
 		var eqWall = wallToSplit.getEquation();
 		var wallToSplitLength = qSVG.gap(wallToSplit.start, wallToSplit.end);
 		var newWalls: { distance: number; coords: Point2D }[] = [];
@@ -593,7 +596,6 @@ function App() {
 			) {
 				var distance = qSVG.gap(wallToSplit.start, inter);
 				if (distance > 5 && distance < wallToSplitLength) {
-					console.log("Pushing new wall");
 					newWalls.push({ distance: distance, coords: inter });
 				}
 			}
@@ -1315,7 +1317,7 @@ function App() {
 							setShowMainPanel(true);
 
 							binder.graph.remove();
-							rib(wallMeta);
+							updateMeasurementText(wallMeta);
 						}}
 					/>
 				</div>

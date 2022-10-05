@@ -2,7 +2,6 @@ import { constants } from "../constants";
 import { getCanvasOffset } from "../func";
 import { qSVG } from "../qSVG";
 import {
-	MeasurementRange,
 	Point2D,
 	SVGCreationData,
 	SVGData,
@@ -11,11 +10,13 @@ import {
 	WallMetaData,
 	WallEquationGroup,
 	WallEquation,
+	PointDistance,
 } from "./models";
 import { v4 as uuid } from "uuid";
 import {
 	findById,
 	intersectionOfEquations,
+	intersectionOfSideEquations,
 	isObjectsEquals,
 	perpendicularEquation,
 } from "./utils";
@@ -130,6 +131,8 @@ export class Object2D implements ObjectMetaData {
 		svgData.width ? (this.size = svgData.width) : (this.size = size);
 		svgData.height ? (this.thick = svgData.height) : (this.thick = thick);
 	}
+	up: PointDistance[];
+	down: PointDistance[];
 
 	update = () => {
 		this.width = this.size / constants.METER_SIZE;
@@ -1482,13 +1485,13 @@ export const calculateDPath = (
 	const compareThickX = halfThick * Math.sin(comparisonAngle);
 	const compareThickY = halfThick * Math.cos(comparisonAngle);
 
-	const comparisonUpEq = qSVG.createEquation(
+	const comparisonUpEq = createEquation(
 		comparePointStart.x + compareThickX,
 		comparePointStart.y - compareThickY,
 		comparePointEnd.x + compareThickX,
 		comparePointEnd.y - compareThickY
 	);
-	const comparisonDownEq = qSVG.createEquation(
+	const comparisonDownEq = createEquation(
 		comparePointStart.x - compareThickX,
 		comparePointStart.y + compareThickY,
 		comparePointEnd.x - compareThickX,
@@ -1602,7 +1605,7 @@ export const wallsComputing = (
 			var nearestNodesToStart = getWallNodes(wall.start, wallMeta, wall);
 			for (var k in nearestNodesToStart) {
 				const nearest = nearestNodesToStart[k];
-				const eqInter = qSVG.createEquation(
+				const eqInter = createEquation(
 					nearest.wall.start.x,
 					nearest.wall.start.y,
 					nearest.wall.end.x,
@@ -1663,7 +1666,7 @@ export const wallsComputing = (
 			var nearestNodesToEnd = getWallNodes(wall.end, wallMeta, wall);
 			for (var k in nearestNodesToEnd) {
 				const nearest = nearestNodesToEnd[k];
-				var eqInter = qSVG.createEquation(
+				var eqInter = createEquation(
 					nearest.wall.start.x,
 					nearest.wall.start.y,
 					nearest.wall.end.x,
@@ -1708,19 +1711,19 @@ export const wallsComputing = (
 		wall.angle = angleWall;
 		const wallThickX = (wall.thick / 2) * Math.sin(angleWall);
 		const wallThickY = (wall.thick / 2) * Math.cos(angleWall);
-		const eqWallUp = qSVG.createEquation(
+		const eqWallUp = createEquation(
 			wall.start.x + wallThickX,
 			wall.start.y - wallThickY,
 			wall.end.x + wallThickX,
 			wall.end.y - wallThickY
 		);
-		const eqWallDw = qSVG.createEquation(
+		const eqWallDw = createEquation(
 			wall.start.x - wallThickX,
 			wall.start.y + wallThickY,
 			wall.end.x - wallThickX,
 			wall.end.y + wallThickY
 		);
-		const eqWallBase = qSVG.createEquation(
+		const eqWallBase = createEquation(
 			wall.start.x,
 			wall.start.y,
 			wall.end.x,
@@ -1756,4 +1759,473 @@ export const wallsComputing = (
 			dWay ?? ""
 		);
 	}
+};
+
+export const objFromWall = (
+	wall: WallMetaData,
+	objectMetas: ObjectMetaData[]
+) => {
+	var objList = [];
+	for (var scan = 0; scan < objectMetas.length; scan++) {
+		var search;
+		if (objectMetas[scan].family == "inWall") {
+			var eq = createEquation(
+				wall.start.x,
+				wall.start.y,
+				wall.end.x,
+				wall.end.y
+			);
+			search = qSVG.nearPointOnEquation(eq, objectMetas[scan]);
+			if (
+				search.distance < 0.01 &&
+				wall.pointInsideWall(objectMetas[scan], false)
+			) {
+				objList.push(objectMetas[scan]);
+			}
+		}
+	}
+	return objList;
+};
+
+export const setInWallMeasurementText = (
+	wall: WallMetaData,
+	objectMetas: ObjectMetaData[],
+	option = false
+) => {
+	if (!option) $("#boxRib").empty();
+	const upWalls: WallMeasurementData[] = [];
+	const downWalls: WallMeasurementData[] = [];
+	upWalls.push({
+		side: "up",
+		coords: wall.coords[0],
+		distance: 0,
+	});
+	downWalls.push({
+		side: "down",
+		coords: wall.coords[1],
+		distance: 0,
+	});
+
+	const addMeasureData = (
+		p1: { x: number; y: number },
+		p2: { x: number; y: number },
+		objSide: "up" | "down"
+	) => {
+		const mesureArray = objSide === "up" ? upWalls : downWalls;
+		const distance = qSVG.measure(p1, p2) / constants.METER_SIZE;
+		mesureArray.push({
+			side: objSide,
+			coords: p2,
+			distance: parseInt(distance.toFixed(2)),
+		});
+	};
+
+	const objWall = objFromWall(wall, objectMetas);
+	for (let ob in objWall) {
+		const objTarget = objWall[ob];
+		objTarget.up = [
+			qSVG.nearPointOnEquation(wall.equations.up, objTarget.limit[0]),
+			qSVG.nearPointOnEquation(wall.equations.up, objTarget.limit[1]),
+		];
+		objTarget.down = [
+			qSVG.nearPointOnEquation(wall.equations.down, objTarget.limit[0]),
+			qSVG.nearPointOnEquation(wall.equations.down, objTarget.limit[1]),
+		];
+		addMeasureData(wall.coords[0], objTarget.up[0], "up");
+		addMeasureData(wall.coords[0], objTarget.up[1], "up");
+		addMeasureData(wall.coords[1], objTarget.down[0], "down");
+		addMeasureData(wall.coords[1], objTarget.down[1], "down");
+	}
+
+	addMeasureData(wall.coords[0], wall.coords[3], "up");
+	addMeasureData(wall.coords[1], wall.coords[2], "down");
+
+	upWalls.sort((a, b) => {
+		return parseInt((a.distance - b.distance).toFixed(2));
+	});
+	downWalls.sort((a, b) => {
+		return parseInt((a.distance - b.distance).toFixed(2));
+	});
+
+	addInWallMeasurementsToScene(upWalls, wall);
+	addInWallMeasurementsToScene(downWalls, wall);
+};
+
+export const updateMeasurementText = (wallMeta: WallMetaData[], shift = 5) => {
+	const { downWalls, upWalls } = buildWallMeasurementData(wallMeta);
+
+	if (shift == 5) $("#boxRib").empty();
+
+	upWalls.forEach((upWallArray) => {
+		addWallMeasurementsToScene(upWallArray, wallMeta, shift);
+	});
+	downWalls.forEach((downWallArray) => {
+		addWallMeasurementsToScene(downWallArray, wallMeta, shift);
+	});
+};
+
+type WallMeasurementData = {
+	wallIndex?: number;
+	crossEdge?: number;
+	side: string;
+	coords: Point2D;
+	distance: number;
+};
+
+const buildWallMeasurementData = (
+	wallMeta: WallMetaData[]
+): { upWalls: WallMeasurementData[][]; downWalls: WallMeasurementData[][] } => {
+	const upWalls: WallMeasurementData[][] = [];
+	const downWalls: WallMeasurementData[][] = [];
+	for (let i in wallMeta) {
+		const wall = wallMeta[i];
+		if (!wall.equations.base) continue;
+
+		const upDataArray: WallMeasurementData[] = [];
+		upDataArray.push({
+			wallIndex: +i,
+			crossEdge: +i,
+			side: "up",
+			coords: wall.coords[0],
+			distance: 0,
+		});
+
+		const downDataArray: WallMeasurementData[] = [];
+		downDataArray.push({
+			wallIndex: +i,
+			crossEdge: +i,
+			side: "down",
+			coords: wall.coords[1],
+			distance: 0,
+		});
+		for (let p in wallMeta) {
+			if (i === p) continue;
+
+			const comparisonWall = wallMeta[p];
+			if (!comparisonWall.equations.base) continue;
+
+			const cross = intersectionOfSideEquations(
+				wall.equations.base,
+				comparisonWall.equations.base
+			);
+			if (!cross || !wall.pointInsideWall(cross, true)) continue;
+
+			let inter = intersectionOfSideEquations(
+				wall.equations.up,
+				comparisonWall.equations.up
+			);
+			if (
+				inter &&
+				wall.pointBetweenCoords(inter, 1, true) &&
+				comparisonWall.pointBetweenCoords(inter, 1, true)
+			) {
+				let distance =
+					qSVG.measure(wall.coords[0], inter) / constants.METER_SIZE;
+				upDataArray.push({
+					wallIndex: +i,
+					crossEdge: +p,
+					side: "up",
+					coords: inter,
+					distance: +distance.toFixed(2),
+				});
+			}
+
+			inter = intersectionOfSideEquations(
+				wall.equations.up,
+				comparisonWall.equations.down
+			);
+			if (
+				inter &&
+				wall.pointBetweenCoords(inter, 1, true) &&
+				comparisonWall.pointBetweenCoords(inter, 2, true)
+			) {
+				let distance =
+					qSVG.measure(wall.coords[0], inter) / constants.METER_SIZE;
+				upDataArray.push({
+					wallIndex: +i,
+					crossEdge: +p,
+					side: "up",
+					coords: inter,
+					distance: +distance.toFixed(2),
+				});
+			}
+
+			inter = intersectionOfSideEquations(
+				wall.equations.down,
+				comparisonWall.equations.up
+			);
+			if (
+				inter &&
+				wall.pointBetweenCoords(inter, 2, true) &&
+				comparisonWall.pointBetweenCoords(inter, 1, true)
+			) {
+				let distance =
+					qSVG.measure(wall.coords[1], inter) / constants.METER_SIZE;
+				downDataArray.push({
+					wallIndex: +i,
+					crossEdge: +p,
+					side: "down",
+					coords: inter,
+					distance: +distance.toFixed(2),
+				});
+			}
+
+			inter = intersectionOfSideEquations(
+				wall.equations.down,
+				comparisonWall.equations.down
+			);
+			if (
+				inter &&
+				wall.pointBetweenCoords(inter, 2, true) &&
+				comparisonWall.pointBetweenCoords(inter, 2, true)
+			) {
+				let distance =
+					qSVG.measure(wall.coords[1], inter) / constants.METER_SIZE;
+				downDataArray.push({
+					wallIndex: +i,
+					crossEdge: +p,
+					side: "down",
+					coords: inter,
+					distance: +distance.toFixed(2),
+				});
+			}
+		}
+		let distance =
+			qSVG.measure(wall.coords[0], wall.coords[3]) / constants.METER_SIZE;
+		upDataArray.push({
+			wallIndex: +i,
+			crossEdge: +i,
+			side: "up",
+			coords: wall.coords[3],
+			distance: +distance.toFixed(2),
+		});
+		let distance2 =
+			qSVG.measure(wall.coords[1], wall.coords[2]) / constants.METER_SIZE;
+		downDataArray.push({
+			wallIndex: +i,
+			crossEdge: +i,
+			side: "down",
+			coords: wall.coords[2],
+			distance: +distance2.toFixed(2),
+		});
+
+		upWalls.push(upDataArray);
+		downWalls.push(downDataArray);
+	}
+
+	// Sort by distance
+	for (let a in upWalls) {
+		upWalls[a].sort(function (a, b) {
+			return +(a.distance - b.distance).toFixed(2);
+		});
+	}
+	for (let a in downWalls) {
+		downWalls[a].sort(function (a, b) {
+			return +(a.distance - b.distance).toFixed(2);
+		});
+	}
+
+	return { upWalls, downWalls };
+};
+
+const addWallMeasurementsToScene = (
+	measureData: WallMeasurementData[],
+	wallMeta: WallMetaData[],
+	shift: number
+) => {
+	for (let n = 1; n < measureData.length; n++) {
+		const current = measureData[n];
+		const previous = measureData[n - 1];
+		const edge = current.wallIndex ?? 0;
+		const crossEdge = current.crossEdge ?? 0;
+		const prevCrossEdge = previous.crossEdge ?? 0;
+		if (previous.wallIndex == edge) {
+			const valueText = Math.abs(previous.distance - current.distance);
+
+			if (valueText < 0.15) continue;
+
+			if (prevCrossEdge == crossEdge && crossEdge != edge) continue;
+
+			if (measureData.length > 2) {
+				const polygon = [];
+				if (n == 1) {
+					for (let pp = 0; pp < 4; pp++) {
+						polygon.push({
+							x: wallMeta[crossEdge].coords[pp].x,
+							y: wallMeta[crossEdge].coords[pp].y,
+						});
+					}
+					if (qSVG.rayCasting(measureData[0].coords, polygon)) {
+						continue;
+					}
+				} else if (n == measureData.length - 1) {
+					for (let pp = 0; pp < 4; pp++) {
+						polygon.push({
+							x: wallMeta[prevCrossEdge].coords[pp].x,
+							y: wallMeta[prevCrossEdge].coords[pp].y,
+						});
+					}
+					if (
+						qSVG.rayCasting(measureData[measureData.length - 1].coords, polygon)
+					) {
+						continue;
+					}
+				}
+			}
+
+			let angle = wallMeta[edge].angle * (180 / Math.PI);
+			let shiftValue = -shift;
+			if (previous.side == "down") {
+				shiftValue = -shiftValue + 10;
+			}
+			if (angle > 90 || angle < -89) {
+				angle -= 180;
+				shiftValue = -shift;
+				if (previous.side !== "down") {
+					shiftValue = -shiftValue + 10;
+				}
+			}
+
+			addSizeTextToScene(current, previous, valueText, angle, shiftValue);
+		}
+	}
+};
+
+const addInWallMeasurementsToScene = (
+	measureData: WallMeasurementData[],
+	wall: WallMetaData
+) => {
+	for (let i = 1; i < measureData.length; i++) {
+		var angleTextValue = wall.angle * (180 / Math.PI);
+		const current = measureData[i];
+		const previous = measureData[i - 1];
+		const valueText = Math.abs(previous.distance - current.distance);
+
+		let shift = -5;
+		if (previous.side === "down") {
+			shift = -shift + 10;
+		}
+		if (angleTextValue > 89 || angleTextValue < -89) {
+			angleTextValue -= 180;
+			if (previous.side === "down") {
+				shift = -5;
+			} else {
+				shift = -shift + 10;
+			}
+		}
+
+		addSizeTextToScene(
+			current,
+			previous,
+			valueText,
+			angleTextValue,
+			shift,
+			true
+		);
+	}
+};
+
+const addSizeTextToScene = (
+	current: WallMeasurementData,
+	previous: WallMeasurementData,
+	valueText: number,
+	angleText: number,
+	shiftValue: number,
+	inWall = false
+) => {
+	const sizeTextSvg = document.createElementNS(
+		"http://www.w3.org/2000/svg",
+		"text"
+	);
+	const startText = qSVG.middle(
+		previous.coords.x,
+		previous.coords.y,
+		current.coords.x,
+		current.coords.y
+	);
+	sizeTextSvg.setAttributeNS(null, "x", startText.x.toString());
+	sizeTextSvg.setAttributeNS(null, "y", (startText.y + shiftValue).toString());
+	sizeTextSvg.setAttributeNS(null, "text-anchor", "middle");
+	sizeTextSvg.setAttributeNS(null, "font-family", "roboto");
+	sizeTextSvg.setAttributeNS(null, "stroke", "#ffffff");
+	sizeTextSvg.textContent = valueText.toFixed(2);
+	if (+sizeTextSvg.textContent < 1) {
+		sizeTextSvg.setAttributeNS(null, "font-size", inWall ? "0.8em" : "0.73em");
+		sizeTextSvg.textContent = sizeTextSvg.textContent.substring(
+			1,
+			sizeTextSvg.textContent.length
+		);
+	} else {
+		sizeTextSvg.setAttributeNS(null, "font-size", inWall ? "1em" : "0.9em");
+	}
+	sizeTextSvg.setAttributeNS(null, "stroke-width", inWall ? "0.27px" : "0.2px");
+	sizeTextSvg.setAttributeNS(null, "fill", inWall ? "#666666" : "#555555");
+	sizeTextSvg.setAttribute(
+		"transform",
+		`rotate(${angleText} ${startText.x},${startText.y})`
+	);
+
+	$("#boxRib").append(sizeTextSvg);
+};
+
+export const createEquation = (
+	x0: number,
+	y0: number,
+	x1: number,
+	y1: number
+): WallEquation => {
+	if (x1 - x0 == 0) {
+		return {
+			A: "v",
+			B: x0,
+		};
+	} else if (y1 - y0 == 0) {
+		return {
+			A: "h",
+			B: y0,
+		};
+	} else {
+		return {
+			A: (y1 - y0) / (x1 - x0),
+			B: y1 - x1 * ((y1 - y0) / (x1 - x0)),
+		};
+	}
+};
+
+export const angleBetweenPoints = (
+	x1: number,
+	y1: number,
+	x2: number,
+	y2: number
+): { rad: number; deg: number } => {
+	const rad = x1 - x2 == 0 ? Math.PI / 2 : Math.atan((y1 - y2) / (x1 - x2));
+	const deg = (rad * 180) / Math.PI;
+	return { rad, deg };
+};
+
+export const angleBetweenThreePoints = (
+	x1: number,
+	y1: number,
+	x2: number,
+	y2: number,
+	x3: number,
+	y3: number
+): { rad: number; deg: number } => {
+	var a = Math.sqrt(
+		Math.pow(Math.abs(x2 - x1), 2) + Math.pow(Math.abs(y2 - y1), 2)
+	);
+	var b = Math.sqrt(
+		Math.pow(Math.abs(x2 - x3), 2) + Math.pow(Math.abs(y2 - y3), 2)
+	);
+	var c = Math.sqrt(
+		Math.pow(Math.abs(x3 - x1), 2) + Math.pow(Math.abs(y3 - y1), 2)
+	);
+	const rad =
+		a == 0 || b == 0
+			? Math.PI / 2
+			: Math.acos(
+					(Math.pow(a, 2) + Math.pow(b, 2) - Math.pow(c, 2)) / (2 * a * b)
+			  );
+	const deg = (360 * rad) / (2 * Math.PI);
+	return { rad, deg };
 };

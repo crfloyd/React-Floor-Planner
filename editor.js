@@ -1,9 +1,10 @@
 import { qSVG } from "./qSVG";
 import { constants } from "./constants";
-import { findById, isObjectsEquals } from "./src/utils";
-import { createSvgElement, wallsComputing } from "./src/svgTools";
-import { v4 as uuid } from "uuid";
-import { Wall } from "./src/wall";
+import {
+	createSvgElement,
+	wallsComputing,
+	createEquation,
+} from "./src/svgTools";
 
 export const editor = {
 	colorWall: "#666",
@@ -57,37 +58,32 @@ export const editor = {
 
 	stickOnWall: function (snap, wallMeta) {
 		if (wallMeta.length == 0) return false;
-		var wallDistance = Infinity;
-		var wallSelected = {};
-		var result;
+		let wallDistance = Infinity;
+		let wallSelected = {};
 		if (wallMeta.length == 0) return false;
-		for (var e = 0; e < wallMeta.length; e++) {
-			var eq1 = qSVG.createEquation(
-				wallMeta[e].coords[0].x,
-				wallMeta[e].coords[0].y,
-				wallMeta[e].coords[3].x,
-				wallMeta[e].coords[3].y
+		wallMeta.forEach((wall) => {
+			const eq1 = createEquation(
+				wall.coords[0].x,
+				wall.coords[0].y,
+				wall.coords[3].x,
+				wall.coords[3].y
 			);
 			result1 = qSVG.nearPointOnEquation(eq1, snap);
-			var eq2 = qSVG.createEquation(
-				wallMeta[e].coords[1].x,
-				wallMeta[e].coords[1].y,
-				wallMeta[e].coords[2].x,
-				wallMeta[e].coords[2].y
+			const eq2 = createEquation(
+				wall.coords[1].x,
+				wall.coords[1].y,
+				wall.coords[2].x,
+				wall.coords[2].y
 			);
 			result2 = qSVG.nearPointOnEquation(eq2, snap);
 			if (
 				result1.distance < wallDistance &&
-				qSVG.btwn(
-					result1.x,
-					wallMeta[e].coords[0].x,
-					wallMeta[e].coords[3].x
-				) &&
-				qSVG.btwn(result1.y, wallMeta[e].coords[0].y, wallMeta[e].coords[3].y)
+				qSVG.btwn(result1.x, wall.coords[0].x, wall.coords[3].x) &&
+				qSVG.btwn(result1.y, wall.coords[0].y, wall.coords[3].y)
 			) {
 				wallDistance = result1.distance;
 				wallSelected = {
-					wall: wallMeta[e],
+					wall: wall,
 					x: result1.x,
 					y: result1.y,
 					distance: result1.distance,
@@ -95,32 +91,28 @@ export const editor = {
 			}
 			if (
 				result2.distance < wallDistance &&
-				qSVG.btwn(
-					result2.x,
-					wallMeta[e].coords[1].x,
-					wallMeta[e].coords[2].x
-				) &&
-				qSVG.btwn(result2.y, wallMeta[e].coords[1].y, wallMeta[e].coords[2].y)
+				qSVG.btwn(result2.x, wall.coords[1].x, wall.coords[2].x) &&
+				qSVG.btwn(result2.y, wall.coords[1].y, wall.coords[2].y)
 			) {
 				wallDistance = result2.distance;
 				wallSelected = {
-					wall: wallMeta[e],
+					wall: wall,
 					x: result2.x,
 					y: result2.y,
 					distance: result2.distance,
 				};
 			}
-		}
+		});
 		var vv = editor.nearVertice(snap, wallMeta);
 		if (vv.distance < wallDistance) {
-			var eq1 = qSVG.createEquation(
+			var eq1 = createEquation(
 				vv.number.coords[0].x,
 				vv.number.coords[0].y,
 				vv.number.coords[3].x,
 				vv.number.coords[3].y
 			);
 			result1 = qSVG.nearPointOnEquation(eq1, vv);
-			var eq2 = qSVG.createEquation(
+			var eq2 = createEquation(
 				vv.number.coords[1].x,
 				vv.number.coords[1].y,
 				vv.number.coords[2].x,
@@ -163,7 +155,7 @@ export const editor = {
 		for (var scan = 0; scan < objectMeta.length; scan++) {
 			var search;
 			if (objectMeta[scan].family == "inWall") {
-				var eq = qSVG.createEquation(
+				var eq = createEquation(
 					wall.start.x,
 					wall.start.y,
 					wall.end.x,
@@ -176,15 +168,6 @@ export const editor = {
 			}
 		}
 		return objList;
-	},
-
-	createEquationFromWall: function (wall) {
-		return qSVG.createEquation(
-			wall.start.x,
-			wall.start.y,
-			wall.end.x,
-			wall.end.y
-		);
 	},
 
 	rayCastingWall: function (snap, wallMeta) {
@@ -653,32 +636,29 @@ export const editor = {
 	},
 
 	nearWall: function (snap, wallMeta, range = Infinity) {
-		var wallDistance = Infinity;
-		var wallSelected = {};
-		var result;
+		let wallDistance = Infinity;
+		let wallSelected = {};
+		let result;
 		if (wallMeta.length == 0) return false;
-		for (var e = 0; e < wallMeta.length; e++) {
-			var eq = qSVG.createEquation(
-				wallMeta[e].start.x,
-				wallMeta[e].start.y,
-				wallMeta[e].end.x,
-				wallMeta[e].end.y
+		wallMeta.forEach((wall) => {
+			var eq = createEquation(
+				wall.start.x,
+				wall.start.y,
+				wall.end.x,
+				wall.end.y
 			);
 			result = qSVG.nearPointOnEquation(eq, snap);
-			if (
-				result.distance < wallDistance &&
-				wallMeta[e].pointInsideWall(result)
-			) {
+			if (result.distance < wallDistance && wall.pointInsideWall(result)) {
 				wallDistance = result.distance;
 				wallSelected = {
-					wall: wallMeta[e],
+					wall: wall,
 					x: result.x,
 					y: result.y,
 					distance: result.distance,
 				};
 			}
-		}
-		var vv = editor.nearVertice(snap, wallMeta);
+		});
+		const vv = editor.nearVertice(snap, wallMeta);
 		if (vv.distance < wallDistance) {
 			wallDistance = vv.distance;
 			wallSelected = {
@@ -688,8 +668,7 @@ export const editor = {
 				distance: vv.distance,
 			};
 		}
-		if (wallDistance <= range) return wallSelected;
-		else return false;
+		return wallDistance <= range ? wallSelected : false;
 	},
 
 	showScaleBox: function (roomMeta, wallMeta) {
