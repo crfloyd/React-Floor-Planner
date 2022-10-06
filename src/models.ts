@@ -1,5 +1,3 @@
-import { Object2D } from "./svgTools";
-
 export interface Point2D {
 	x: number;
 	y: number;
@@ -50,15 +48,10 @@ export interface WallEquation {
 	backup?: WallMetaData | null;
 }
 
-export interface WallSideEquationParams {
-	A: string;
-	B: string | number;
-}
-
 export interface WallSideEquations {
-	up: WallSideEquationParams;
-	down: WallSideEquationParams;
-	base: WallSideEquationParams;
+	up: WallEquation;
+	down: WallEquation;
+	base: WallEquation;
 }
 
 export interface WallJunction {
@@ -82,6 +75,11 @@ export interface WallMetaData {
 	child?: string | null;
 	dPath?: string | null;
 
+	update: (
+		allWalls: WallMetaData[],
+		wallEquations: WallEquationGroup,
+		moveAction: boolean
+	) => void;
 	getEquation: () => WallEquation;
 	pointInsideWall: (point: Point2D, round: boolean) => boolean;
 	pointBetweenCoords: (
@@ -182,4 +180,11 @@ export interface SVGCreationData {
 export interface MeasurementRange {
 	min: number;
 	max: number;
+}
+
+export interface SvgPathMetaData {
+	p1: Point2D;
+	p2: Point2D;
+	p3: Point2D;
+	stroke: string;
 }

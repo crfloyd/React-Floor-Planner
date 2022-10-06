@@ -1,16 +1,10 @@
 import { constants } from "../constants";
 import { getCanvasOffset } from "../func";
-import {
-	Point2D,
-	ViewboxData,
-	WallEquation,
-	WallMetaData,
-	WallSideEquationParams,
-} from "./models";
+import { Point2D, ViewboxData, WallEquation, WallMetaData } from "./models";
 
 export const intersectionOfSideEquations = (
-	equation1: WallSideEquationParams,
-	equation2: WallSideEquationParams
+	equation1: WallEquation,
+	equation2: WallEquation
 ) => {
 	return intersectionOfEquations(
 		{ A: equation1.A, B: equation1.B as number },

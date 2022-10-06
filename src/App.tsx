@@ -9,15 +9,11 @@ import {
 	getCanvasDimensions,
 	setViewboxContent,
 	appendObjects,
-	intersectionOff,
 } from "../func";
 import * as engine from "../engine";
 import { qSVG } from "../qSVG";
 import { editor } from "../editor";
-import {
-	computeLimit,
-	intersectionOfEquations,
-} from "./utils";
+import { computeLimit, intersectionOfEquations } from "./utils";
 
 import "./App.css";
 import {
@@ -31,13 +27,10 @@ import {
 	WallEquationGroup,
 	WallMetaData,
 	ViewboxData,
+	SvgPathMetaData,
 } from "./models";
 import { constants } from "../constants";
-import {
-	Object2D,
-	setInWallMeasurementText,
-	updateMeasurementText,
-} from "./svgTools";
+import { setInWallMeasurementText, updateMeasurementText } from "./svgTools";
 import { Wall } from "./wall";
 import { useHistory } from "./hooks/useHistory";
 import WallTools from "./components/WallTools";
@@ -216,6 +209,9 @@ function App() {
 	const [enableUndo, setEnableUndo] = useState(false);
 	const [enableRedo, setEnableRedo] = useState(false);
 
+	const [helperLineSvgData, setHelperLineSvgData] =
+		useState<SvgPathMetaData | null>();
+
 	const [showMainPanel, setShowMainPanel] = useState(true);
 	const [showBoxScale, setShowBoxScale] = useState(true);
 	const [showWallTools, setShowWallTools] = useState(false);
@@ -344,7 +340,7 @@ function App() {
 		setMode(mode);
 		modeOption = option;
 
-		intersectionOff(lineIntersectionP);
+		setHelperLineSvgData(null);
 	};
 
 	const createInvisibleWall = (wall: any) => {
@@ -674,6 +670,8 @@ function App() {
 		}
 	};
 
+	const addSvgPath = (data: SvgPathMetaData) => {};
+
 	return (
 		<>
 			<header>React Floor Planner Ver.0.1</header>
@@ -822,7 +820,8 @@ function App() {
 						setCross,
 						labelMeasure,
 						setLabelMeasure,
-						layerSettings.showMeasurements
+						layerSettings.showMeasurements,
+						setHelperLineSvgData
 					)
 				}
 				onMouseMove={(e) => {
@@ -871,7 +870,8 @@ function App() {
 						cross,
 						setCross,
 						labelMeasure,
-						setLabelMeasure
+						setLabelMeasure,
+						setHelperLineSvgData
 					);
 					//}, 30);
 				}}
@@ -1255,7 +1255,17 @@ function App() {
 					visibility={layerSettings.showEnergy ? "visible" : "hidden"}
 				></g>
 				<g id="boxFurniture"></g>
-				<g id="boxbind"></g>
+				<g id="boxbind">
+					{helperLineSvgData && (
+						<path
+							stroke={helperLineSvgData.stroke}
+							d={`M${helperLineSvgData.p1.x},${helperLineSvgData.p1.y} L${helperLineSvgData.p2.x},${helperLineSvgData.p2.y} L${helperLineSvgData.p3.x},${helperLineSvgData.p3.y}`}
+							strokeWidth="0.75"
+							strokeOpacity="1"
+							fill="none"
+						></path>
+					)}
+				</g>
 				<g
 					id="boxArea"
 					visibility={layerSettings.showSurfaces ? "visible" : "hidden"}
@@ -1964,52 +1974,6 @@ function App() {
 								Configure Rooms
 							</button>
 						</li>
-						<br />
-
-						{/* <li>
-							<button
-								className="btn btn-default fully "
-								id="node_mode"
-								onClick={() => {
-									setBoxInfoText("Cut a wall (resets configuration)");
-									applyMode(Mode.Node);
-								}}
-							>
-								<i className="fa fa-2x fa-scissors" aria-hidden="true"></i>
-							</button>
-						</li> */}
-						<br />
-						<li>
-							{/* <button
-								className="btn btn-default fully "
-								id="distance_mode"
-								data-toggle="tooltip"
-								data-placement="right"
-								title="Add a measurement"
-								onClick={() => {
-									setBoxInfoText("Add a measurement");
-									setCursor("crosshair");
-									applyMode(Mode.Distance);
-								}}
-							>
-								MEASURE
-							</button> */}
-						</li>
-						{/* <li>
-							<button
-								className="btn btn-default fully "
-								id="text_mode"
-								data-toggle="tooltip"
-								data-placement="right"
-								title="Add text"
-								onClick={() => {
-									setBoxInfoText("Add text");
-									applyMode(Mode.Text);
-								}}
-							>
-								TEXT
-							</button>
-						</li> */}
 						<br />
 						{showDoorList && !showSub && (
 							<div

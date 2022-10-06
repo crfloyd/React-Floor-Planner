@@ -2,16 +2,17 @@ import { qSVG } from "./qSVG";
 import { constants } from "./constants";
 import {
 	createSvgElement,
-	wallsComputing,
+	refreshWalls,
 	createEquation,
 	pointInPolygon,
+	nearPointOnEquation,
 } from "./src/svgTools";
 
 export const editor = {
 	colorWall: "#666",
 
 	architect: function (walls, setRooms, roomMeta, setRoomMeta, wallEquations) {
-		wallsComputing(walls, wallEquations);
+		refreshWalls(walls, wallEquations);
 		walls.forEach((wall) => {
 			wall.addToScene();
 		});
@@ -69,14 +70,14 @@ export const editor = {
 				wall.coords[3].x,
 				wall.coords[3].y
 			);
-			result1 = qSVG.nearPointOnEquation(eq1, snap);
+			result1 = nearPointOnEquation(eq1, snap);
 			const eq2 = createEquation(
 				wall.coords[1].x,
 				wall.coords[1].y,
 				wall.coords[2].x,
 				wall.coords[2].y
 			);
-			result2 = qSVG.nearPointOnEquation(eq2, snap);
+			result2 = nearPointOnEquation(eq2, snap);
 			if (
 				result1.distance < wallDistance &&
 				qSVG.btwn(result1.x, wall.coords[0].x, wall.coords[3].x) &&
@@ -112,14 +113,14 @@ export const editor = {
 				vv.number.coords[3].x,
 				vv.number.coords[3].y
 			);
-			result1 = qSVG.nearPointOnEquation(eq1, vv);
+			result1 = nearPointOnEquation(eq1, vv);
 			var eq2 = createEquation(
 				vv.number.coords[1].x,
 				vv.number.coords[1].y,
 				vv.number.coords[2].x,
 				vv.number.coords[2].y
 			);
-			result2 = qSVG.nearPointOnEquation(eq2, vv);
+			result2 = nearPointOnEquation(eq2, vv);
 			if (
 				result1.distance < wallDistance &&
 				qSVG.btwn(result1.x, vv.number.coords[0].x, vv.number.coords[3].x) &&
@@ -162,7 +163,7 @@ export const editor = {
 					wall.end.x,
 					wall.end.y
 				);
-				search = qSVG.nearPointOnEquation(eq, objectMeta[scan]);
+				search = nearPointOnEquation(eq, objectMeta[scan]);
 				if (search.distance < 0.01 && wall.pointInsideWall(objectMeta[scan])) {
 					objList.push(objectMeta[scan]);
 				}
@@ -216,12 +217,12 @@ export const editor = {
 		for (var ob in objWall) {
 			var objTarget = objWall[ob];
 			objTarget.up = [
-				qSVG.nearPointOnEquation(wall.equations.up, objTarget.limit[0]),
-				qSVG.nearPointOnEquation(wall.equations.up, objTarget.limit[1]),
+				nearPointOnEquation(wall.equations.up, objTarget.limit[0]),
+				nearPointOnEquation(wall.equations.up, objTarget.limit[1]),
 			];
 			objTarget.down = [
-				qSVG.nearPointOnEquation(wall.equations.down, objTarget.limit[0]),
-				qSVG.nearPointOnEquation(wall.equations.down, objTarget.limit[1]),
+				nearPointOnEquation(wall.equations.down, objTarget.limit[0]),
+				nearPointOnEquation(wall.equations.down, objTarget.limit[1]),
 			];
 
 			distance =
@@ -648,7 +649,7 @@ export const editor = {
 				wall.end.x,
 				wall.end.y
 			);
-			result = qSVG.nearPointOnEquation(eq, snap);
+			result = nearPointOnEquation(eq, snap);
 			if (result.distance < wallDistance && wall.pointInsideWall(result)) {
 				wallDistance = result.distance;
 				wallSelected = {

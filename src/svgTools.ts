@@ -11,6 +11,7 @@ import {
 	WallEquationGroup,
 	WallEquation,
 	PointDistance,
+	SvgPathMetaData,
 } from "./models";
 import { v4 as uuid } from "uuid";
 import {
@@ -38,212 +39,6 @@ export const createSvgElement = (id: string, shape: string, attrs: any) => {
 	}
 	return svg;
 };
-
-export class Object2D implements ObjectMetaData {
-	public id = uuid();
-	public graph = qSVG.create("none", "g");
-	public scale = { x: 1, y: 1 };
-	public height: number;
-	public width: number;
-	public bbox: any;
-	public realBbox;
-	public x: number;
-	public y: number;
-	public params: SVGCreationData;
-	public limit: Point2D[];
-	public class: string;
-
-	constructor(
-		public readonly family: string,
-		classe: string,
-		public type: string,
-		public pos: Point2D,
-		public angle: number,
-		public angleSign: boolean,
-		public size: number,
-		public hinge = "normal",
-		public thick: number,
-		public value: number,
-		private viewbox: ViewboxData
-	) {
-		this.height = this.thick / constants.METER_SIZE;
-		this.width = this.size / constants.METER_SIZE;
-		this.x = pos.x;
-		this.y = pos.y;
-		this.limit = [];
-		this.class = classe;
-
-		const svgData = carpentryCalc(classe, type, size, thick, value);
-		const cc = svgData.construc;
-		var blank;
-		for (var i = 0; i < cc.length; i++) {
-			const item = cc[i];
-			if (item.path) {
-				// const s: SVGPathElement = document.createElementNS(
-				// 	"http://www.w3.org/2000/svg",
-				// 	"path"
-				// );
-				blank = createSvgElement("none", "path", {
-					d: item.path,
-					"stroke-width": 1,
-					fill: item.fill,
-					stroke: item.stroke,
-					"stroke-dasharray": item.strokeDashArray,
-				});
-			} else if (item.text) {
-				blank = qSVG.create("none", "text", {
-					x: item.x,
-					y: item.y,
-					"font-size": item.fontSize,
-					stroke: item.stroke,
-					"stroke-width": item.strokeWidth,
-					"font-family": "roboto",
-					"text-anchor": "middle",
-					fill: item.fill,
-				});
-				blank.context.textContent = item.text;
-			}
-			this.graph.append(blank);
-		}
-
-		const bbox = this.graph.get(0).getBoundingClientRect();
-		const offset = getCanvasOffset() ?? { left: 0, top: 0 };
-
-		bbox.x =
-			bbox.x * viewbox.zoomFactor -
-			offset.left * viewbox.zoomFactor +
-			viewbox.originX;
-		bbox.y =
-			bbox.y * viewbox.zoomFactor -
-			offset.top * viewbox.zoomFactor +
-			viewbox.originY;
-		bbox.origin = { x: this.x, y: this.y };
-		this.bbox = bbox;
-		this.realBbox = [
-			{ x: -this.size / 2, y: -this.thick / 2 },
-			{ x: this.size / 2, y: -this.thick / 2 },
-			{ x: this.size / 2, y: this.thick / 2 },
-			{ x: -this.size / 2, y: this.thick / 2 },
-		];
-		// if (family == "byObject") this.family = cc.family;
-		// this.params = cc.params; // (bindBox, move, resize, rotate)
-		this.params = svgData;
-		svgData.width ? (this.size = svgData.width) : (this.size = size);
-		svgData.height ? (this.thick = svgData.height) : (this.thick = thick);
-	}
-	up: PointDistance[];
-	down: PointDistance[];
-
-	update = () => {
-		this.width = this.size / constants.METER_SIZE;
-		this.height = this.thick / constants.METER_SIZE;
-		const cc = carpentryCalc(
-			this.class,
-			this.type,
-			this.size,
-			this.thick,
-			this.value
-		);
-		// setConstructs(cc);
-		for (var tt = 0; tt < cc.construc.length; tt++) {
-			if (cc.construc[tt].path) {
-				this.graph.find("path")[tt].setAttribute("d", cc.construc[tt].path);
-			} else {
-				// this.graph.find('text').context.textContent = cc[tt].text;
-			}
-		}
-		var hingeStatus = this.hinge; // normal - reverse
-		var hingeUpdate;
-		if (hingeStatus == "normal") hingeUpdate = 1;
-		else hingeUpdate = -1;
-		this.graph.attr({
-			transform:
-				"translate(" +
-				this.x +
-				"," +
-				this.y +
-				") rotate(" +
-				this.angle +
-				",0,0) scale(" +
-				hingeUpdate +
-				", 1)",
-		});
-		var bbox = this.graph.get(0).getBoundingClientRect();
-		const offset = getCanvasOffset() ?? { left: 0, top: 0 };
-		bbox.x =
-			bbox.x * this.viewbox.zoomFactor -
-			offset.left * this.viewbox.zoomFactor +
-			this.viewbox.originX;
-		bbox.y =
-			bbox.y * this.viewbox.zoomFactor -
-			offset.top * this.viewbox.zoomFactor +
-			this.viewbox.originY;
-		bbox.origin = { x: this.x, y: this.y };
-		this.bbox = bbox;
-
-		if (this.class == "text" && this.angle == 0) {
-			this.realBbox = [
-				{ x: this.bbox.x, y: this.bbox.y },
-				{ x: this.bbox.x + this.bbox.width, y: this.bbox.y },
-				{
-					x: this.bbox.x + this.bbox.width,
-					y: this.bbox.y + this.bbox.height,
-				},
-				{ x: this.bbox.x, y: this.bbox.y + this.bbox.height },
-			];
-			this.size = this.bbox.width;
-			this.thick = this.bbox.height;
-		}
-
-		var angleRadian = -this.angle * (Math.PI / 180);
-		this.realBbox = [
-			{ x: -this.size / 2, y: -this.thick / 2 },
-			{ x: this.size / 2, y: -this.thick / 2 },
-			{ x: this.size / 2, y: this.thick / 2 },
-			{ x: -this.size / 2, y: this.thick / 2 },
-		];
-		var newRealBbox = [
-			{ x: 0, y: 0 },
-			{ x: 0, y: 0 },
-			{ x: 0, y: 0 },
-			{ x: 0, y: 0 },
-		];
-		newRealBbox[0].x =
-			this.realBbox[0].y * Math.sin(angleRadian) +
-			this.realBbox[0].x * Math.cos(angleRadian) +
-			this.x;
-		newRealBbox[1].x =
-			this.realBbox[1].y * Math.sin(angleRadian) +
-			this.realBbox[1].x * Math.cos(angleRadian) +
-			this.x;
-		newRealBbox[2].x =
-			this.realBbox[2].y * Math.sin(angleRadian) +
-			this.realBbox[2].x * Math.cos(angleRadian) +
-			this.x;
-		newRealBbox[3].x =
-			this.realBbox[3].y * Math.sin(angleRadian) +
-			this.realBbox[3].x * Math.cos(angleRadian) +
-			this.x;
-		newRealBbox[0].y =
-			this.realBbox[0].y * Math.cos(angleRadian) -
-			this.realBbox[0].x * Math.sin(angleRadian) +
-			this.y;
-		newRealBbox[1].y =
-			this.realBbox[1].y * Math.cos(angleRadian) -
-			this.realBbox[1].x * Math.sin(angleRadian) +
-			this.y;
-		newRealBbox[2].y =
-			this.realBbox[2].y * Math.cos(angleRadian) -
-			this.realBbox[2].x * Math.sin(angleRadian) +
-			this.y;
-		newRealBbox[3].y =
-			this.realBbox[3].y * Math.cos(angleRadian) -
-			this.realBbox[3].x * Math.sin(angleRadian) +
-			this.y;
-		this.realBbox = newRealBbox;
-		return true;
-	};
-}
 
 export const carpentryCalc = (
 	classType: string,
@@ -1573,192 +1368,19 @@ export const calculateDPath = (
 	}
 };
 
-export const wallsComputing = (
-	wallMeta: WallMetaData[],
+export const refreshWalls = (
+	wallMetas: WallMetaData[],
 	wallEquations: WallEquationGroup,
 	moveAction = false
 ) => {
 	$("#boxwall").empty();
 	$("#boxArea").empty();
 
-	clearParentsAndChildren(wallMeta);
+	clearParentsAndChildren(wallMetas);
 
-	let previousWall = null;
-	let previousWallStart: Point2D = { x: 0, y: 0 };
-	let previousWallEnd: Point2D = { x: 0, y: 0 };
-	for (var vertice = 0; vertice < wallMeta.length; vertice++) {
-		var wall = wallMeta[vertice];
-		if (wall.parent != null) {
-			const parent = findById(wall.parent, wallMeta);
-			if (parent) {
-				if (isObjectsEquals(parent.start, wall.start)) {
-					previousWall = parent;
-					previousWallStart = previousWall.end;
-					previousWallEnd = previousWall.start;
-				} else if (isObjectsEquals(parent.end, wall.start)) {
-					previousWall = parent;
-					previousWallStart = previousWall.start;
-					previousWallEnd = previousWall.end;
-				}
-			}
-		} else {
-			var nearestNodesToStart = getWallNodes(wall.start, wallMeta, wall);
-			for (var k in nearestNodesToStart) {
-				const nearest = nearestNodesToStart[k];
-				const eqInter = createEquation(
-					nearest.wall.start.x,
-					nearest.wall.start.y,
-					nearest.wall.end.x,
-					nearest.wall.end.y
-				);
-				const angleInter = moveAction
-					? qSVG.angleBetweenEquations(eqInter.A, wallEquations.equation2?.A)
-					: 90;
-				if (
-					nearest.type == "start" &&
-					nearest.wall.parent == null &&
-					angleInter > 20 &&
-					angleInter < 160
-				) {
-					wall.parent = nearest.wall.id;
-					nearest.wall.parent = wall.id;
-
-					previousWall = findById(wall.parent, wallMeta);
-					if (previousWall) {
-						previousWallStart = previousWall.end;
-						previousWallEnd = previousWall.start;
-					}
-				}
-				if (
-					nearest.type == "end" &&
-					nearest.wall.child == null &&
-					angleInter > 20 &&
-					angleInter < 160
-				) {
-					wall.parent = nearest.wall.id;
-					nearest.wall.child = wall.id;
-					previousWall = findById(wall.parent, wallMeta);
-					if (previousWall) {
-						previousWallStart = previousWall.start;
-						previousWallEnd = previousWall.end;
-					}
-				}
-			}
-		}
-
-		let thickness = 0;
-		let nextWallStart: Point2D = { x: 0, y: 0 };
-		let nextWallEnd: Point2D = { x: 0, y: 0 };
-
-		if (wall.child != null) {
-			const child = findById(wall.child, wallMeta);
-			if (child) {
-				thickness = child.thick;
-				if (isObjectsEquals(child.end, wall.end)) {
-					nextWallStart = child.end;
-					nextWallEnd = child.start;
-				} else {
-					nextWallStart = child.start;
-					nextWallEnd = child.end;
-				}
-			}
-		} else {
-			var nearestNodesToEnd = getWallNodes(wall.end, wallMeta, wall);
-			for (var k in nearestNodesToEnd) {
-				const nearest = nearestNodesToEnd[k];
-				var eqInter = createEquation(
-					nearest.wall.start.x,
-					nearest.wall.start.y,
-					nearest.wall.end.x,
-					nearest.wall.end.y
-				);
-				var angleInter = moveAction
-					? qSVG.angleBetweenEquations(eqInter.A, wallEquations.equation2?.A)
-					: 90;
-
-				if (angleInter <= 20 || angleInter >= 160) {
-					continue;
-				}
-
-				if (nearest.type == "end" && nearest.wall.child == null) {
-					wall.child = nearest.wall.id;
-					nearest.wall.child = wall.id;
-					const nextWall = findById(wall.child, wallMeta);
-					if (nextWall) {
-						nextWallStart = nextWall.end;
-						nextWallEnd = nextWall.start;
-						thickness = nextWall.thick;
-					}
-				}
-				if (nearest.type == "start" && nearest.wall.parent == null) {
-					wall.child = nearest.wall.id;
-					nearest.wall.parent = wall.id;
-					const nextWall = findById(wall.child, wallMeta);
-					if (nextWall) {
-						nextWallStart = nextWall.start;
-						nextWallEnd = nextWall.end;
-						thickness = nextWall.thick;
-					}
-				}
-			}
-		}
-
-		const angleWall = Math.atan2(
-			wall.end.y - wall.start.y,
-			wall.end.x - wall.start.x
-		);
-
-		wall.angle = angleWall;
-		const wallThickX = (wall.thick / 2) * Math.sin(angleWall);
-		const wallThickY = (wall.thick / 2) * Math.cos(angleWall);
-		const eqWallUp = createEquation(
-			wall.start.x + wallThickX,
-			wall.start.y - wallThickY,
-			wall.end.x + wallThickX,
-			wall.end.y - wallThickY
-		);
-		const eqWallDw = createEquation(
-			wall.start.x - wallThickX,
-			wall.start.y + wallThickY,
-			wall.end.x - wallThickX,
-			wall.end.y + wallThickY
-		);
-		const eqWallBase = createEquation(
-			wall.start.x,
-			wall.start.y,
-			wall.end.x,
-			wall.end.y
-		);
-		wall.equations = {
-			up: { A: eqWallUp.A as string, B: eqWallUp.B },
-			down: { A: eqWallDw.A as string, B: eqWallDw.B },
-			base: { A: eqWallBase.A as string, B: eqWallBase.B },
-		};
-
-		let dWay = calculateDPath(
-			wall,
-			angleWall,
-			previousWallStart,
-			previousWallEnd,
-			true,
-			eqWallUp,
-			eqWallDw,
-			previousWall?.thick ?? 0,
-			""
-		);
-
-		wall.dPath = calculateDPath(
-			wall,
-			angleWall,
-			nextWallStart,
-			nextWallEnd,
-			false,
-			eqWallUp,
-			eqWallDw,
-			thickness,
-			dWay ?? ""
-		);
-	}
+	wallMetas.forEach((wall) =>
+		wall.update(wallMetas, wallEquations, moveAction)
+	);
 };
 
 export const objFromWall = (
@@ -1775,7 +1397,7 @@ export const objFromWall = (
 				wall.end.x,
 				wall.end.y
 			);
-			search = qSVG.nearPointOnEquation(eq, objectMetas[scan]);
+			search = nearPointOnEquation(eq, objectMetas[scan]);
 			if (
 				search.distance < 0.01 &&
 				wall.pointInsideWall(objectMetas[scan], false)
@@ -1824,12 +1446,12 @@ export const setInWallMeasurementText = (
 	for (let ob in objWall) {
 		const objTarget = objWall[ob];
 		objTarget.up = [
-			qSVG.nearPointOnEquation(wall.equations.up, objTarget.limit[0]),
-			qSVG.nearPointOnEquation(wall.equations.up, objTarget.limit[1]),
+			nearPointOnEquation(wall.equations.up, objTarget.limit[0]),
+			nearPointOnEquation(wall.equations.up, objTarget.limit[1]),
 		];
 		objTarget.down = [
-			qSVG.nearPointOnEquation(wall.equations.down, objTarget.limit[0]),
-			qSVG.nearPointOnEquation(wall.equations.down, objTarget.limit[1]),
+			nearPointOnEquation(wall.equations.down, objTarget.limit[0]),
+			nearPointOnEquation(wall.equations.down, objTarget.limit[1]),
 		];
 		addMeasureData(wall.coords[0], objTarget.up[0], "up");
 		addMeasureData(wall.coords[0], objTarget.up[1], "up");
@@ -2263,4 +1885,156 @@ export const pointInPolygon = (point: Point2D, polygon: Point2D[]) => {
 		}
 	}
 	return inside;
+};
+
+export const createWallGuideLine = (
+	snap: Point2D,
+	wallMeta: WallMetaData[],
+	lineIntersectionP: JQuery<SVGElement> | null,
+	setLineIntersectionP: (
+		v: JQuery<SVGElement> | null
+	) => JQuery<SVGElement> | null,
+	range = Infinity,
+	setHelperLineSvgData: (data: SvgPathMetaData | null) => void,
+	except: WallMetaData[] = []
+) => {
+	// ORANGE LINES 90° NEAR SEGMENT
+	var equation: any = {};
+	let p1: Point2D = { x: 0, y: 0 };
+	let p2: Point2D = { x: 0, y: 0 };
+	let p3: Point2D = { x: 0, y: 0 };
+	let node = 0;
+	let distance = range;
+	let way = 1;
+
+	for (let index = 0; index < wallMeta.length; index++) {
+		if (except.indexOf(wallMeta[index]) != -1) continue;
+
+		var x1 = wallMeta[index].start.x;
+		var y1 = wallMeta[index].start.y;
+		var x2 = wallMeta[index].end.x;
+		var y2 = wallMeta[index].end.y;
+
+		// EQUATION 90° of segment nf/nf-1 at X2/Y2 Point
+		if (Math.abs(y2 - y1) == 0) {
+			equation.C = "v"; // C/D equation 90° Coef = -1/E
+			equation.D = x1;
+			equation.E = "h"; // E/F equation Segment
+			equation.F = y1;
+			equation.G = "v"; // G/H equation 90° Coef = -1/E
+			equation.H = x2;
+			equation.I = "h"; // I/J equation Segment
+			equation.J = y2;
+		} else if (Math.abs(x2 - x1) == 0) {
+			equation.C = "h"; // C/D equation 90° Coef = -1/E
+			equation.D = y1;
+			equation.E = "v"; // E/F equation Segment
+			equation.F = x1;
+			equation.G = "h"; // G/H equation 90° Coef = -1/E
+			equation.H = y2;
+			equation.I = "v"; // I/J equation Segment
+			equation.J = x2;
+		} else {
+			equation.C = (x1 - x2) / (y2 - y1);
+			equation.D = y1 - x1 * equation.C;
+			equation.E = (y2 - y1) / (x2 - x1);
+			equation.F = y1 - x1 * equation.E;
+			equation.G = (x1 - x2) / (y2 - y1);
+			equation.H = y2 - x2 * equation.C;
+			equation.I = (y2 - y1) / (x2 - x1);
+			equation.J = y2 - x2 * equation.E;
+		}
+		equation.A = equation.C;
+		equation.B = equation.D;
+		let eq = nearPointOnEquation(equation, snap);
+		if (eq.distance < distance) {
+			distance = eq.distance;
+			p1 = { x: x1, y: y1 };
+			p2 = { x: x2, y: y2 };
+			p3 = { x: eq.x, y: eq.y };
+			node = index;
+		}
+		equation.A = equation.E;
+		equation.B = equation.F;
+		eq = nearPointOnEquation(equation, snap);
+		if (eq.distance < distance) {
+			distance = eq.distance;
+			p1 = { x: x1, y: y1 };
+			p2 = { x: x2, y: y2 };
+			p3 = { x: eq.x, y: eq.y };
+			node = index;
+		}
+		equation.A = equation.G;
+		equation.B = equation.H;
+		eq = nearPointOnEquation(equation, snap);
+		if (eq.distance < distance) {
+			distance = eq.distance;
+			p1 = { x: x1, y: y1 };
+			p2 = { x: x2, y: y2 };
+			p3 = { x: eq.x, y: eq.y };
+			way = 2;
+			node = index;
+		}
+		equation.A = equation.I;
+		equation.B = equation.J;
+		eq = nearPointOnEquation(equation, snap);
+		if (eq.distance < distance) {
+			distance = eq.distance;
+			p1 = { x: x1, y: y1 };
+			p2 = { x: x2, y: y2 };
+			p3 = { x: eq.x, y: eq.y };
+			way = 2;
+			node = index;
+		}
+	} // END LOOP FOR
+
+	if (distance >= range) {
+		setHelperLineSvgData(null);
+		return false;
+	}
+	setHelperLineSvgData({
+		p1: way == 2 ? p1 : p2,
+		p2: way == 2 ? p2 : p1,
+		p3: p3,
+		stroke: "#d7ac57",
+	});
+
+	return {
+		x: p3.x,
+		y: p3.y,
+		wall: wallMeta[node],
+		distance: distance,
+	};
+};
+
+export const nearPointOnEquation = (equation: WallEquation, point: Point2D) => {
+	// Y = Ax + B ---- equation {A:val, B:val}
+	if (equation.A === "h") {
+		return {
+			x: point.x,
+			y: equation.B,
+			distance: Math.abs(equation.B - point.y),
+		};
+	} else if (equation.A === "v") {
+		return {
+			x: equation.B,
+			y: point.y,
+			distance: Math.abs(equation.B - point.x),
+		};
+	} else {
+		const p1 = { x: point.x, y: equation.A * point.x + equation.B };
+		const p2 = { x: (point.y - equation.B) / equation.A, y: point.y };
+		return qSVG.pDistance(point, p1, p2);
+	}
+};
+
+export const create = (id: string, shape: string, attrs: string[]) => {
+	const svg = $(document.createElementNS("http://www.w3.org/2000/svg", shape));
+	for (var k in attrs) {
+		svg.attr(k, attrs[k]);
+	}
+	if (id != "none") {
+		$("#" + id).append(svg);
+	}
+	return svg;
 };

@@ -23,15 +23,16 @@ import {
 	calculateSnap,
 } from "./src/utils";
 import {
-	Object2D,
-	wallsComputing,
+	refreshWalls,
 	updateMeasurementText,
 	setInWallMeasurementText,
 	angleBetweenPoints,
 	getAngle,
 	pointInPolygon,
+	createWallGuideLine,
 } from "./src/svgTools";
 import { Wall } from "./src/wall";
+import { Object2D } from "./src/Object2D";
 
 const Rcirclebinder = 8;
 
@@ -98,7 +99,8 @@ export const _MOUSEMOVE = (
 	cross,
 	setCross,
 	labelMeasure,
-	setLabelMeasure
+	setLabelMeasure,
+	setHelperLineSvgData
 ) => {
 	event.preventDefault();
 	// $(".sub").hide(100);
@@ -260,78 +262,78 @@ export const _MOUSEMOVE = (
 	//**************************************************************************
 	//**************        DISTANCE MODE **************************************
 	//**************************************************************************
-	if (mode == Mode.Distance) {
-		snap = calculateSnap(event, viewbox);
-		if (binder == null) {
-			cross = setCross(
-				qSVG.create("boxbind", "path", {
-					d: "M-3000,0 L3000,0 M0,-3000 L0,3000",
-					"stroke-width": 0.5,
-					"stroke-opacity": "0.8",
-					stroke: "#e2b653",
-					fill: "#e2b653",
-				})
-			);
-			binder = setBinder(
-				new Object2D(
-					"free",
-					constants.OBJECT_CLASSES.MEASURE,
-					"",
-					{ x: 0, y: 0 },
-					0,
-					0,
-					0,
-					"normal",
-					0,
-					"",
-					viewbox
-				)
-			);
-			labelMeasure = setLabelMeasure(
-				qSVG.create("none", "text", {
-					x: 0,
-					y: -10,
-					"font-size": "1.2em",
-					stroke: "#ffffff",
-					"stroke-width": "0.4px",
-					"font-family": "roboto",
-					"text-anchor": "middle",
-					fill: "#3672d9",
-				})
-			);
-			binder.graph.append(labelMeasure);
-			$("#boxbind").append(binder.graph);
-		} else {
-			x = setX(snap.x);
-			y = setY(snap.y);
-			// let x = snap.x;
-			// let y = snap.y;
-			cross.attr({
-				transform: "translate(" + snap.x + "," + snap.y + ")",
-			});
-			if (action) {
-				var startText = qSVG.middle(point.x, point.y, x, y);
-				var angleText = angleBetweenPoints(point.y, point.y, x, y);
-				var valueText = qSVG.measure(
-					{
-						x: point.x,
-						y: point.y,
-					},
-					{
-						x: x,
-						y: y,
-					}
-				);
-				binder.size = valueText;
-				binder.x = startText.x;
-				binder.y = startText.y;
-				binder.angle = angleText.deg;
-				valueText = (valueText / constants.METER_SIZE).toFixed(2) + " m";
-				labelMeasure.context.textContent = valueText;
-				binder.update();
-			}
-		}
-	}
+	// if (mode == Mode.Distance) {
+	// 	snap = calculateSnap(event, viewbox);
+	// 	if (binder == null) {
+	// 		cross = setCross(
+	// 			qSVG.create("boxbind", "path", {
+	// 				d: "M-3000,0 L3000,0 M0,-3000 L0,3000",
+	// 				"stroke-width": 0.5,
+	// 				"stroke-opacity": "0.8",
+	// 				stroke: "#e2b653",
+	// 				fill: "#e2b653",
+	// 			})
+	// 		);
+	// 		binder = setBinder(
+	// 			new Object2D(
+	// 				"free",
+	// 				constants.OBJECT_CLASSES.MEASURE,
+	// 				"",
+	// 				{ x: 0, y: 0 },
+	// 				0,
+	// 				0,
+	// 				0,
+	// 				"normal",
+	// 				0,
+	// 				"",
+	// 				viewbox
+	// 			)
+	// 		);
+	// 		labelMeasure = setLabelMeasure(
+	// 			qSVG.create("none", "text", {
+	// 				x: 0,
+	// 				y: -10,
+	// 				"font-size": "1.2em",
+	// 				stroke: "#ffffff",
+	// 				"stroke-width": "0.4px",
+	// 				"font-family": "roboto",
+	// 				"text-anchor": "middle",
+	// 				fill: "#3672d9",
+	// 			})
+	// 		);
+	// 		binder.graph.append(labelMeasure);
+	// 		$("#boxbind").append(binder.graph);
+	// 	} else {
+	// 		x = setX(snap.x);
+	// 		y = setY(snap.y);
+	// 		// let x = snap.x;
+	// 		// let y = snap.y;
+	// 		cross.attr({
+	// 			transform: "translate(" + snap.x + "," + snap.y + ")",
+	// 		});
+	// 		if (action) {
+	// 			var startText = qSVG.middle(point.x, point.y, x, y);
+	// 			var angleText = angleBetweenPoints(point.y, point.y, x, y);
+	// 			var valueText = qSVG.measure(
+	// 				{
+	// 					x: point.x,
+	// 					y: point.y,
+	// 				},
+	// 				{
+	// 					x: x,
+	// 					y: y,
+	// 				}
+	// 			);
+	// 			binder.size = valueText;
+	// 			binder.x = startText.x;
+	// 			binder.y = startText.y;
+	// 			binder.angle = angleText.deg;
+	// 			valueText = (valueText / constants.METER_SIZE).toFixed(2) + " m";
+	// 			labelMeasure.context.textContent = valueText;
+	// 			binder.update();
+	// 		}
+	// 	}
+	// }
 
 	//**************************************************************************
 	//**************        ROOM MODE *****************************************
@@ -515,74 +517,76 @@ export const _MOUSEMOVE = (
 	//**************        NODE MODE *****************************************
 	//**************************************************************************
 
-	if (mode == Mode.Node) {
-		snap = calculateSnap(event, viewbox);
+	// if (mode == Mode.Node) {
+	// 	console.log("node mode");
+	// 	snap = calculateSnap(event, viewbox);
 
-		if (binder == null) {
-			const addNode = editor.nearWall(snap, wallMeta, 30);
-			if (addNode) {
-				var x2 = addNode.wall.end.x;
-				var y2 = addNode.wall.end.y;
-				var x1 = addNode.wall.start.x;
-				var y1 = addNode.wall.start.y;
-				angleWall = angleBetweenPoints(x1, y1, x2, y2);
-				binder = setBinder(
-					qSVG.create("boxbind", "path", {
-						id: "circlebinder",
-						d: "M-20,-10 L-13,0 L-20,10 Z M-13,0 L13,0 M13,0 L20,-10 L20,10 Z",
-						stroke: "#5cba79",
-						fill: "#5cba79",
-						"stroke-width": "1.5px",
-					})
-				);
+	// 	if (binder == null) {
+	// 		const addNode = editor.nearWall(snap, wallMeta, 30);
+	// 		if (addNode) {
+	// 			var x2 = addNode.wall.end.x;
+	// 			var y2 = addNode.wall.end.y;
+	// 			var x1 = addNode.wall.start.x;
+	// 			var y1 = addNode.wall.start.y;
+	// 			angleWall = angleBetweenPoints(x1, y1, x2, y2);
+	// 			binder = setBinder(
+	// 				qSVG.create("boxbind", "path", {
+	// 					id: "circlebinder",
+	// 					d: "M-20,-10 L-13,0 L-20,10 Z M-13,0 L13,0 M13,0 L20,-10 L20,10 Z",
+	// 					stroke: "#5cba79",
+	// 					fill: "#5cba79",
+	// 					"stroke-width": "1.5px",
+	// 				})
+	// 			);
 
-				binder.attr({
-					transform:
-						"translate(" +
-						addNode.x +
-						"," +
-						addNode.y +
-						") rotate(" +
-						(angleWall.deg + 90) +
-						",0,0)",
-				});
-				binder.data = addNode;
-				binder.x1 = x1;
-				binder.x2 = x2;
-				binder.y1 = y1;
-				binder.y2 = y2;
-				setBinder(binder);
-			}
-		} else {
-			const addNode = editor.nearWall(snap, wallMeta, 30);
-			if (addNode) {
-				if (addNode) {
-					var x2 = addNode.wall.end.x;
-					var y2 = addNode.wall.end.y;
-					var x1 = addNode.wall.start.x;
-					var y1 = addNode.wall.start.y;
-					angleWall = angleBetweenPoints(x1, y1, x2, y2);
-					binder.attr({
-						transform:
-							"translate(" +
-							addNode.x +
-							"," +
-							addNode.y +
-							") rotate(" +
-							(angleWall.deg + 90) +
-							",0,0)",
-					});
-					binder.data = addNode;
-				} else {
-					binder.remove();
-					binder = setBinder(null);
-				}
-			} else {
-				binder.remove();
-				binder = setBinder(null);
-			}
-		}
-	} // END NODE MODE
+	// 			binder.attr({
+	// 				transform:
+	// 					"translate(" +
+	// 					addNode.x +
+	// 					"," +
+	// 					addNode.y +
+	// 					") rotate(" +
+	// 					(angleWall.deg + 90) +
+	// 					",0,0)",
+	// 			});
+	// 			binder.data = addNode;
+	// 			binder.x1 = x1;
+	// 			binder.x2 = x2;
+	// 			binder.y1 = y1;
+	// 			binder.y2 = y2;
+	// 			setBinder(binder);
+	// 			console.log(binder);
+	// 		}
+	// 	} else {
+	// 		const addNode = editor.nearWall(snap, wallMeta, 30);
+	// 		if (addNode) {
+	// 			if (addNode) {
+	// 				var x2 = addNode.wall.end.x;
+	// 				var y2 = addNode.wall.end.y;
+	// 				var x1 = addNode.wall.start.x;
+	// 				var y1 = addNode.wall.start.y;
+	// 				angleWall = angleBetweenPoints(x1, y1, x2, y2);
+	// 				binder.attr({
+	// 					transform:
+	// 						"translate(" +
+	// 						addNode.x +
+	// 						"," +
+	// 						addNode.y +
+	// 						") rotate(" +
+	// 						(angleWall.deg + 90) +
+	// 						",0,0)",
+	// 				});
+	// 				binder.data = addNode;
+	// 			} else {
+	// 				binder.remove();
+	// 				binder = setBinder(null);
+	// 			}
+	// 		} else {
+	// 			binder.remove();
+	// 			binder = setBinder(null);
+	// 		}
+	// 	}
+	// } // END NODE MODE
 
 	//**********************************  SELECT MODE ***************************************************************
 	if (mode == Mode.Select) {
@@ -735,7 +739,7 @@ export const _MOUSEMOVE = (
 					var objWall = editor.objFromWall(wallUnderCursor, objectMeta);
 					if (objWall.length > 0)
 						editor.inWallRib2(wallUnderCursor, objectMeta);
-					binder = setBinder({ wall: wallUnderCursor });
+					binder = setBinder({ wall: wallUnderCursor, type: "segment" });
 					// binder.wall.inWallRib(objectMeta);
 					setInWallMeasurementText(binder.wall, objectMeta);
 					var line = qSVG.create("none", "line", {
@@ -763,51 +767,9 @@ export const _MOUSEMOVE = (
 					binder.graph.append(ball1);
 					binder.graph.append(ball2);
 					$("#boxbind").append(binder.graph);
-					binder.type = "segment";
-					setBinder(binder);
 					setCursor("pointer");
 				}
 			} else {
-				// let wallBind = editor.nearWall(snap, wallMeta, 6);
-				// console.log("hi", wallBind);
-				// if (wallBind) {
-				// 	if (wallBind && binder == null) {
-				// 		wallBind = wallBind.wall;
-				// 		var objWall = editor.objFromWall(wallBind, objectMeta);
-				// 		if (objWall.length > 0) editor.inWallRib2(wallBind, objectMeta);
-				// 		binder = {};
-				// 		binder.wall = wallBind;
-				// 		binder.wall.inWallRib(objectMeta);
-				// 		var line = qSVG.create("none", "line", {
-				// 			x1: binder.wall.start.x,
-				// 			y1: binder.wall.start.y,
-				// 			x2: binder.wall.end.x,
-				// 			y2: binder.wall.end.y,
-				// 			"stroke-width": 5,
-				// 			stroke: "#5cba79",
-				// 		});
-				// 		var ball1 = qSVG.create("none", "circle", {
-				// 			class: "circle_css",
-				// 			cx: binder.wall.start.x,
-				// 			cy: binder.wall.start.y,
-				// 			r: Rcirclebinder / 1.8,
-				// 		});
-				// 		var ball2 = qSVG.create("none", "circle", {
-				// 			class: "circle_css",
-				// 			cx: binder.wall.end.x,
-				// 			cy: binder.wall.end.y,
-				// 			r: Rcirclebinder / 1.8,
-				// 		});
-				// 		binder.graph = qSVG.create("none", "g");
-				// 		binder.graph.append(line);
-				// 		binder.graph.append(ball1);
-				// 		binder.graph.append(ball2);
-				// 		$("#boxbind").append(binder.graph);
-				// 		binder.type = "segment";
-				// 		setBinder(binder);
-				// 		setCursor("pointer");
-				// 	}
-				// } else {
 				if (binder && binder.type == "segment") {
 					binder.graph.remove();
 					binder = setBinder(null);
@@ -815,7 +777,6 @@ export const _MOUSEMOVE = (
 					setCursor("default");
 					updateMeasurementText(wallMeta);
 				}
-				// }
 			}
 		}
 	}
@@ -826,12 +787,13 @@ export const _MOUSEMOVE = (
 		snap = calculateSnap(event, viewbox);
 		setCursor("grab");
 		point = setPoint({ x: snap.x, y: snap.y });
-		helpConstruc = func.intersection(
+		helpConstruc = createWallGuideLine(
 			snap,
 			wallMeta,
 			lineIntersectionP,
 			setLineIntersectionP,
-			25
+			25,
+			setHelperLineSvgData
 		);
 		if (helpConstruc) {
 			if (helpConstruc.distance < 10) {
@@ -856,7 +818,7 @@ export const _MOUSEMOVE = (
 					})
 				);
 			}
-			func.intersectionOff(lineIntersectionP);
+			setHelperLineSvgData(null);
 		} else {
 			if (!helpConstruc) setCursor("crosshair");
 			if (binder) {
@@ -881,8 +843,6 @@ export const _MOUSEMOVE = (
 			const wallNode = editor.nearWallNode(snap, wallMeta, 20);
 			if (wallNode) {
 				point = setPoint({ x: wallNode.x, y: wallNode.y });
-
-				setWallStartConstruc(false);
 				if (wallNode.bestWall == wallMeta.length - 1) {
 					setCursor("validation");
 				} else {
@@ -929,18 +889,17 @@ export const _MOUSEMOVE = (
 					y2: y,
 				});
 
-				helpConstrucEnd = func.intersection(
+				helpConstrucEnd = createWallGuideLine(
 					snap,
 					wallMeta,
 					lineIntersectionP,
 					setLineIntersectionP,
-					10
+					10,
+					setHelperLineSvgData
 				);
 				if (helpConstrucEnd) {
 					x = setX(helpConstrucEnd.x);
 					y = setY(helpConstrucEnd.y);
-					// x = helpConstrucEnd.x;
-					// y = helpConstrucEnd.y;
 				}
 
 				wallEndConstruc = setWallEndConstruc(
@@ -950,8 +909,6 @@ export const _MOUSEMOVE = (
 					// TO SNAP SEGMENT TO FINALIZE X2Y2
 					x = setX(wallEndConstruc.x);
 					y = setY(wallEndConstruc.y);
-					// x = wallEndConstruc.x;
-					// y = wallEndConstruc.y;
 					setCursor("grab");
 				} else {
 					setCursor("crosshair");
@@ -980,7 +937,7 @@ export const _MOUSEMOVE = (
 					// x = wallNode.x;
 					// y = wallNode.y;
 					wallEndConstruc = setWallEndConstruc(true);
-					func.intersectionOff(lineIntersectionP);
+					setHelperLineSvgData(null);
 					if (wallNode.bestWall == wallMeta.length - 1 && multiChecked) {
 						setCursor("validation");
 					} else {
@@ -1135,12 +1092,13 @@ export const _MOUSEMOVE = (
 					else snap.y = coords.y;
 				}
 				if (
-					(helpConstruc = func.intersection(
+					(helpConstruc = createWallGuideLine(
 						snap,
 						wallMeta,
 						lineIntersectionP,
 						setLineIntersectionP,
 						10,
+						setHelperLineSvgData,
 						wallListRun
 					))
 				) {
@@ -1174,7 +1132,7 @@ export const _MOUSEMOVE = (
 			}
 			binder.data = coords;
 
-			wallsComputing(wallMeta, wallEquations); // UPDATE FALSE
+			refreshWalls(wallMeta, wallEquations); // UPDATE FALSE
 			wallMeta.forEach((wall) => {
 				wall.addToScene();
 			});
@@ -1374,7 +1332,7 @@ export const _MOUSEMOVE = (
 				}
 			}
 			// WALL COMPUTING, BLOCK FAMILY OF BINDERWALL IF NULL (START OR END) !!!!!
-			wallsComputing(wallMeta, wallEquations, true);
+			refreshWalls(wallMeta, wallEquations, true);
 			wallMeta.forEach((wall) => {
 				wall.addToScene();
 			});
@@ -1577,13 +1535,13 @@ export const _MOUSEDOWN = (
 	// *******************************************************************
 	// **************************   DISTANCE MODE   **********************
 	// *******************************************************************
-	if (mode == Mode.Distance) {
-		if (!action) {
-			action = setAction(true);
-			snap = calculateSnap(event, viewbox);
-			setPoint({ x: snap.x, y: snap.y });
-		}
-	}
+	// if (mode == Mode.Distance) {
+	// 	if (!action) {
+	// 		action = setAction(true);
+	// 		snap = calculateSnap(event, viewbox);
+	// 		setPoint({ x: snap.x, y: snap.y });
+	// 	}
+	// }
 
 	// *******************************************************************
 	// *************************   LINE/WALL MODE   **********************
@@ -1592,21 +1550,15 @@ export const _MOUSEDOWN = (
 		if (!action) {
 			snap = calculateSnap(event, viewbox);
 			setPoint({ x: snap.x, y: snap.y });
-			wallStartConstruc = setWallStartConstruc(
-				editor.nearWall(snap, wallMeta, 12)
-			);
-			if (wallStartConstruc) {
-				// TO SNAP SEGMENT TO FINALIZE X2Y2
-				setPoint({ x: wallStartConstruc.x, y: wallStartConstruc.y });
+			const nearWall = editor.nearWall(snap, wallMeta, 12);
+			if (nearWall) {
+				setPoint({ x: nearWall.x, y: nearWall.y });
 			}
-		} else {
-			// FINALIZE LINE_++
-			// construc = 1;
 		}
 		action = setAction(true);
 	}
 	if (mode == Mode.EditDoor) {
-		// ACTION 1 ACTIVATE EDITION OF THE DOOR
+		// ACTION 1 ACTIVATE EDIT DOOR
 		action = setAction(true);
 		setCursor("pointer");
 	}
@@ -1615,6 +1567,14 @@ export const _MOUSEDOWN = (
 	// **********************   SELECT MODE + BIND   *********************
 	// *******************************************************************
 	if (mode == Mode.Select) {
+		switch (binder?.type) {
+			case "segment": {
+				mode = setMode(Mode.Bind);
+				break;
+			}
+			default:
+				break;
+		}
 		if (
 			binder &&
 			(binder.type == "segment" ||
@@ -2039,7 +1999,8 @@ export const _MOUSEUP = (
 	setCross,
 	labelMeasure,
 	setLabelMeasure,
-	showMeasurements
+	showMeasurements,
+	setHelperLineSvgData
 ) => {
 	if (showMeasurements) {
 		$("#boxScale").show(200);
@@ -2090,49 +2051,49 @@ export const _MOUSEUP = (
 	// *******************************************************************
 	// **************************   DISTANCE MODE   **********************
 	// *******************************************************************
-	if (mode == Mode.Distance) {
-		if (action) {
-			action = setAction(false);
-			// MODIFY BBOX FOR BINDER ZONE (TXT)
-			var bbox = labelMeasure.get(0).getBoundingClientRect();
-			const offset = $("#lin").offset();
-			bbox.x =
-				bbox.x * viewbox.zoomFactor -
-				offset.left * viewbox.zoomFactor +
-				viewbox.origX;
-			bbox.y =
-				bbox.y * viewbox.zoomFactor -
-				offset.top * viewbox.zoomFactor +
-				viewbox.origY;
-			bbox.origin = { x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height / 2 };
-			binder.bbox = bbox;
-			binder.realBbox = [
-				{ x: binder.bbox.x, y: binder.bbox.y },
-				{ x: binder.bbox.x + binder.bbox.width, y: binder.bbox.y },
-				{
-					x: binder.bbox.x + binder.bbox.width,
-					y: binder.bbox.y + binder.bbox.height,
-				},
-				{ x: binder.bbox.x, y: binder.bbox.y + binder.bbox.height },
-			];
-			binder.size = binder.bbox.width;
-			binder.thick = binder.bbox.height;
-			binder.graph.append(labelMeasure);
+	// if (mode == Mode.Distance) {
+	// 	if (action) {
+	// 		action = setAction(false);
+	// 		// MODIFY BBOX FOR BINDER ZONE (TXT)
+	// 		var bbox = labelMeasure.get(0).getBoundingClientRect();
+	// 		const offset = $("#lin").offset();
+	// 		bbox.x =
+	// 			bbox.x * viewbox.zoomFactor -
+	// 			offset.left * viewbox.zoomFactor +
+	// 			viewbox.origX;
+	// 		bbox.y =
+	// 			bbox.y * viewbox.zoomFactor -
+	// 			offset.top * viewbox.zoomFactor +
+	// 			viewbox.origY;
+	// 		bbox.origin = { x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height / 2 };
+	// 		binder.bbox = bbox;
+	// 		binder.realBbox = [
+	// 			{ x: binder.bbox.x, y: binder.bbox.y },
+	// 			{ x: binder.bbox.x + binder.bbox.width, y: binder.bbox.y },
+	// 			{
+	// 				x: binder.bbox.x + binder.bbox.width,
+	// 				y: binder.bbox.y + binder.bbox.height,
+	// 			},
+	// 			{ x: binder.bbox.x, y: binder.bbox.y + binder.bbox.height },
+	// 		];
+	// 		binder.size = binder.bbox.width;
+	// 		binder.thick = binder.bbox.height;
+	// 		binder.graph.append(labelMeasure);
 
-			const objData = [...objectMeta, binder];
-			// OBJDATA.push(binder);
-			binder.graph.remove();
-			func.appendObjects(objData);
-			objectMeta = setObjectMeta(objData);
-			binder = setBinder(null);
-			labelMeasure = setLabelMeasure(null);
-			cross.remove();
-			cross = setCross(null);
-			$("#boxinfo").html("Measure added");
-			mode = resetMode();
-			save();
-		}
-	}
+	// 		const objData = [...objectMeta, binder];
+	// 		// OBJDATA.push(binder);
+	// 		binder.graph.remove();
+	// 		func.appendObjects(objData);
+	// 		objectMeta = setObjectMeta(objData);
+	// 		binder = setBinder(null);
+	// 		labelMeasure = setLabelMeasure(null);
+	// 		cross.remove();
+	// 		cross = setCross(null);
+	// 		$("#boxinfo").html("Measure added");
+	// 		mode = resetMode();
+	// 		save();
+	// 	}
+	// }
 
 	// *******************************************************************
 	// **************************   ROOM MODE   **************************
@@ -2219,7 +2180,7 @@ export const _MOUSEUP = (
 
 	if (mode == Mode.Line || mode == Mode.Partition) {
 		$("#linetemp").remove(); // DEL LINE HELP CONSTRUC 0 45 90
-		func.intersectionOff(lineIntersectionP);
+		setHelperLineSvgData(null);
 
 		var sizeWall = qSVG.measure({ x: x, y: y }, point);
 		sizeWall = sizeWall / constants.METER_SIZE;

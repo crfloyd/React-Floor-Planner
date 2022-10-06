@@ -6,9 +6,9 @@ import {
 	ViewboxData,
 	WallMetaData,
 } from "../models";
-import { Object2D } from "../svgTools";
 import { Wall } from "../wall";
 import { v4 as uuid } from "uuid";
+import { Object2D } from "../Object2D";
 
 export const useHistory = () => {
 	// const [history, setHistory] = useState<HistorySnapshot[]>([]);
