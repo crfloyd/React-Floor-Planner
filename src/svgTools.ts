@@ -12,6 +12,9 @@ import {
 	WallEquation,
 	PointDistance,
 	SvgPathMetaData,
+	WallJunction,
+	WallVertex,
+	Polygon,
 } from "./models";
 import { v4 as uuid } from "uuid";
 import {
@@ -2037,4 +2040,394 @@ export const create = (id: string, shape: string, attrs: string[]) => {
 		$("#" + id).append(svg);
 	}
 	return svg;
+};
+
+export const vertexList = (junction: WallJunction[]) => {
+	var verticies: WallVertex[] = [];
+	// var vertextest = [];
+	for (var jj = 0; jj < junction.length; jj++) {
+		var found = true;
+		for (var vv = 0; vv < verticies.length; vv++) {
+			if (
+				Math.round(junction[jj].values[0]) == Math.round(verticies[vv].x) &&
+				Math.round(junction[jj].values[1]) == Math.round(verticies[vv].y)
+			) {
+				found = false;
+				verticies[vv].segment.push(junction[jj].segment);
+				break;
+			} else {
+				found = true;
+			}
+		}
+		if (found) {
+			verticies.push({
+				x: Math.round(junction[jj].values[0]),
+				y: Math.round(junction[jj].values[1]),
+				segment: [junction[jj].segment],
+				bypass: 0,
+				type: junction[jj].type,
+			});
+		}
+	}
+
+	var toClean = [];
+	for (var ss = 0; ss < verticies.length; ss++) {
+		const vert = verticies[ss];
+		const vertChildren: { id: number; angle: number }[] = [];
+		const vertRemoved: number[] = [];
+		vert.child = vertChildren;
+		vert.removed = vertRemoved;
+		for (var sg = 0; sg < vert.segment.length; sg++) {
+			const vertSegment = vert.segment[sg];
+			for (var sc = 0; sc < verticies.length; sc++) {
+				if (sc === ss) continue;
+				const vertCompare = verticies[sc];
+				for (var scg = 0; scg < vertCompare.segment.length; scg++) {
+					if (vertCompare.segment[scg] == vertSegment) {
+						vertChildren.push({
+							id: sc,
+							angle: Math.floor(getAngle(vert, vertCompare, "deg").deg),
+						});
+					}
+				}
+			}
+		}
+		toClean = [];
+		for (var fr = 0; fr < vertChildren.length - 1; fr++) {
+			for (var ft = fr + 1; ft < vertChildren.length; ft++) {
+				if (fr != ft && typeof vertChildren[fr] != "undefined") {
+					found = true;
+
+					if (
+						qSVG.btwn(
+							vertChildren[ft].angle,
+							vertChildren[fr].angle + 3,
+							vertChildren[fr].angle - 3,
+							true
+						) &&
+						found
+					) {
+						var dOne = qSVG.gap(vert, verticies[vertChildren[ft].id]);
+						var dTwo = qSVG.gap(vert, verticies[vertChildren[fr].id]);
+						if (dOne > dTwo) {
+							toClean.push(ft);
+						} else {
+							toClean.push(fr);
+						}
+					}
+				}
+			}
+		}
+		toClean.sort(function (a, b) {
+			return b - a;
+		});
+		toClean.push(-1);
+		for (var cc = 0; cc < toClean.length - 1; cc++) {
+			if (toClean[cc] > toClean[cc + 1]) {
+				vert.removed.push(vertChildren[toClean[cc]].id);
+				vertChildren.splice(toClean[cc], 1);
+			}
+		}
+	}
+	// vertexTest = vertex;
+	return verticies;
+};
+
+export const polygonize = (walls: WallMetaData[]) => {
+	let junction: WallJunction[] = [];
+	walls.forEach((wall, idx) => {
+		const wallJunctions = wall
+			.getJunctions(walls)
+			.map((junction) => ({ ...junction, segment: idx }));
+		junction = junction.concat(wallJunctions);
+	});
+
+	const vertex = vertexList(junction);
+
+	var edgesChild = [];
+	for (var j = 0; j < vertex.length; j++) {
+		const vert = vertex[j];
+		const numChild = vert.child?.length ?? 0;
+		for (var vv = 0; vv < numChild; vv++) {
+			const child = vert.child;
+			if (child) {
+				edgesChild.push([j, child[vv].id]);
+			}
+		}
+	}
+	var polygons: Polygon[] = [];
+	for (var jc = 0; jc < edgesChild.length; jc++) {
+		var bestVertexIndex = 0;
+		var bestVertexValue = Infinity;
+		for (var j = 0; j < vertex.length; j++) {
+			const vert = vertex[j];
+			const vertChild = vert.child ?? [];
+			if (
+				vert.x < bestVertexValue &&
+				vertChild.length > 1 &&
+				vert.bypass == 0
+			) {
+				bestVertexValue = vert.x;
+				bestVertexIndex = j;
+			}
+			if (
+				vert.x == bestVertexValue &&
+				vertChild.length > 1 &&
+				vert.bypass == 0
+			) {
+				if (vert.y > vertex[bestVertexIndex].y) {
+					bestVertexValue = vert.x;
+					bestVertexIndex = j;
+				}
+			}
+		}
+
+		const bestVertex = vertex[bestVertexIndex];
+
+		// console.log("%c%s", "background: yellow; font-size: 14px;","RESEARCH WAY FOR STARTING VERTEX "+bestVertex);
+		const WAYS: string[] = qSVG.segmentTree(bestVertexIndex, vertex);
+		if (WAYS.length == 0) {
+			bestVertex.bypass = 1;
+		}
+		if (WAYS.length > 0) {
+			const tempSurface = WAYS[0].split("-").map((a) => parseInt(a));
+			var lengthRoom = qSVG.areaRoom(vertex, tempSurface);
+			var bestArea = lengthRoom;
+			var found = true;
+			for (var sss = 0; sss < polygons.length; sss++) {
+				if (qSVG.arrayCompare(polygons[sss].way, tempSurface, "pop")) {
+					found = false;
+					bestVertex.bypass = 1;
+					break;
+				}
+			}
+
+			if (bestArea < 360) {
+				bestVertex.bypass = 1;
+			}
+			if (bestVertex.bypass == 0) {
+				// <-------- TO REVISE IMPORTANT !!!!!!!! bestArea Control ???
+				var realCoords = polygonIntoWalls(vertex, tempSurface, walls);
+				var realArea = qSVG.area(realCoords.inside);
+				var outsideArea = qSVG.area(realCoords.outside);
+				var coords = [];
+				for (var rr = 0; rr < tempSurface.length; rr++) {
+					coords.push({
+						x: vertex[tempSurface[rr]].x,
+						y: vertex[tempSurface[rr]].y,
+					});
+				}
+				// WARNING -> FAKE
+				if (realCoords.inside.length != realCoords.outside.length) {
+					polygons.push({
+						way: tempSurface,
+						coords: coords,
+						coordsOutside: realCoords.outside ?? [],
+						coordsInside: realCoords.inside,
+						area: realArea as number,
+						outsideArea: outsideArea as number,
+						realArea: bestArea,
+					});
+				} else {
+					// REAL INSIDE POLYGONE -> ROOM
+					polygons.push({
+						way: tempSurface,
+						coords: realCoords.inside,
+						coordsOutside: realCoords.outside ?? [],
+						area: realArea as number,
+						outsideArea: outsideArea as number,
+						realArea: bestArea,
+					});
+				}
+
+				// REMOVE FIRST POINT OF WAY ON CHILDS FIRST VERTEX
+				const bestVertexChild = bestVertex.child ?? [];
+				for (var aa = 0; aa < bestVertexChild.length; aa++) {
+					if (bestVertexChild[aa].id == tempSurface[1]) {
+						bestVertexChild.splice(aa, 1);
+					}
+				}
+
+				// REMOVE FIRST VERTEX OF WAY ON CHILDS SECOND VERTEX
+				const tempSurfaceVertChild = vertex[tempSurface[1]].child ?? [];
+				for (var aa = 0; aa < tempSurfaceVertChild.length; aa++) {
+					if (tempSurfaceVertChild[aa].id == bestVertexIndex) {
+						tempSurfaceVertChild.splice(aa, 1);
+					}
+				}
+				//REMOVE FILAMENTS ?????
+
+				do {
+					var looping = 0;
+					for (var aa = 0; aa < vertex.length; aa++) {
+						const vertChild = vertex[aa].child ?? [];
+						if (vertChild.length == 1) {
+							looping = 1;
+							vertex[aa].child = [];
+							for (var ab = 0; ab < vertex.length; ab++) {
+								// OR MAKE ONLY ON THE WAY tempSurface ?? BETTER ??
+
+								const vertChild2 = vertex[aa].child ?? [];
+								for (var ac = 0; ac < vertChild2.length; ac++) {
+									if (vertChild2[ac].id == aa) {
+										vertChild2.splice(ac, 1);
+									}
+								}
+							}
+						}
+					}
+				} while (looping == 1);
+			}
+		}
+	}
+	//SUB AREA(s) ON POLYGON CONTAINS OTHERS FREE POLYGONS (polygon without commonSideEdge)
+	for (var pp = 0; pp < polygons.length; pp++) {
+		var inside = [];
+		for (var free = 0; free < polygons.length; free++) {
+			if (pp != free) {
+				var polygonFree = polygons[free].coords;
+				var countCoords = polygonFree.length;
+				var found = true;
+				for (var pf = 0; pf < countCoords; pf++) {
+					found = pointInPolygon(
+						{ x: polygonFree[pf]?.x, y: polygonFree[pf]?.y },
+						polygons[pp].coords.map((c) => ({ x: c?.x, y: c?.y }))
+					);
+					if (!found) {
+						break;
+					}
+				}
+				if (found) {
+					inside.push(free);
+					polygons[pp].area =
+						(polygons[pp].area as number) -
+						(polygons[free].outsideArea as number);
+				}
+			}
+		}
+		polygons[pp].inside = inside;
+	}
+	return { polygons: polygons, vertex: vertex };
+};
+
+export const polygonIntoWalls = (
+	vertex: WallVertex[],
+	surface: number[],
+	walls: WallMetaData[]
+) => {
+	var vertexArray = surface;
+	var wall: {
+		x1: number;
+		y1: number;
+		x2: number;
+		y2: number;
+		segment: number;
+	}[] = [];
+	var polygon: Point2D[] = vertexArray.map((v) => ({
+		x: vertex[v].x,
+		y: vertex[v].y,
+	}));
+	// FIND EDGE (WALLS HERE) OF THESE TWO VERTEX
+	for (var i = 0; i < vertexArray.length - 1; i++) {
+		const current = vertex[vertexArray[i]];
+		const next = vertex[vertexArray[i + 1]];
+		next.segment.forEach((nextSegment) => {
+			current.segment.forEach((currentSegment) => {
+				if (nextSegment !== currentSegment) return;
+				wall.push({
+					x1: current.x,
+					y1: current.y,
+					x2: next.x,
+					y2: next.y,
+					segment: nextSegment,
+				});
+			});
+		});
+		// for (var segStart = 0; segStart < next.segment.length; segStart++) {
+		// 	for (var segEnd = 0; segEnd < current.segment.length; segEnd++) {
+		// 		if (next.segment[segStart] == current.segment[segEnd]) {
+		// 			wall.push({
+		// 				x1: current.x,
+		// 				y1: current.y,
+		// 				x2: next.x,
+		// 				y2: next.y,
+		// 				segment: next.segment[segStart],
+		// 			});
+		// 		}
+		// 	}
+		// }
+	}
+	// CALC INTERSECS OF EQ PATHS OF THESE TWO WALLS.
+	var inside: Point2D[] = [];
+	var outside: Point2D[] = [];
+	for (var i = 0; i < wall.length; i++) {
+		var inter = [];
+		var edge = wall[i];
+		if (i < wall.length - 1) var nextEdge = wall[i + 1];
+		else var nextEdge = wall[0];
+		var angleEdge = Math.atan2(edge.y2 - edge.y1, edge.x2 - edge.x1);
+		var angleNextEdge = Math.atan2(
+			nextEdge.y2 - nextEdge.y1,
+			nextEdge.x2 - nextEdge.x1
+		);
+		var edgeThicknessX = (walls[edge.segment].thick / 2) * Math.sin(angleEdge);
+		var edgeThicknessY = (walls[edge.segment].thick / 2) * Math.cos(angleEdge);
+		var nextEdgeThicknessX =
+			(walls[nextEdge.segment].thick / 2) * Math.sin(angleNextEdge);
+		var nextEdgeThicknessY =
+			(walls[nextEdge.segment].thick / 2) * Math.cos(angleNextEdge);
+		var eqEdgeUp = createEquation(
+			edge.x1 + edgeThicknessX,
+			edge.y1 - edgeThicknessY,
+			edge.x2 + edgeThicknessX,
+			edge.y2 - edgeThicknessY
+		);
+		var eqEdgeDw = createEquation(
+			edge.x1 - edgeThicknessX,
+			edge.y1 + edgeThicknessY,
+			edge.x2 - edgeThicknessX,
+			edge.y2 + edgeThicknessY
+		);
+		var eqNextEdgeUp = createEquation(
+			nextEdge.x1 + nextEdgeThicknessX,
+			nextEdge.y1 - nextEdgeThicknessY,
+			nextEdge.x2 + nextEdgeThicknessX,
+			nextEdge.y2 - nextEdgeThicknessY
+		);
+		var eqNextEdgeDw = createEquation(
+			nextEdge.x1 - nextEdgeThicknessX,
+			nextEdge.y1 + nextEdgeThicknessY,
+			nextEdge.x2 - nextEdgeThicknessX,
+			nextEdge.y2 + nextEdgeThicknessY
+		);
+
+		angleEdge = angleEdge * (180 / Math.PI);
+		angleNextEdge = angleNextEdge * (180 / Math.PI);
+
+		if (eqEdgeUp.A != eqNextEdgeUp.A) {
+			inter.push(intersectionOfEquations(eqEdgeUp, eqNextEdgeUp));
+			inter.push(intersectionOfEquations(eqEdgeDw, eqNextEdgeDw));
+		} else {
+			inter.push({
+				x: edge.x2 + edgeThicknessX,
+				y: edge.y2 - edgeThicknessY,
+			});
+			inter.push({
+				x: edge.x2 - edgeThicknessX,
+				y: edge.y2 + edgeThicknessY,
+			});
+		}
+
+		inter.forEach((interPoint) => {
+			if (interPoint == null) return;
+			if (pointInPolygon(interPoint, polygon)) {
+				inside.push(interPoint);
+			} else {
+				outside.push(interPoint);
+			}
+		});
+	}
+	inside.push(inside[0]);
+	outside.push(outside[0]);
+	return { inside: inside, outside: outside };
 };

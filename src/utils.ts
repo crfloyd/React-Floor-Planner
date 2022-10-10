@@ -53,12 +53,19 @@ export const intersectionOfEquations = (
 	return null;
 };
 
-export const findById = (id: string, wallMeta: WallMetaData[]) => {
+export const findById = (
+	id: string,
+	wallMeta: WallMetaData[]
+): WallMetaData | null => {
 	const match = wallMeta.find((m) => m.id === id);
-	return match;
+	return match ?? null;
 };
 
-export const isObjectsEquals = (a: object, b: object, message = false) => {
+export const isObjectsEquals = (
+	a: object,
+	b: object,
+	message: string | null = null
+) => {
 	if (message) console.log(message);
 
 	// if both null, return true

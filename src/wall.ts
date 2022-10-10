@@ -261,7 +261,7 @@ export class Wall implements WallMetaData {
 		return this.isBetween(p, start, end, round);
 	}
 
-	getJunctions(allWalls: WallMetaData[]) {
+	getJunctions(allWalls: WallMetaData[]): WallJunction[] {
 		const junctions: WallJunction[] = [];
 		var thisWallEquation = createEquation(
 			this.start.x,
