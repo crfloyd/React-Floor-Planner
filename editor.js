@@ -151,7 +151,7 @@ export const editor = {
 		return wallSelected;
 	},
 
-	// RETURN OBJDATA INDEX LIST FROM A WALL
+	// Returns the objects on a wall
 	objFromWall: function (wall, objectMeta) {
 		var objList = [];
 		for (var scan = 0; scan < objectMeta.length; scan++) {

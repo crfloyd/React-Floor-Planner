@@ -36,6 +36,7 @@ import { Wall } from "./src/wall";
 import { Object2D } from "./src/Object2D";
 import { handleSegmentClicked } from "./src/engine/mouseDown/SegmentClickHandler";
 import { handleObjectMove } from "./src/engine/mouseMove/ObjectMoveHandler";
+import { handleNodeClicked } from "./src/engine/mouseDown/NodeClickHandler";
 
 const Rcirclebinder = 8;
 
@@ -93,12 +94,12 @@ export const _MOUSEMOVE = (
 	setWallStartConstruc,
 	wallEndConstruc,
 	setWallEndConstruc,
-	wallListObj,
+	currentNodeWallObjectData,
 	wallEquations,
 	followerData,
 	objectEquationData,
 	resetObjectEquationData,
-	wallListRun,
+	currentNodeWallList,
 	cross,
 	setCross,
 	labelMeasure,
@@ -862,30 +863,35 @@ export const _MOUSEMOVE = (
 		if (binder.type == "node") {
 			var coords = snap;
 			var magnetic = false;
-			for (var k in wallListRun) {
-				if (isObjectsEquals(wallListRun[k].end, binder.data)) {
-					if (Math.abs(wallListRun[k].start.x - snap.x) < 20) {
-						coords.x = wallListRun[k].start.x;
+			for (var k in currentNodeWallList) {
+				if (isObjectsEquals(currentNodeWallList[k].end, binder.data)) {
+					if (Math.abs(currentNodeWallList[k].start.x - snap.x) < 20) {
+						coords.x = currentNodeWallList[k].start.x;
 						magnetic = "H";
 					}
-					if (Math.abs(wallListRun[k].start.y - snap.y) < 20) {
-						coords.y = wallListRun[k].start.y;
+					if (Math.abs(currentNodeWallList[k].start.y - snap.y) < 20) {
+						coords.y = currentNodeWallList[k].start.y;
 						magnetic = "V";
 					}
 				}
-				if (isObjectsEquals(wallListRun[k].start, binder.data)) {
-					if (Math.abs(wallListRun[k].end.x - snap.x) < 20) {
-						coords.x = wallListRun[k].end.x;
+				if (isObjectsEquals(currentNodeWallList[k].start, binder.data)) {
+					if (Math.abs(currentNodeWallList[k].end.x - snap.x) < 20) {
+						coords.x = currentNodeWallList[k].end.x;
 						magnetic = "H";
 					}
-					if (Math.abs(wallListRun[k].end.y - snap.y) < 20) {
-						coords.y = wallListRun[k].end.y;
+					if (Math.abs(currentNodeWallList[k].end.y - snap.y) < 20) {
+						coords.y = currentNodeWallList[k].end.y;
 						magnetic = "V";
 					}
 				}
 			}
 
-			const nodeMove = editor.nearWallNode(snap, wallMeta, 15, wallListRun);
+			const nodeMove = editor.nearWallNode(
+				snap,
+				wallMeta,
+				15,
+				currentNodeWallList
+			);
 			if (nodeMove) {
 				coords.x = nodeMove.x;
 				coords.y = nodeMove.y;
@@ -908,7 +914,7 @@ export const _MOUSEMOVE = (
 						setLineIntersectionP,
 						10,
 						setHelperLineSvgData,
-						wallListRun
+						currentNodeWallList
 					))
 				) {
 					coords.x = helpConstruc.x;
@@ -929,14 +935,14 @@ export const _MOUSEMOVE = (
 					cy: coords.y,
 				});
 			}
-			for (var k in wallListRun) {
-				if (isObjectsEquals(wallListRun[k].start, binder.data)) {
-					wallListRun[k].start.x = coords.x;
-					wallListRun[k].start.y = coords.y;
+			for (var k in currentNodeWallList) {
+				if (isObjectsEquals(currentNodeWallList[k].start, binder.data)) {
+					currentNodeWallList[k].start.x = coords.x;
+					currentNodeWallList[k].start.y = coords.y;
 				}
-				if (isObjectsEquals(wallListRun[k].end, binder.data)) {
-					wallListRun[k].end.x = coords.x;
-					wallListRun[k].end.y = coords.y;
+				if (isObjectsEquals(currentNodeWallList[k].end, binder.data)) {
+					currentNodeWallList[k].end.x = coords.x;
+					currentNodeWallList[k].end.y = coords.y;
 				}
 			}
 			binder.data = coords;
@@ -946,15 +952,15 @@ export const _MOUSEMOVE = (
 				wall.addToScene();
 			});
 
-			for (var k in wallListObj) {
-				var wall = wallListObj[k].wall;
-				var objTarget = wallListObj[k].obj;
+			for (var k in currentNodeWallObjectData) {
+				var wall = currentNodeWallObjectData[k].wall;
+				var objTarget = currentNodeWallObjectData[k].obj;
 
 				const angleWall = getAngle(wall.start, wall.end, "deg").deg;
 				var limits = computeLimit(
 					wall.equations.base,
-					2 * wallListObj[k].distance,
-					wallListObj[k].from
+					2 * currentNodeWallObjectData[k].distance,
+					currentNodeWallObjectData[k].from
 				); // COORDS OBJ AFTER ROTATION
 				var indexLimits = 0;
 				if (wall.pointInsideWall(limits[1])) indexLimits = 1;
@@ -979,8 +985,8 @@ export const _MOUSEMOVE = (
 				} else {
 					objTarget.graph.remove();
 					objTarget = null;
-					objectMeta.splice(wall.indexObj, 1);
-					wallListObj.splice(k, 1);
+					objectMeta.splice(wall.index, 1);
+					currentNodeWallObjectData.splice(k, 1);
 				}
 			}
 			// for (k in toClean)
@@ -1301,16 +1307,12 @@ export const _MOUSEDOWN = (
 	setDrag,
 	binder,
 	setBinder,
-	wallStartConstruc,
-	setWallStartConstruc,
-	wallListObj,
-	clearWallListObj,
+	setCurrentNodeWallObjects,
 	wallEquations,
+	setWallEquations,
+	setObjectEquationData,
 	followerData,
-	objectEquationData,
-	resetObjectEquationData,
-	wallListRun,
-	resetWallListRun,
+	setCurrentNodeWalls,
 	setCursor,
 	viewbox
 ) => {
@@ -1349,123 +1351,64 @@ export const _MOUSEDOWN = (
 
 	// *******************************************************************
 	// **********************   SELECT MODE + BIND   *********************
+	// room, segment, boundingBo, obj, node
 	// *******************************************************************
 	if (mode == Mode.Select) {
 		switch (binder?.type) {
 			case "segment": {
-				mode = setMode(Mode.Bind);
-				break;
-			}
-			default:
-				break;
-		}
-
-		if (
-			binder &&
-			(binder.type == "segment" ||
-				binder.type == "node" ||
-				binder.type == "obj" ||
-				binder.type == "boundingBox")
-		) {
-			mode = setMode(Mode.Bind);
-
-			if (binder.type == "obj") {
+				setMode(Mode.Bind);
 				action = setAction(true);
-			}
-
-			if (binder.type == "boundingBox") {
-				action = setAction(true);
-			}
-
-			// INIT FOR HELP BINDER NODE MOVING H V (MOUSE DOWN)
-			if (binder.type == "node") {
 				$("#boxScale").hide(100);
-				var node = binder.data;
-				setPoint({ x: node.x, y: node.y });
-				var nodeControl = { x: node.x, y: node.y };
-
-				// DETERMINATE DISTANCE OF OPPOSED NODE ON EDGE(s) PARENT(s) OF THIS NODE
-				wallListObj = clearWallListObj();
-				// wallListObj = []; // SUPER VAR -- WARNING
-				var objWall;
-				wallListRun = resetWallListRun();
-				for (var ee = wallMeta.length - 1; ee > -1; ee--) {
-					// SEARCH MOST YOUNG WALL COORDS IN NODE BINDER
-					if (
-						isObjectsEquals(wallMeta[ee].start, nodeControl) ||
-						isObjectsEquals(wallMeta[ee].end, nodeControl)
-					) {
-						wallListRun.push(wallMeta[ee]);
-						break;
-					}
-				}
-				if (wallListRun[0].child != null) {
-					if (
-						isObjectsEquals(wallListRun[0].child.start, nodeControl) ||
-						isObjectsEquals(wallListRun[0].child.end, nodeControl)
-					)
-						wallListRun.push(wallListRun[0].child);
-				}
-				if (wallListRun[0].parent != null) {
-					const parent = findById(wallListRun[0].parent, wallMeta);
-					if (
-						isObjectsEquals(parent.start, nodeControl) ||
-						isObjectsEquals(parent.end, nodeControl)
-					)
-						wallListRun.push(parent);
-				}
-
-				for (var k in wallListRun) {
-					if (
-						isObjectsEquals(wallListRun[k].start, nodeControl) ||
-						isObjectsEquals(wallListRun[k].end, nodeControl)
-					) {
-						var nodeTarget = wallListRun[k].start;
-						if (isObjectsEquals(wallListRun[k].start, nodeControl)) {
-							nodeTarget = wallListRun[k].end;
-						}
-						objWall = editor.objFromWall(wallListRun[k], objectMeta); // LIST OBJ ON EDGE -- NOT INDEX !!!
-						const wall = wallListRun[k];
-						for (var ob = 0; ob < objWall.length; ob++) {
-							var objTarget = objWall[ob];
-							var distance = qSVG.measure(objTarget, nodeTarget);
-							wallListObj.push({
-								wall: wall,
-								from: nodeTarget,
-								distance: distance,
-								obj: objTarget,
-								indexObj: ob,
-							});
-						}
-					}
-				}
-				action = setAction(true);
-			}
-			if (binder.type == "segment") {
 				const {
 					binder: binderResult,
 					wallMeta: wallMetaResult,
-					objectEquationData: equationDataResult,
+					objectEquationData: objectEquationsResult,
 					wallEquations: wallEquationsResult,
 				} = handleSegmentClicked(
 					binder,
 					wallMeta,
 					objectMeta,
 					wallEquations,
-					resetObjectEquationData,
-					followerData,
-					setAction
+					followerData
 				);
 				setBinder(binderResult);
 				setWallMeta(wallMetaResult);
-				objectEquationData = equationDataResult;
-				wallEquations = wallEquationsResult;
+				setObjectEquationData(objectEquationsResult);
+				setWallEquations(wallEquationsResult);
+				break;
 			}
-		} else {
-			action = setAction(false);
-			setDrag(true);
-			const snap = calculateSnap(event, viewbox);
-			setPoint({ x: snap.xMouse, y: snap.yMouse });
+			case "node": {
+				setMode(Mode.Bind);
+				setAction(true);
+				$("#boxScale").hide(100);
+				var node = binder.data;
+				setPoint({ x: node.x, y: node.y });
+				var nodeControl = { x: node.x, y: node.y };
+
+				const { nodeWalls, nodeWallObjects } = handleNodeClicked({
+					x: node.x,
+					y: node.y,
+					wallMeta,
+					objectMeta,
+				});
+				setCurrentNodeWallObjects(nodeWallObjects);
+				setCurrentNodeWalls(nodeWalls);
+				break;
+			}
+			case "obj":
+			case "boundingBox": {
+				console.log("MODE: ", binder.type);
+				mode = setMode(Mode.Bind);
+				action = setAction(true);
+				break;
+			}
+			default: {
+				action = setAction(false);
+				setDrag(true);
+				const snap = calculateSnap(event, viewbox);
+				setPoint({ x: snap.xMouse, y: snap.yMouse });
+				break;
+			}
 		}
 	}
 };

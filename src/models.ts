@@ -98,6 +98,15 @@ export interface WallMetaData {
 		round: boolean
 	) => boolean;
 	getJunctions(allWalls: WallMetaData[]): WallJunction[];
+	getObjects(objectMeta: ObjectMetaData[]): ObjectMetaData[];
+}
+
+export interface NodeWallObjectData {
+	wall: WallMetaData;
+	from: Point2D;
+	distance: number;
+	obj: ObjectMetaData;
+	index: number;
 }
 
 export interface BoundingBox {

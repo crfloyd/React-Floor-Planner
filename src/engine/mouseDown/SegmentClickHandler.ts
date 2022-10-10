@@ -1,7 +1,5 @@
-import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
 import {
-	ObjectEquationData,
 	ObjectMetaData,
 	Point2D,
 	WallEquation,
@@ -17,13 +15,13 @@ export const handleSegmentClicked = (
 	wallMeta: WallMetaData[],
 	objectMeta: ObjectMetaData[],
 	wallEquations: WallEquationGroup,
-	resetObjectEquationData: () => [],
 	followerData: {
 		equations: { wall: WallMetaData; eq: WallEquation; type: string }[];
 		intersection: Point2D | null;
 	}
 ) => {
-	var wall = { ...binder.wall };
+	// const wall = { ...binder.wall } as WallMetaData;
+	const wall = Wall.fromWall(binder.wall);
 	binder.before = binder.wall.start;
 	wallEquations.equation2 = wall.getEquation();
 	if (wall.parent != null) {
@@ -67,7 +65,7 @@ export const handleSegmentClicked = (
 				}
 			}
 			if (found) {
-				const parent = findById(wall.parent, wallMeta);
+				const parent = findById(wall.parent ?? "", wallMeta);
 				if (parent && parent.end === wall.start) {
 					// if (isObjectsEquals(wall.parent.end, wall.start, "1")) {
 					const newWall = new Wall(
@@ -186,7 +184,7 @@ export const handleSegmentClicked = (
 				}
 			}
 			if (found) {
-				const child = findById(wall.child, wallMeta);
+				const child = findById(wall.child ?? "", wallMeta);
 				if (child && isObjectsEquals(child.start, wall.end)) {
 					var newWall = new Wall(wall.end, child.start, "new", wall.thick);
 					newWall.parent = wall.id;
@@ -276,21 +274,16 @@ export const handleSegmentClicked = (
 		}
 	}
 
-	resetObjectEquationData();
-	const objectEquationData: ObjectEquationData[] = [];
-	var objWall = editor.objFromWall(wall, objectMeta); // LIST OBJ ON EDGE
-	for (var ob = 0; ob < objWall.length; ob++) {
-		var objTarget = objWall[ob];
-		objectEquationData.push({
-			obj: objTarget,
-			wall: wall,
-			eq: perpendicularEquation(
-				wallEquations.equation2 ?? { A: 0, B: 0 },
-				objTarget.x,
-				objTarget.y
-			),
-		});
-	}
+	const objectsOnWall = wall.getObjects(objectMeta);
+	const objectEquationData = objectsOnWall.map((objTarget) => ({
+		obj: objTarget,
+		wall: wall,
+		eq: perpendicularEquation(
+			wallEquations.equation2 ?? { A: 0, B: 0 },
+			objTarget.x,
+			objTarget.y
+		),
+	}));
 
 	return { binder, wallMeta, objectEquationData, wallEquations };
 };
