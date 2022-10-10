@@ -28,6 +28,7 @@ import {
 	WallMetaData,
 	ViewboxData,
 	SvgPathMetaData,
+	NodeWallObjectData,
 } from "./models";
 import { constants } from "../constants";
 import { setInWallMeasurementText, updateMeasurementText } from "./svgTools";
@@ -109,18 +110,14 @@ const setWallEndConstruc = (val: boolean) => {
 	return wallEndConstruc;
 };
 
-let wallObjectList: {
-	wall: WallMetaData;
-	from: Point2D;
-	distance: number;
-	obj: ObjectMetaData;
-	index: number;
-}[] = [];
+let currentNodeWallObjectData: NodeWallObjectData[] = [];
+const setCurrentNodeWallObjectData = (newData: NodeWallObjectData[]) => {
+	currentNodeWallObjectData = newData;
+};
 
-let wallListRun: WallMetaData[] = [];
-const resetWallListRun = () => {
-	wallListRun = [];
-	return wallListRun;
+let currentNodeWalls: WallMetaData[] = [];
+const setCurrentNodeWalls = (newWalls: WallMetaData[]) => {
+	currentNodeWalls = newWalls;
 };
 
 let binder: any;
@@ -142,9 +139,12 @@ let wallEquations: WallEquationGroup = {
 	equation2: null,
 	equation3: null,
 };
+const setWallEquations = (newEquations: WallEquationGroup) => {
+	wallEquations = newEquations;
+};
 let objectEquationData: ObjectEquationData[] = [];
-const resetObjectEquationData = () => {
-	objectEquationData = [];
+const setObjectEquationData = (newData: ObjectEquationData[]) => {
+	objectEquationData = newData;
 	return objectEquationData;
 };
 
@@ -701,19 +701,12 @@ function App() {
 						setDrag,
 						binder,
 						setBinder,
-						wallStartConstruc,
-						setWallStartConstruc,
-						wallObjectList,
-						() => {
-							wallObjectList = [];
-							return wallObjectList;
-						},
+						setCurrentNodeWallObjectData,
 						wallEquations,
+						setWallEquations,
+						setObjectEquationData,
 						followerData,
-						objectEquationData,
-						resetObjectEquationData,
-						wallListRun,
-						resetWallListRun,
+						setCurrentNodeWalls,
 						setCursor,
 						viewbox
 					)
@@ -861,12 +854,12 @@ function App() {
 						setWallStartConstruc,
 						wallEndConstruc,
 						setWallEndConstruc,
-						wallObjectList,
+						currentNodeWallObjectData,
 						wallEquations,
 						followerData,
 						objectEquationData,
-						resetObjectEquationData,
-						wallListRun,
+						(): ObjectEquationData[] => setObjectEquationData([]),
+						currentNodeWalls,
 						cross,
 						setCross,
 						labelMeasure,

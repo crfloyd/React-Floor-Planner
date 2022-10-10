@@ -12,6 +12,23 @@ import { constants } from "../constants";
 import { getCanvasOffset } from "../func";
 import { carpentryCalc, createSvgElement } from "./svgTools";
 
+// export enum ObjectType {
+// 	Unknown,
+// 	Bay,
+// 	Dimmer,
+// 	Double,
+// 	Fix,
+// 	Flap,
+// 	Gtl,
+// 	Opening,
+// 	Pocket,
+// 	Simple,
+// 	SimpleStair,
+// 	Switch,
+// 	DoubleSwitch,
+// 	Twin,
+// }
+
 export class Object2D implements ObjectMetaData {
 	id = uuid();
 	graph = qSVG.create("none", "g");

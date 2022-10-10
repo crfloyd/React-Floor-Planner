@@ -12,7 +12,12 @@ import { editor } from "../editor";
 import { qSVG } from "../qSVG";
 import { findById, intersectionOfEquations, isObjectsEquals } from "./utils";
 import { constants } from "../constants";
-import { calculateDPath, createEquation, getWallNodes } from "./svgTools";
+import {
+	calculateDPath,
+	createEquation,
+	getWallNodes,
+	nearPointOnEquation,
+} from "./svgTools";
 
 export class Wall implements WallMetaData {
 	id: string;
@@ -41,6 +46,20 @@ export class Wall implements WallMetaData {
 		};
 		this.graph = {};
 	}
+
+	static fromWall = (from: Wall): Wall => {
+		const newWall = new Wall(from.start, from.end, from.type, from.thick);
+		newWall.id = from.id;
+		newWall.parent = from.parent;
+		newWall.child = from.child;
+		newWall.angle = from.angle;
+		newWall.equations = from.equations;
+		newWall.graph = from.graph;
+		newWall.coords = from.coords;
+		newWall.backUp = from.backUp;
+		newWall.dPath = from.dPath;
+		return newWall;
+	};
 
 	update = (
 		allWalls: WallMetaData[],
@@ -261,7 +280,26 @@ export class Wall implements WallMetaData {
 		return this.isBetween(p, start, end, round);
 	}
 
-	getJunctions(allWalls: WallMetaData[]) {
+	getObjects(allObjects: ObjectMetaData[]): ObjectMetaData[] {
+		const objectsOnWall: ObjectMetaData[] = [];
+		allObjects.forEach((obj) => {
+			if (obj.family == "inWall") {
+				var eq = createEquation(
+					this.start.x,
+					this.start.y,
+					this.end.x,
+					this.end.y
+				);
+				const searchResult = nearPointOnEquation(eq, obj);
+				if (searchResult.distance < 0.01 && this.pointInsideWall(obj)) {
+					objectsOnWall.push(obj);
+				}
+			}
+		});
+		return objectsOnWall;
+	}
+
+	getJunctions(allWalls: WallMetaData[]): WallJunction[] {
 		const junctions: WallJunction[] = [];
 		var thisWallEquation = createEquation(
 			this.start.x,

@@ -61,6 +61,16 @@ export interface WallJunction {
 	type: "natural" | "intersection";
 }
 
+export interface WallVertex {
+	x: number;
+	y: number;
+	segment: number[];
+	bypass: number;
+	type: string;
+	child?: { id: number; angle: number }[];
+	removed?: number[];
+}
+
 export interface WallMetaData {
 	id: string;
 	thick: number;
@@ -87,6 +97,16 @@ export interface WallMetaData {
 		coordSet: 1 | 2,
 		round: boolean
 	) => boolean;
+	getJunctions(allWalls: WallMetaData[]): WallJunction[];
+	getObjects(objectMeta: ObjectMetaData[]): ObjectMetaData[];
+}
+
+export interface NodeWallObjectData {
+	wall: WallMetaData;
+	from: Point2D;
+	distance: number;
+	obj: ObjectMetaData;
+	index: number;
 }
 
 export interface BoundingBox {
@@ -187,4 +207,15 @@ export interface SvgPathMetaData {
 	p2: Point2D;
 	p3: Point2D;
 	stroke: string;
+}
+
+export interface Polygon {
+	way: number[];
+	coords: Point2D[];
+	coordsOutside: Point2D[];
+	coordsInside?: Point2D[];
+	area: number;
+	outsideArea: number;
+	realArea: number;
+	inside?: number[];
 }
