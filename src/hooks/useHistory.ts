@@ -9,6 +9,7 @@ import {
 import { Wall } from "../wall";
 import { v4 as uuid } from "uuid";
 import { Object2D } from "../Object2D";
+import { CanvasState } from "../engine/CanvasState";
 
 export const useHistory = () => {
 	// const [history, setHistory] = useState<HistorySnapshot[]>([]);
@@ -16,12 +17,7 @@ export const useHistory = () => {
 	// const [historyIndex, setHistoryIndex] = useState(0);
 	let historyIndex = 0;
 
-	const save = (
-		objects: ObjectMetaData[],
-		walls: WallMetaData[],
-		rooms: RoomMetaData[],
-		boot = false
-	) => {
+	const save = (canvasState: CanvasState, boot = false) => {
 		if (boot) {
 			localStorage.removeItem("history");
 		}
@@ -32,9 +28,9 @@ export const useHistory = () => {
 		history = [
 			...history,
 			{
-				objData: objects,
-				wallData: walls,
-				roomData: rooms,
+				objData: canvasState.objectMeta,
+				wallData: canvasState.wallMeta,
+				roomData: canvasState.roomMeta,
 			},
 		];
 		try {

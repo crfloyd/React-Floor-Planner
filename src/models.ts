@@ -18,7 +18,7 @@ export const Mode = {
 	Distance: "distance_mode",
 	Room: "room_mode",
 	Node: "node_mode",
-	Door: "door_mode",
+	Opening: "door_mode",
 	Line: "line_mode",
 	Partition: "partition_mode",
 	EditWall: "edit_wall_mode",
@@ -134,6 +134,7 @@ export interface BoundingBox {
 	right: number;
 	bottom: number;
 	left: number;
+	origin: Point2D;
 }
 
 export interface ObjectMetaData {

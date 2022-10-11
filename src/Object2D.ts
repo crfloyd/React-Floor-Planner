@@ -55,7 +55,7 @@ export class Object2D implements ObjectMetaData {
 		public size: number,
 		public hinge = "normal",
 		public thick: number,
-		public value: number,
+		public value: any,
 		private viewbox: ViewboxData
 	) {
 		this.height = this.thick / constants.METER_SIZE;

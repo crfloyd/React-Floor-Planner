@@ -10,7 +10,7 @@ import {
 import { Object2D } from "../../Object2D";
 import { getAngle } from "../../svgTools";
 
-export const handleObjectMove = (
+export const handleMouseMoveOverObject = (
 	snap: Point2D,
 	binder: any,
 	wallMeta: WallMetaData[],

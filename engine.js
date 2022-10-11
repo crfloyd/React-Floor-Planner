@@ -1,17 +1,3 @@
-// document.querySelector("#lin").addEventListener("mouseup", _MOUSEUP);
-// document.querySelector("#lin").addEventListener(
-// 	"mousemove",
-// 	throttle(function (event) {
-// 		_MOUSEMOVE(event);
-// 	}, 30)
-// );
-// document.querySelector("#lin").addEventListener("mousedown", _MOUSEDOWN, true);
-
-// $(document).on("click", "#lin", function (event) {
-// 	event.preventDefault();
-// });
-
-import * as func from "./func";
 import { qSVG } from "./qSVG";
 import { constants } from "./constants";
 import { Mode } from "./src/models";
@@ -32,12 +18,12 @@ import {
 	pointInPolygon,
 	createWallGuideLine,
 } from "./src/svgTools";
-import { Wall } from "./src/wall";
 import { Object2D } from "./src/Object2D";
-import { handleSegmentClicked } from "./src/engine/mouseDown/SegmentClickHandler";
-import { handleObjectMove } from "./src/engine/mouseMove/ObjectMoveHandler";
-import { handleNodeClicked } from "./src/engine/mouseDown/NodeClickHandler";
-import { handleSelectModeClick } from "./src/engine/mouseDown/SelectModeClickHandler";
+import { handleMouseMoveOverObject } from "./src/engine/mouseMove/ObjectMouseMoveHandler";
+import { handleMouseMoveRoomMode } from "./src/engine/mouseMove/RoomModeMoveHandler";
+import { handleMouseMoveOpeningMode } from "./src/engine/mouseMove/OpeningMouseMoveHandler";
+import { handleMouseMoveSelectMode } from "./src/engine/mouseMove/SelectModeMouseMoveHandler";
+import { handleMouseMoveLineMode } from "./src/engine/mouseMove/LineModeMouseMoveHandler";
 
 const Rcirclebinder = 8;
 
@@ -70,6 +56,7 @@ export const _MOUSEMOVE = (
 	wallDrawPoint,
 	setWallDrawPoint,
 	continuousWallMode,
+	cursor,
 	setCursor,
 	editor,
 	rooms,
@@ -77,21 +64,15 @@ export const _MOUSEMOVE = (
 	roomMeta,
 	setRoomMeta,
 	wallMeta,
-	setWallMeta,
 	objectMeta,
-	setObjectMeta,
 	action,
 	drag,
 	binder,
 	setBinder,
 	viewbox,
-	zoomMaker,
-	lineIntersectionP,
-	setLineIntersectionP,
+	handleCameraChange,
 	lengthTemp,
 	setLengthTemp,
-	setWallStartConstruc,
-	wallEndConstruc,
 	setWallEndConstruc,
 	currentNodeWallObjectData,
 	wallEquations,
@@ -99,10 +80,6 @@ export const _MOUSEMOVE = (
 	objectEquationData,
 	resetObjectEquationData,
 	currentNodeWallList,
-	cross,
-	setCross,
-	labelMeasure,
-	setLabelMeasure,
 	setHelperLineSvgData
 ) => {
 	event.preventDefault();
@@ -110,7 +87,7 @@ export const _MOUSEMOVE = (
 		![
 			Mode.Object,
 			Mode.Room,
-			Mode.Door,
+			Mode.Opening,
 			Mode.Select,
 			Mode.Line,
 			Mode.Partition,
@@ -141,7 +118,7 @@ export const _MOUSEMOVE = (
 		if (binder == null) {
 			$("#object_list").hide(200);
 		}
-		const updatedBinder = handleObjectMove(
+		const updatedBinder = handleMouseMoveOverObject(
 			snap,
 			binder,
 			wallMeta,
@@ -156,729 +133,73 @@ export const _MOUSEMOVE = (
 	//**************************************************************************
 
 	if (mode == Mode.Room) {
-		const roomTarget = editor.rayCastingRoom(snap, roomMeta);
-		if (roomTarget) {
-			if (binder) {
-				binder.remove();
-				binder = setBinder(binder);
-			}
-
-			var pathSurface = roomTarget.coords;
-			var pathCreate = "M" + pathSurface[0].x + "," + pathSurface[0].y;
-			for (var p = 1; p < pathSurface.length - 1; p++) {
-				pathCreate =
-					pathCreate + " " + "L" + pathSurface[p].x + "," + pathSurface[p].y;
-			}
-			pathCreate = pathCreate + "Z";
-
-			if (roomTarget.inside.length > 0) {
-				for (var ins = 0; ins < roomTarget.inside.length; ins++) {
-					pathCreate =
-						pathCreate +
-						" M" +
-						rooms.polygons[roomTarget.inside[ins]].coords[
-							rooms.polygons[roomTarget.inside[ins]].coords.length - 1
-						].x +
-						"," +
-						rooms.polygons[roomTarget.inside[ins]].coords[
-							rooms.polygons[roomTarget.inside[ins]].coords.length - 1
-						].y;
-					for (
-						var free = rooms.polygons[roomTarget.inside[ins]].coords.length - 2;
-						free > -1;
-						free--
-					) {
-						pathCreate =
-							pathCreate +
-							" L" +
-							rooms.polygons[roomTarget.inside[ins]].coords[free].x +
-							"," +
-							rooms.polygons[roomTarget.inside[ins]].coords[free].y;
-					}
-				}
-			}
-
-			binder = setBinder(
-				qSVG.create("boxbind", "path", {
-					id: "roomSelected",
-					d: pathCreate,
-					fill: "#c9c14c",
-					"fill-opacity": 0.5,
-					stroke: "#c9c14c",
-					"fill-rule": "evenodd",
-					"stroke-width": 3,
-				})
-			);
-			binder.type = "room";
-			binder.area = roomTarget.area;
-			binder.id = roomMeta.indexOf(roomTarget);
-		} else {
-			if (binder) {
-				binder.remove();
-				binder = setBinder(null);
-			}
-		}
+		binder = handleMouseMoveRoomMode(binder, snap, roomMeta, rooms);
+		setBinder(binder);
 	}
 
 	//**************************************************************************
 	//**************        DOOR/WINDOW MODE   *********************************
 	//**************************************************************************
 
-	if (mode == Mode.Door) {
-		const wallSelect = editor.nearWall(snap, wallMeta);
-		if (wallSelect) {
-			var wall = wallSelect.wall;
-			if (wall.type != "separate") {
-				if (binder == null) {
-					// family, classe, type, pos, angle, angleSign, size, hinge, thick
-					binder = setBinder(
-						new Object2D(
-							"inWall",
-							constants.OBJECT_CLASSES.DOOR_WINDOW,
-							modeOption,
-							wallSelect,
-							0,
-							0,
-							60,
-							"normal",
-							wall.thick,
-							0,
-							viewbox
-						)
-					);
-
-					let angleWall = getAngle(wall.start, wall.end, "deg").deg;
-					var v1 = qSVG.vectorXY(
-						{ x: wall.start.x, y: wall.start.y },
-						{ x: wall.end.x, y: wall.end.y }
-					);
-					var v2 = qSVG.vectorXY({ x: wall.end.x, y: wall.end.y }, snap);
-					var newAngle = qSVG.vectorDeter(v1, v2);
-					if (Math.sign(newAngle) == 1) {
-						angleWall += 180;
-						binder.angleSign = 1;
-					}
-					var startCoords = qSVG.middle(
-						wall.start.x,
-						wall.start.y,
-						wall.end.x,
-						wall.end.y
-					);
-					binder.x = startCoords.x;
-					binder.y = startCoords.y;
-					binder.angle = angleWall;
-					binder.update();
-					$("#boxbind").append(binder.graph);
-				} else {
-					let angleWall = getAngle(wall.start, wall.end, "deg").deg;
-					var v1 = qSVG.vectorXY(
-						{ x: wall.start.x, y: wall.start.y },
-						{ x: wall.end.x, y: wall.end.y }
-					);
-					var v2 = qSVG.vectorXY({ x: wall.end.x, y: wall.end.y }, snap);
-					var newAngle = qSVG.vectorDeter(v1, v2);
-					binder.angleSign = 0;
-					if (Math.sign(newAngle) == 1) {
-						binder.angleSign = 1;
-						angleWall += 180;
-					}
-
-					var limits = computeLimit(
-						wall.equations.base,
-						binder.size,
-						wallSelect
-					);
-					if (
-						wall.pointInsideWall(limits[0]) &&
-						wall.pointInsideWall(limits[1])
-					) {
-						binder.x = wallSelect.x;
-						binder.y = wallSelect.y;
-						binder.angle = angleWall;
-						binder.thick = wall.thick;
-						binder.limit = limits;
-						binder.update();
-					}
-
-					if (
-						(wallSelect.x == wall.start.x && wallSelect.y == wall.start.y) ||
-						(wallSelect.x == wall.end.x && wallSelect.y == wall.end.y)
-					) {
-						if (wall.pointInsideWall(limits[0])) {
-							binder.x = limits[0].x;
-							binder.y = limits[0].y;
-						}
-						if (wall.pointInsideWall(limits[1])) {
-							binder.x = limits[1].x;
-							binder.y = limits[1].y;
-						}
-						binder.limit = limits;
-						binder.angle = angleWall;
-						binder.thick = wall.thick;
-						binder.update();
-					}
-				}
-			}
-		} else {
-			if (binder) {
-				binder.graph.remove();
-				binder = setBinder(null);
-			}
-		}
+	if (mode == Mode.Opening) {
+		handleMouseMoveOpeningMode(
+			binder,
+			setBinder,
+			snap,
+			wallMeta,
+			modeOption,
+			viewbox
+		);
 	}
-
-	//**************************************************************************
-	//**************        NODE MODE *****************************************
-	//**************************************************************************
-
-	// if (mode == Mode.Node) {
-	// 	console.log("node mode");
-	// 	snap = calculateSnap(event, viewbox);
-
-	// 	if (binder == null) {
-	// 		const addNode = editor.nearWall(snap, wallMeta, 30);
-	// 		if (addNode) {
-	// 			var x2 = addNode.wall.end.x;
-	// 			var y2 = addNode.wall.end.y;
-	// 			var x1 = addNode.wall.start.x;
-	// 			var y1 = addNode.wall.start.y;
-	// 			angleWall = angleBetweenPoints(x1, y1, x2, y2);
-	// 			binder = setBinder(
-	// 				qSVG.create("boxbind", "path", {
-	// 					id: "circlebinder",
-	// 					d: "M-20,-10 L-13,0 L-20,10 Z M-13,0 L13,0 M13,0 L20,-10 L20,10 Z",
-	// 					stroke: "#5cba79",
-	// 					fill: "#5cba79",
-	// 					"stroke-width": "1.5px",
-	// 				})
-	// 			);
-
-	// 			binder.attr({
-	// 				transform:
-	// 					"translate(" +
-	// 					addNode.x +
-	// 					"," +
-	// 					addNode.y +
-	// 					") rotate(" +
-	// 					(angleWall.deg + 90) +
-	// 					",0,0)",
-	// 			});
-	// 			binder.data = addNode;
-	// 			binder.x1 = x1;
-	// 			binder.x2 = x2;
-	// 			binder.y1 = y1;
-	// 			binder.y2 = y2;
-	// 			setBinder(binder);
-	// 			console.log(binder);
-	// 		}
-	// 	} else {
-	// 		const addNode = editor.nearWall(snap, wallMeta, 30);
-	// 		if (addNode) {
-	// 			if (addNode) {
-	// 				var x2 = addNode.wall.end.x;
-	// 				var y2 = addNode.wall.end.y;
-	// 				var x1 = addNode.wall.start.x;
-	// 				var y1 = addNode.wall.start.y;
-	// 				angleWall = angleBetweenPoints(x1, y1, x2, y2);
-	// 				binder.attr({
-	// 					transform:
-	// 						"translate(" +
-	// 						addNode.x +
-	// 						"," +
-	// 						addNode.y +
-	// 						") rotate(" +
-	// 						(angleWall.deg + 90) +
-	// 						",0,0)",
-	// 				});
-	// 				binder.data = addNode;
-	// 			} else {
-	// 				binder.remove();
-	// 				binder = setBinder(null);
-	// 			}
-	// 		} else {
-	// 			binder.remove();
-	// 			binder = setBinder(null);
-	// 		}
-	// 	}
-	// } // END NODE MODE
 
 	//**********************************  SELECT MODE ***************************************************************
 	if (mode == Mode.Select) {
-		if (drag) {
-			setCursor("move");
-			const distX = (snap.xMouse - point.x) * viewbox.zoomFactor;
-			const distY = (snap.yMouse - point.y) * viewbox.zoomFactor;
-			zoomMaker("zoomdrag", distX, distY);
-		} else {
-			var objTarget = false;
-			objectMeta.forEach((objMeta) => {
-				var realBboxCoords = objMeta.realBbox;
-				if (pointInPolygon(snap, realBboxCoords)) {
-					objTarget = objMeta;
-				}
-			});
-			if (objTarget) {
-				if (binder && binder.type == "segment") {
-					binder.graph.remove();
-					binder = setBinder(null);
-					setCursor("default");
-				}
-				if (objTarget.params.bindBox) {
-					// OBJ -> BOUNDINGBOX TOOL
-					if (binder == null) {
-						binder = setBinder(
-							new Object2D(
-								"free",
-								constants.OBJECT_CLASSES.BOUNDING_BOX,
-								"",
-								objTarget.bbox.origin,
-								objTarget.angle,
-								0,
-								objTarget.size,
-								"normal",
-								objTarget.thick,
-								objTarget.realBbox,
-								viewbox
-							)
-						);
-
-						binder.update();
-						binder.obj = objTarget;
-						binder.type = "boundingBox";
-						binder.oldX = binder.x;
-						binder.oldY = binder.y;
-						$("#boxbind").append(binder.graph);
-						if (!objTarget.params.move) setCursor("trash"); // LIKE MEASURE ON PLAN
-						if (objTarget.params.move) setCursor("move");
-					}
-				} else {
-					// DOOR, WINDOW, OPENING.. -- OBJ WITHOUT BINDBOX (params.bindBox = False) -- !!!!
-					if (binder == null) {
-						var wall = editor.rayCastingWall(objTarget, wallMeta);
-						if (wall.length > 1) wall = wall[0];
-						// wall.inWallRib(objectMeta);
-						setInWallMeasurementText(wall, objectMeta);
-						var thickObj = wall.thick;
-						var sizeObj = objTarget.size;
-
-						binder = setBinder(
-							new Object2D(
-								"inWall",
-								constants.OBJECT_CLASSES.HOVER_BOX,
-								"",
-								objTarget,
-								objTarget.angle,
-								0,
-								sizeObj,
-								"normal",
-								thickObj,
-								0,
-								viewbox
-							)
-						);
-						binder.update();
-
-						binder.oldXY = { x: objTarget.x, y: objTarget.y }; // FOR OBJECT MENU
-						$("#boxbind").append(binder.graph);
-					} else {
-						if (event.target == binder.graph.get(0).firstChild) {
-							setCursor("move");
-							binder.graph
-								.get(0)
-								.firstChild.setAttribute("class", "circle_css_2");
-							binder.type = "obj";
-							binder.obj = objTarget;
-						} else {
-							setCursor("default");
-							binder.graph
-								.get(0)
-								.firstChild.setAttribute("class", "circle_css_1");
-							binder.type = false;
-						}
-					}
-				}
-			} else {
-				if (binder) {
-					if (binder.graph && typeof binder.graph != "undefined")
-						binder.graph.remove();
-					else if (binder.remove != undefined) binder.remove();
-					binder = setBinder(null);
-					setCursor("default");
-					updateMeasurementText(wallMeta);
-				}
-			}
-
-			// BIND CIRCLE IF nearNode and GROUP ALL SAME XY SEG POINTS
-			let wallNode = editor.nearWallNode(snap, wallMeta, 20);
-			if (wallNode) {
-				if (binder == null || binder.type == "segment") {
-					binder = setBinder(
-						qSVG.create("boxbind", "circle", {
-							id: "circlebinder",
-							class: "circle_css_2",
-							cx: wallNode.x,
-							cy: wallNode.y,
-							r: Rcirclebinder,
-						})
-					);
-					binder.data = wallNode;
-					binder.type = "node";
-					if ($("#linebinder").length) $("#linebinder").remove();
-				} else {
-					// REMAKE CIRCLE_CSS ON BINDER AND TAKE DATA SEG GROUP
-					// if (typeof(binder) != 'undefined') {
-					//     binder.attr({
-					//         class: "circle_css_2"
-					//     });
-					// }
-				}
-				setCursor("move");
-			} else {
-				if (binder && binder.type == "node") {
-					binder.remove();
-					binder = setBinder(null);
-					func.hideAllSize();
-					setCursor("default");
-					updateMeasurementText(wallMeta);
-				}
-			}
-
-			// BIND WALL WITH NEARPOINT function ---> WALL BINDER CREATION
-			let wallUnderCursor = editor.rayCastingWall(snap, wallMeta);
-			if (wallUnderCursor) {
-				if (wallUnderCursor.length > 1)
-					wallUnderCursor = wallUnderCursor[wallUnderCursor.length - 1];
-				if (wallUnderCursor && binder == null) {
-					var objWall = wallUnderCursor.getObjects(objectMeta);
-					if (objWall.length > 0)
-						editor.inWallRib2(wallUnderCursor, objectMeta);
-					binder = setBinder({ wall: wallUnderCursor, type: "segment" });
-					// binder.wall.inWallRib(objectMeta);
-					setInWallMeasurementText(binder.wall, objectMeta);
-					var line = qSVG.create("none", "line", {
-						x1: binder.wall.start.x,
-						y1: binder.wall.start.y,
-						x2: binder.wall.end.x,
-						y2: binder.wall.end.y,
-						"stroke-width": 5,
-						stroke: "#5cba79",
-					});
-					var ball1 = qSVG.create("none", "circle", {
-						class: "circle_css",
-						cx: binder.wall.start.x,
-						cy: binder.wall.start.y,
-						r: Rcirclebinder / 1.8,
-					});
-					var ball2 = qSVG.create("none", "circle", {
-						class: "circle_css",
-						cx: binder.wall.end.x,
-						cy: binder.wall.end.y,
-						r: Rcirclebinder / 1.8,
-					});
-					binder.graph = qSVG.create("none", "g");
-					binder.graph.append(line);
-					binder.graph.append(ball1);
-					binder.graph.append(ball2);
-					$("#boxbind").append(binder.graph);
-					setCursor("pointer");
-				}
-			} else {
-				if (binder && binder.type == "segment") {
-					binder.graph.remove();
-					binder = setBinder(null);
-					func.hideAllSize();
-					setCursor("default");
-					updateMeasurementText(wallMeta);
-				}
-			}
-		}
+		handleMouseMoveSelectMode(
+			event,
+			binder,
+			setBinder,
+			snap,
+			wallMeta,
+			objectMeta,
+			point,
+			drag,
+			setCursor,
+			viewbox,
+			handleCameraChange
+		);
 	}
 
 	// ------------------------------  LINE MODE ------------------------------------------------------
 
-	if (!action && (mode == Mode.Line || mode == Mode.Partition)) {
-		setCursor("grab");
-		point = setPoint({ x: snap.x, y: snap.y });
-		helpConstruc = createWallGuideLine(
-			snap,
+	if (mode === Mode.Line || mode === Mode.Partition) {
+		const {
+			binder: updatedBinder,
+			cursor: updatedCursor,
+			point: updatedPoint,
+			lengthTemp: updatedLengthTemp,
+			endWallConstruction: shouldEndWallConstruction,
+			wallDrawPoint: updatedDrawPoint,
+		} = handleMouseMoveLineMode(
+			binder,
+			action,
+			mode,
+			cursor,
 			wallMeta,
-			lineIntersectionP,
-			setLineIntersectionP,
-			25,
-			setHelperLineSvgData
+			snap,
+			point,
+			wallDrawPoint,
+			setHelperLineSvgData,
+			continuousWallMode,
+			lengthTemp
 		);
-		if (helpConstruc) {
-			if (helpConstruc.distance < 10) {
-				point = setPoint({ x: helpConstruc.x, y: helpConstruc.y });
-				setCursor("grab");
-			} else {
-				setCursor("crosshair");
-			}
-		}
-		const wallNode = editor.nearWallNode(snap, wallMeta, 20);
-		if (wallNode) {
-			point = setPoint({ x: wallNode.x, y: wallNode.y });
-			setCursor("grab");
-			if (binder == null) {
-				binder = setBinder(
-					qSVG.create("boxbind", "circle", {
-						id: "circlebinder",
-						class: "circle_css_2",
-						cx: wallNode.x,
-						cy: wallNode.y,
-						r: Rcirclebinder / 1.5,
-					})
-				);
-			}
-			setHelperLineSvgData(null);
-		} else {
-			if (!helpConstruc) setCursor("crosshair");
-			if (binder) {
-				if (binder.graph) binder.graph.remove();
-				else binder.remove();
-				binder = setBinder(null);
-			}
-		}
+		setBinder(updatedBinder);
+		setCursor(updatedCursor);
+		setPoint(updatedPoint);
+		setLengthTemp(updatedLengthTemp);
+		setWallEndConstruc(shouldEndWallConstruction);
+		setWallDrawPoint(updatedDrawPoint);
 	}
 
-	// ******************************************************************************************************
-	// ************************** ACTION = 1   LINE MODE => WALL CREATE                 *********************
-	// ******************************************************************************************************
-
-	if (action && (mode == Mode.Line || mode == Mode.Partition)) {
-		wallDrawPoint = setWallDrawPoint(snap);
-		// x = setX(snap.x);
-		// y = setY(snap.y);
-		// let x = snap.x;
-		// let y = snap.y;
-		if (!$("#line_construc").length) {
-			const wallNode = editor.nearWallNode(snap, wallMeta, 20);
-			if (wallNode) {
-				point = setPoint({ x: wallNode.x, y: wallNode.y });
-				if (wallNode.bestWall == wallMeta.length - 1) {
-					setCursor("validation");
-				} else {
-					setCursor("grab");
-				}
-			} else {
-				setCursor("crosshair");
-			}
-		}
-
-		const starter = Math.abs(point.x - snap.x) + Math.abs(point.y - snap.y);
-		if (starter > constants.GRID_SIZE) {
-			if (!$("#line_construc").length) {
-				var ws = 20;
-				if (mode == Mode.Partition) ws = 10;
-				const lineconstruc = qSVG.create("boxbind", "line", {
-					id: "line_construc",
-					x1: point.x,
-					y1: point.y,
-					x2: wallDrawPoint.x,
-					y2: wallDrawPoint.y,
-					"stroke-width": ws,
-					"stroke-linecap": "butt",
-					"stroke-opacity": 0.7,
-					stroke: "#9fb2e2",
-				});
-
-				const svgadd = qSVG.create("boxbind", "line", {
-					// ORANGE TEMP LINE FOR ANGLE 0 90 45 -+
-					id: "linetemp",
-					x1: point.x,
-					y1: point.y,
-					x2: wallDrawPoint.x,
-					y2: wallDrawPoint.y,
-					stroke: "transparent",
-					"stroke-width": 0.5,
-					"stroke-opacity": "0.9",
-				});
-			} else {
-				// THE LINES AND BINDER ARE CREATED
-
-				$("#linetemp").attr({
-					x2: wallDrawPoint.x,
-					y2: wallDrawPoint.y,
-				});
-
-				helpConstrucEnd = createWallGuideLine(
-					snap,
-					wallMeta,
-					lineIntersectionP,
-					setLineIntersectionP,
-					10,
-					setHelperLineSvgData
-				);
-				if (helpConstrucEnd) {
-					// x = setX(helpConstrucEnd.x);
-					// y = setY(helpConstrucEnd.y);
-					wallDrawPoint = setWallDrawPoint({
-						x: helpConstrucEnd.x,
-						y: helpConstrucEnd.y,
-					});
-				}
-
-				wallEndConstruc = setWallEndConstruc(
-					editor.nearWall(snap, wallMeta, 12)
-				);
-				if (wallEndConstruc) {
-					// TO SNAP SEGMENT TO FINALIZE X2Y2
-					wallDrawPoint = setWallDrawPoint({
-						x: wallEndConstruc.x,
-						y: wallEndConstruc.y,
-					});
-					// x = setX(wallEndConstruc.x);
-					// y = setY(wallEndConstruc.y);
-					setCursor("grab");
-				} else {
-					setCursor("crosshair");
-				}
-
-				// nearNode helped to attach the end of the construc line
-				const wallNode = editor.nearWallNode(snap, wallMeta, 20);
-				if (wallNode) {
-					if (binder == null) {
-						binder = setBinder(
-							qSVG.create("boxbind", "circle", {
-								id: "circlebinder",
-								class: "circle_css_2",
-								cx: wallNode.x,
-								cy: wallNode.y,
-								r: Rcirclebinder / 1.5,
-							})
-						);
-					}
-					$("#line_construc").attr({
-						x2: wallNode.x,
-						y2: wallNode.y,
-					});
-					wallDrawPoint = setWallDrawPoint({ x: wallNode.x, y: wallNode.y });
-					// x = setX(wallNode.x);
-					// y = setY(wallNode.y);
-					// x = wallNode.x;
-					// y = wallNode.y;
-					wallEndConstruc = setWallEndConstruc(true);
-					setHelperLineSvgData(null);
-					if (wallNode.bestWall == wallMeta.length - 1 && continuousWallMode) {
-						setCursor("validation");
-					} else {
-						setCursor("grab");
-					}
-				} else {
-					if (binder) {
-						binder.remove();
-						binder = setBinder(null);
-					}
-					if (wallEndConstruc === false) setCursor("crosshair");
-				}
-				// LINETEMP AND LITLLE SNAPPING FOR HELP TO CONSTRUC ANGLE 0 90 45 *****************************************
-				var fltt = angleBetweenPoints(
-					point.x,
-					point.y,
-					wallDrawPoint.x,
-					wallDrawPoint.y
-				);
-				var flt = Math.abs(fltt.deg);
-				var coeff = fltt.deg / flt; // -45 -> -1     45 -> 1
-				var phi = point.y - coeff * point.x;
-				var Xdiag = (wallDrawPoint.y - phi) / coeff;
-				if (binder == null) {
-					// HELP FOR H LINE
-					var found = false;
-					let x = wallDrawPoint.x;
-					let y = wallDrawPoint.y;
-					if (flt < 15 && Math.abs(point.y - wallDrawPoint.y) < 25) {
-						y = point.y;
-						found = true;
-					}
-					// HELP FOR V LINE
-					if (flt > 75 && Math.abs(point.x - wallDrawPoint.x) < 25) {
-						x = point.x;
-						found = true;
-					}
-					// HELP FOR DIAG LINE
-					if (flt < 55 && flt > 35 && Math.abs(Xdiag - wallDrawPoint.x) < 20) {
-						x = Xdiag;
-						// x = Xdiag;
-						found = true;
-					}
-
-					wallDrawPoint = setWallDrawPoint({ x, y });
-					if (found) {
-						$("#line_construc").attr({ "stroke-opacity": 1 });
-					} else $("#line_construc").attr({ "stroke-opacity": 0.7 });
-				}
-				$("#line_construc").attr({
-					x2: wallDrawPoint.x,
-					y2: wallDrawPoint.y,
-				});
-
-				// SHOW WALL SIZE -------------------------------------------------------------------------
-				var startText = qSVG.middle(
-					point.x,
-					point.y,
-					wallDrawPoint.x,
-					wallDrawPoint.y
-				);
-				var angleText = angleBetweenPoints(
-					point.x,
-					point.y,
-					wallDrawPoint.x,
-					wallDrawPoint.y
-				);
-				var valueText = (
-					qSVG.measure(
-						{
-							x: point.x,
-							y: point.y,
-						},
-						{
-							x: wallDrawPoint.x,
-							y: wallDrawPoint.y,
-						}
-					) / 60
-				).toFixed(2);
-				//if (typeof lengthTemp == "undefined") {
-				if (!lengthTemp) {
-					const lt = document.createElementNS(
-						"http://www.w3.org/2000/svg",
-						"text"
-					);
-					lt.setAttributeNS(null, "x", startText.x);
-					lt.setAttributeNS(null, "y", startText.y - 15);
-					lt.setAttributeNS(null, "text-anchor", "middle");
-					lt.setAttributeNS(null, "stroke", "none");
-					lt.setAttributeNS(null, "stroke-width", "0.6px");
-					lt.setAttributeNS(null, "fill", "#777777");
-					lt.textContent = valueText + "m";
-					setLengthTemp(lt);
-					$("#boxbind").append(lengthTemp);
-				}
-				if (lengthTemp && valueText > 0.1) {
-					lengthTemp.setAttributeNS(null, "x", startText.x);
-					lengthTemp.setAttributeNS(null, "y", startText.y - 15);
-					lengthTemp.setAttribute(
-						"transform",
-						"rotate(" +
-							angleText.deg +
-							" " +
-							startText.x +
-							"," +
-							startText.y +
-							")"
-					);
-					lengthTemp.textContent = valueText + " m";
-					setLengthTemp(lengthTemp);
-				}
-				if (lengthTemp && valueText < 0.1) {
-					lengthTemp.textContent = "";
-					setLengthTemp(lengthTemp);
-				}
-			}
-		}
-	} // END LINE MODE DETECT && ACTION = 1
-
-	//ONMOVE
 	// **************************************************************************************************
 	//        ____ ___ _   _ ____  _____ ____
 	//        | __ )_ _| \ | |  _ \| ____|  _ \
@@ -939,8 +260,6 @@ export const _MOUSEMOVE = (
 					(helpConstruc = createWallGuideLine(
 						snap,
 						wallMeta,
-						lineIntersectionP,
-						setLineIntersectionP,
 						10,
 						setHelperLineSvgData,
 						currentNodeWallList
@@ -1313,421 +632,3 @@ export const _MOUSEMOVE = (
 		}
 	}
 }; // END MOUSEMOVE
-
-//******************************************************************************************************
-//*******************  *****  ******        ************************************************************
-//*******************  *****  ******  ****  ************************************************************
-//*******************  *****  ******  ****  ************************************************************
-//*******************  *****  ******        ************************************************************
-//*******************         ******  ******************************************************************
-//**********************************  ******************************************************************
-
-export const _MOUSEUP = (
-	event,
-	mode,
-	setMode,
-	continuousWallMode,
-	resetMode,
-	setCursor,
-	editor,
-	setRooms,
-	roomMeta,
-	setRoomMeta,
-	wallMeta,
-	setWallMeta,
-	objectMeta,
-	setObjectMeta,
-	action,
-	setAction,
-	setDrag,
-	binder,
-	setBinder,
-	viewbox,
-	lineIntersectionP,
-	lengthTemp,
-	setLengthTemp,
-	point,
-	setPoint,
-	x,
-	y,
-	wallEndConstruc,
-	setWallEndConstruc,
-	save,
-	wallEquations,
-	followerData,
-	showWallTools,
-	showObjectTools,
-	showOpeningTools,
-	updateRoomDisplayData,
-	showMeasurements,
-	setHelperLineSvgData
-) => {
-	if (showMeasurements) {
-		$("#boxScale").show(200);
-	}
-	// if (showRib) $("#boxScale").show(200);
-	// console.log("mouseUp:", viewbox);
-	setDrag(false);
-	setCursor("default");
-	let snap;
-	if (mode == Mode.Select) {
-		if (binder) {
-			binder.remove();
-			binder = setBinder(null);
-			save();
-		}
-	}
-
-	//**************************************************************************
-	//********************   TEXTE   MODE **************************************
-	//**************************************************************************
-	if (mode == Mode.Text) {
-		if (!action) {
-			action = setAction(true);
-			$("#textToLayer").modal();
-			mode = setMode(Mode.EditText);
-		}
-	}
-
-	//**************************************************************************
-	//**************        OBJECT   MODE **************************************
-	//**************************************************************************
-	if (mode == Mode.Object) {
-		const objData = [...objectMeta, binder];
-		// OBJDATA.push(binder);
-		binder.graph.remove();
-		var targetBox = "boxcarpentry";
-		if (objData[objData.length - 1].class == "energy") targetBox = "boxEnergy";
-		if (objData[objData.length - 1].class == "furniture")
-			targetBox = "boxFurniture";
-		$("#" + targetBox).append(objData[objData.length - 1].graph);
-		binder = setBinder(null);
-		objectMeta = setObjectMeta(objData);
-		$("#boxinfo").html("Object added");
-		mode = resetMode();
-		save();
-	}
-
-	// *******************************************************************
-	// **************************   DISTANCE MODE   **********************
-	// *******************************************************************
-	// if (mode == Mode.Distance) {
-	// 	if (action) {
-	// 		action = setAction(false);
-	// 		// MODIFY BBOX FOR BINDER ZONE (TXT)
-	// 		var bbox = labelMeasure.get(0).getBoundingClientRect();
-	// 		const offset = $("#lin").offset();
-	// 		bbox.x =
-	// 			bbox.x * viewbox.zoomFactor -
-	// 			offset.left * viewbox.zoomFactor +
-	// 			viewbox.origX;
-	// 		bbox.y =
-	// 			bbox.y * viewbox.zoomFactor -
-	// 			offset.top * viewbox.zoomFactor +
-	// 			viewbox.origY;
-	// 		bbox.origin = { x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height / 2 };
-	// 		binder.bbox = bbox;
-	// 		binder.realBbox = [
-	// 			{ x: binder.bbox.x, y: binder.bbox.y },
-	// 			{ x: binder.bbox.x + binder.bbox.width, y: binder.bbox.y },
-	// 			{
-	// 				x: binder.bbox.x + binder.bbox.width,
-	// 				y: binder.bbox.y + binder.bbox.height,
-	// 			},
-	// 			{ x: binder.bbox.x, y: binder.bbox.y + binder.bbox.height },
-	// 		];
-	// 		binder.size = binder.bbox.width;
-	// 		binder.thick = binder.bbox.height;
-	// 		binder.graph.append(labelMeasure);
-
-	// 		const objData = [...objectMeta, binder];
-	// 		// OBJDATA.push(binder);
-	// 		binder.graph.remove();
-	// 		func.appendObjects(objData);
-	// 		objectMeta = setObjectMeta(objData);
-	// 		binder = setBinder(null);
-	// 		labelMeasure = setLabelMeasure(null);
-	// 		cross.remove();
-	// 		cross = setCross(null);
-	// 		$("#boxinfo").html("Measure added");
-	// 		mode = resetMode();
-	// 		save();
-	// 	}
-	// }
-
-	// *******************************************************************
-	// **************************   ROOM MODE   **************************
-	// *******************************************************************
-
-	if (mode == Mode.Room) {
-		if (binder == null) {
-			return false;
-		}
-
-		var area = binder.area / 3600;
-		binder.attr({ fill: "none", stroke: "#ddf00a", "stroke-width": 7 });
-		const room = roomMeta[binder.id];
-		updateRoomDisplayData({
-			size: area.toFixed(2),
-			roomIndex: binder.id,
-			surface: room.surface ?? "",
-			showSurface: room.showSurface,
-			background: room.color,
-			name: room.name,
-			action: room.action,
-		});
-
-		mode = setMode(Mode.EditRoom);
-		save();
-	}
-
-	// *******************************************************************
-	// **************************   NODE MODE   **************************
-	// *******************************************************************
-
-	if (mode == Mode.Node) {
-		if (binder) {
-			// ALSO ON MOUSEUP WITH HAVE CIRCLEBINDER ON ADDPOINT
-			var newWall = new Wall(
-				{ x: binder.data.x, y: binder.data.y },
-				binder.data.wall.end,
-				"normal",
-				binder.data.wall.thick
-			);
-			wallMeta = setWallMeta([...wallMeta, newWall]);
-			// WALLS.push(newWall);
-			binder.data.wall.end = { x: binder.data.x, y: binder.data.y };
-			binder.remove();
-			binder = setBinder(null);
-			editor.architect(
-				wallMeta,
-				setRooms,
-				roomMeta,
-				setRoomMeta,
-				wallEquations
-			);
-			save();
-		}
-		mode = resetMode();
-	}
-
-	// *******************************************************************  ***** ****      *******  ******  ******  *****
-	// **************************   OBJ MODE   ***************************  *   * *******     *****  ******  ******   **
-	// *******************************************************************  ***** ****       ******  ******  ******  ***
-
-	if (mode == Mode.Door) {
-		if (binder == null) {
-			$("#boxinfo").html("The plan currently contains no wall.");
-			mode = resetMode();
-			return false;
-		}
-
-		const objData = [...objectMeta, binder];
-		// OBJDATA.push(binder);
-		binder.graph.remove();
-		func.appendObjects(objData);
-		objectMeta = setObjectMeta(objData);
-		binder = setBinder(null);
-		$("#boxinfo").html("Element added");
-		mode = resetMode();
-		save();
-	}
-
-	// *******************************************************************
-	// ********************   LINE MODE MOUSE UP   ***********************
-	// *******************************************************************
-
-	if (mode == Mode.Line || mode == Mode.Partition) {
-		$("#linetemp").remove(); // DEL LINE HELP CONSTRUC 0 45 90
-		setHelperLineSvgData(null);
-
-		var sizeWall = qSVG.measure({ x: x, y: y }, point);
-		sizeWall = sizeWall / constants.METER_SIZE;
-		if ($("#line_construc").length && sizeWall > 0.3) {
-			var sizeWall = constants.WALL_SIZE;
-			if (mode == Mode.Partition) sizeWall = constants.PARTITION_SIZE;
-			var wall = new Wall(point, { x: x, y: y }, "normal", sizeWall);
-			wallMeta = setWallMeta([...wallMeta, wall]);
-			// WALLS.push(wall);
-			editor.architect(
-				wallMeta,
-				setRooms,
-				roomMeta,
-				setRoomMeta,
-				wallEquations
-			);
-
-			if (continuousWallMode && !wallEndConstruc) {
-				setCursor("validation");
-				action = setAction(true);
-			} else action = setAction(false);
-			$("#boxinfo").html(
-				"Wall added <span style='font-size:0.6em'>approx. " +
-					(qSVG.measure(point, { x: x, y: y }) / 60).toFixed(2) +
-					" m</span>"
-			);
-			$("#line_construc").remove(); // DEL LINE CONSTRUC HELP TO VIEW NEW SEG PATH
-			lengthTemp.remove();
-			setLengthTemp(null);
-			// construc = 0;
-			if (wallEndConstruc) action = setAction(false);
-			wallEndConstruc = setWallEndConstruc(false);
-			point = setPoint({ x: x, y: y });
-			save();
-		} else {
-			action = setAction(false);
-			// construc = 0;
-			$("#boxinfo").html("Select mode");
-			mode = resetMode();
-			if (binder) {
-				binder.remove();
-				binder = setBinder(null);
-			}
-			snap = calculateSnap(event, viewbox);
-			point = setPoint({ x: snap.x, y: snap.y });
-		}
-	}
-	// **************************** END LINE MODE MOUSE UP **************************
-
-	//**************************************************************************************
-	//**********************      BIND MODE MOUSE UP    ************************************
-	//**************************************************************************************
-
-	if (mode == Mode.Bind) {
-		action = setAction(false);
-		// construc = 0; // CONSTRUC 0 TO FREE BINDER GROUP NODE WALL MOVING
-		if (binder) {
-			mode = resetMode();
-
-			if (binder.type == "segment") {
-				var found = false;
-				if (binder.wall.start == binder.before) {
-					found = true;
-				}
-
-				if (found) {
-					let isSeparation = binder.wall.type == "separate";
-					showWallTools(isSeparation);
-					mode = setMode(Mode.EditWall);
-				}
-				wallEquations.equation1 = null;
-				wallEquations.equation2 = null;
-				wallEquations.equation3 = null;
-				followerData.intersection = null;
-			}
-
-			if (binder.type == "obj") {
-				var moveDistance =
-					Math.abs(binder.oldXY.x - binder.x) +
-					Math.abs(binder.oldXY.y - binder.y);
-				if (moveDistance < 1) {
-					const min = binder.obj.params.resizeLimit.width.min;
-					const max = binder.obj.params.resizeLimit.width.max;
-					showOpeningTools(min, max, binder.obj.size);
-					// setCursor("default");
-					// $("#boxinfo").html("Config. the door/window");
-					// document
-					// 	.getElementById("doorWindowWidth")
-					// 	.setAttribute("min", binder.obj.params.resizeLimit.width.min);
-					// document
-					// 	.getElementById("doorWindowWidth")
-					// 	.setAttribute("max", binder.obj.params.resizeLimit.width.max);
-					// document.getElementById("doorWindowWidthScale").textContent =
-					// 	binder.obj.params.resizeLimit.width.min +
-					// 	"-" +
-					// 	binder.obj.params.resizeLimit.width.max;
-					// document.getElementById("doorWindowWidth").value = binder.obj.size;
-					// document.getElementById("doorWindowWidthVal").textContent =
-					// 	binder.obj.size;
-					mode = setMode(Mode.EditDoor);
-				} else {
-					mode = setMode(Mode.Select);
-					action = setAction(false);
-					binder.graph.remove();
-					binder = setBinder(null);
-				}
-			}
-
-			if (binder && binder.type == "boundingBox") {
-				var moveObj =
-					Math.abs(binder.oldX - binder.x) + Math.abs(binder.oldY - binder.y);
-				var objTarget = binder.obj;
-				if (!objTarget.params.move) {
-					// TO REMOVE MEASURE ON PLAN
-					objTarget.graph.remove();
-					objectMeta.splice(objectMeta.indexOf(objectMeta), 1);
-					$("#boxinfo").html("Measure deleted!");
-				}
-				if (moveObj < 1 && objTarget.params.move) {
-					if (!objTarget.params.resize) {
-						$("#objBoundingBoxScale").hide();
-					} else {
-						console.log("showing obj tools");
-						showObjectTools();
-						$("#objBoundingBoxScale").show();
-					}
-					// if (!objTarget.params.rotate) $("#objBoundingBoxRotation").hide();
-					// else $("#objBoundingBoxRotation").show();
-					// $("#panel").hide(100);
-					// $("#objBoundingBox").show("200", function () {
-					// 	setCursor("default");
-					// 	$("#boxinfo").html("Modify the object");
-					// 	document
-					// 		.getElementById("bboxWidth")
-					// 		.setAttribute("min", objTarget.params.resizeLimit.width.min);
-					// 	document
-					// 		.getElementById("bboxWidth")
-					// 		.setAttribute("max", objTarget.params.resizeLimit.width.max);
-					// 	document.getElementById("bboxWidthScale").textContent =
-					// 		objTarget.params.resizeLimit.width.min +
-					// 		"-" +
-					// 		objTarget.params.resizeLimit.height.max;
-					// 	document
-					// 		.getElementById("bboxHeight")
-					// 		.setAttribute("min", objTarget.params.resizeLimit.height.min);
-					// 	document
-					// 		.getElementById("bboxHeight")
-					// 		.setAttribute("max", objTarget.params.resizeLimit.height.max);
-					// 	document.getElementById("bboxHeightScale").textContent =
-					// 		objTarget.params.resizeLimit.height.min +
-					// 		"-" +
-					// 		objTarget.params.resizeLimit.height.max;
-					// 	$("#stepsCounter").hide();
-					// 	if (objTarget.class == "stair") {
-					// 		document.getElementById("bboxStepsVal").textContent =
-					// 			objTarget.value;
-					// 		$("#stepsCounter").show();
-					// 	}
-					// 	document.getElementById("bboxWidth").value = objTarget.width * 100;
-					// 	document.getElementById("bboxWidthVal").textContent =
-					// 		objTarget.width * 100;
-					// 	document.getElementById("bboxHeight").value =
-					// 		objTarget.height * 100;
-					// 	document.getElementById("bboxHeightVal").textContent =
-					// 		objTarget.height * 100;
-					// 	document.getElementById("bboxRotation").value = objTarget.angle;
-					// 	document.getElementById("bboxRotationVal").textContent =
-					// 		objTarget.angle;
-					// });
-					mode = setMode(Mode.EditBoundingBox);
-				} else {
-					mode = setMode(Mode.Select);
-					action = setAction(false);
-					binder.graph.remove();
-					binder = setBinder(null);
-				}
-			}
-
-			if (mode == Mode.Bind) {
-				binder.remove();
-				binder = setBinder(null);
-			}
-		} // END BIND IS DEFINED
-		save();
-	} // END BIND MODE
-
-	if (mode != Mode.EditRoom) {
-		editor.showScaleBox(roomMeta, wallMeta);
-		updateMeasurementText(wallMeta);
-	}
-};

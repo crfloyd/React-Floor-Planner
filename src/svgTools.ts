@@ -1867,10 +1867,6 @@ export const pointInPolygon = (point: Point2D, polygon: Point2D[]) => {
 export const createWallGuideLine = (
 	snap: Point2D,
 	wallMeta: WallMetaData[],
-	lineIntersectionP: JQuery<SVGElement> | null,
-	setLineIntersectionP: (
-		v: JQuery<SVGElement> | null
-	) => JQuery<SVGElement> | null,
 	range = Infinity,
 	setHelperLineSvgData: (data: SvgPathMetaData | null) => void,
 	except: WallMetaData[] = []

@@ -3,67 +3,24 @@ import { editor } from "../../../editor";
 import * as func from "../../../func";
 import { qSVG } from "../../../qSVG";
 import {
-	WallMetaData,
 	ObjectMetaData,
-	WallEquationGroup,
-	WallEquation,
-	Point2D,
-	ViewboxData,
 	Mode,
-	RoomMetaData,
 	RoomDisplayData,
-	RoomPolygonData,
 	SvgPathMetaData,
 } from "../../models";
 import { updateMeasurementText } from "../../svgTools";
 import { calculateSnap } from "../../utils";
 import { Wall } from "../../wall";
+import { CanvasState } from "../CanvasState";
 
 interface Props {
-	showMeasurements: boolean;
 	event: React.TouchEvent | React.MouseEvent;
-	mode: string;
-	binder: any;
-	setBinder: (newVal: any) => void;
-	setMode: (newMode: string) => string;
+	canvasState: CanvasState;
 	resetMode: () => string;
-	action: boolean;
-	setAction: (on: boolean) => void;
-	wallMeta: WallMetaData[];
-	setWallMeta: (newData: WallMetaData[]) => void;
-	objectMeta: ObjectMetaData[];
-	setObjectMeta: (newData: ObjectMetaData[]) => void;
-	wallEquations: WallEquationGroup;
-	followerData: {
-		equations: { wall: WallMetaData; eq: WallEquation; type: string }[];
-		intersection: Point2D | null;
-	};
-	setPoint: (newPoint: Point2D) => void;
-	setDrag: (shouldDrag: boolean) => void;
-	viewbox: ViewboxData;
-	roomMeta: RoomMetaData[];
-	setRoomMeta: (newData: RoomMetaData[]) => void;
-	setRoomPolygonData: (newData: RoomPolygonData) => void;
-	setCursor: (
-		val:
-			| "crosshair"
-			| "move"
-			| "pointer"
-			| "validation"
-			| "default"
-			| "trash"
-			| "scissor"
-			| "grab"
-	) => void;
+	showMeasurements: boolean;
 	save: () => void;
 	updateRoomDisplayData: (data: RoomDisplayData) => void;
 	setHelperLineSvgData: (data: SvgPathMetaData | null) => void;
-	wallEndConstruc: boolean;
-	setWallEndConstruc: (val: boolean) => void;
-	point: Point2D;
-	wallDrawPoint: Point2D;
-	lengthTemp: any;
-	setLengthTemp: (val: any) => void;
 	continuousWallMode: boolean;
 	showObjectTools: () => void;
 	showOpeningTools: (min: number, max: number, value: number) => void;
@@ -71,38 +28,40 @@ interface Props {
 }
 
 export const handleMouseUp = ({
+	canvasState: {
+		binder,
+		setBinder,
+		action,
+		setAction,
+		mode,
+		setMode,
+		objectMeta,
+		setObjectMeta,
+		wallMeta,
+		setWallMeta,
+		roomMeta,
+		setRoomMeta,
+		setRoomPolygonData,
+		setDrag,
+		setCursor,
+		wallEquations,
+		point,
+		setPoint,
+		wallDrawPoint,
+		viewbox,
+		wallEndConstruc,
+		setWallEndConstruc,
+		lengthTemp,
+		setLengthTemp,
+		followerData,
+	},
 	event,
-	binder,
-	setBinder,
-	action,
-	setAction,
-	mode,
-	setMode,
 	resetMode,
-	objectMeta,
-	setObjectMeta,
-	wallMeta,
-	setWallMeta,
-	roomMeta,
-	setRoomMeta,
-	setRoomPolygonData,
-	showMeasurements,
-	setDrag,
-	setCursor,
 	save,
+	showMeasurements,
 	updateRoomDisplayData,
-	wallEquations,
 	setHelperLineSvgData,
-	point,
-	setPoint,
-	wallDrawPoint,
-	viewbox,
-	wallEndConstruc,
-	setWallEndConstruc,
-	lengthTemp,
-	setLengthTemp,
 	continuousWallMode,
-	followerData,
 	showObjectTools,
 	showOpeningTools,
 	showWallTools,
@@ -194,7 +153,7 @@ export const handleMouseUp = ({
 			save();
 			break;
 		}
-		case Mode.Door: {
+		case Mode.Opening: {
 			if (binder == null) {
 				$("#boxinfo").html("The plan currently contains no wall.");
 				mode = resetMode();

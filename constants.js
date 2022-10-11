@@ -3,6 +3,7 @@ export const constants = {
 	METER_SIZE: 60,
 	WALL_SIZE: 20,
 	PARTITION_SIZE: 8,
+	CIRCLE_BINDER_RADIUS: 8,
 
 	COLOR_WALL: "#777",
 	COLOR_ROOM_RED: "#A63A50",
