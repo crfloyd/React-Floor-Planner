@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import {
 	onWindowLoad,
@@ -10,30 +10,27 @@ import {
 	setViewboxContent,
 	appendObjects,
 } from "../func";
-import * as engine from "../engine";
 import { qSVG } from "../qSVG";
 import { editor } from "../editor";
 import { computeLimit, intersectionOfEquations } from "./utils";
 
 import "./App.css";
 import {
-	HistorySnapshot,
 	Mode,
 	ObjectEquationData,
 	ObjectMetaData,
 	Point2D,
 	RoomMetaData,
-	WallEquation,
-	WallEquationGroup,
 	WallMetaData,
-	ViewboxData,
 	SvgPathMetaData,
-	NodeWallObjectData,
 	RoomDisplayData,
-	RoomPolygonData,
 } from "./models";
 import { constants } from "../constants";
-import { setInWallMeasurementText, updateMeasurementText } from "./svgTools";
+import {
+	architect,
+	setInWallMeasurementText,
+	updateMeasurementText,
+} from "./svgTools";
 import { Wall } from "./wall";
 import { useHistory } from "./hooks/useHistory";
 import WallTools from "./components/WallTools";
@@ -42,6 +39,7 @@ import DoorWindowTools from "./components/DoorWindowTools";
 import { handleMouseDown } from "./engine/mouseDown/MouseDownHandler";
 import { handleMouseUp } from "./engine/mouseUp/MouseUpHandler";
 import { CanvasState } from "./engine/CanvasState";
+import { handleMouseMove } from "./engine/mouseMove/MouseMoveHandler";
 
 interface LayerSettings {
 	showSurfaces: boolean;
@@ -50,173 +48,9 @@ interface LayerSettings {
 	showEnergy: boolean;
 }
 
-// let mode = Mode.Select;
-// const setMode = (m: string) => {
-// 	mode = m;
-// 	return mode;
-// };
-// let modeOption = "";
-// let wallMeta: WallMetaData[] = [];
-
-// const setWallMeta = (w: WallMetaData[]) => {
-// 	// console.trace("setting wallMeta: ", w);
-// 	wallMeta = w;
-// 	return wallMeta;
-// };
-
-// let roomPolygonData: RoomPolygonData = { polygons: [], vertex: [] };
-// const setRoomPolygonData = (val: RoomPolygonData) => {
-// 	// console.log("Rooms set to: ", val);
-// 	roomPolygonData = val;
-// 	return roomPolygonData;
-// };
-
-// let roomMeta: RoomMetaData[] = [];
-// const setRoomMeta = (r: RoomMetaData[]) => {
-// 	// console.log("setting roomMeta: ", r);
-// 	roomMeta = r;
-// 	return roomMeta;
-// };
-// let objectMeta: ObjectMetaData[] = [];
-// const setObjectMeta = (o: ObjectMetaData[]) => {
-// 	objectMeta = o;
-// 	return objectMeta;
-// };
-
-// let point: Point2D = { x: 0, y: 0 };
-// const setPoint = (p: Point2D) => {
-// 	point = p;
-// 	return point;
-// };
-
-// let wallDrawPoint: Point2D = { x: 0, y: 0 };
-// const setWallDrawPoint = (p: Point2D) => {
-// 	wallDrawPoint = p;
-// 	return wallDrawPoint;
-// };
-// // let x = 0;
-// // const setX = (val: number) => {
-// // 	x = val;
-// // 	return x;
-// // };
-// // let y = 0;
-// // const setY = (val: number) => {
-// // 	y = val;
-// // 	return y;
-// // };
-// let action = false;
-// const setAction = (a: boolean) => {
-// 	action = a;
-// 	return action;
-// };
-
-// let wallStartConstruc = false;
-// const setWallStartConstruc = (val: boolean) => {
-// 	wallStartConstruc = val;
-// 	return wallStartConstruc;
-// };
-// let wallEndConstruc = false;
-// const setWallEndConstruc = (val: boolean) => {
-// 	wallEndConstruc = val;
-// 	return wallEndConstruc;
-// };
-
-// let currentNodeWallObjectData: NodeWallObjectData[] = [];
-// const setCurrentNodeWallObjects = (newData: NodeWallObjectData[]) => {
-// 	currentNodeWallObjectData = newData;
-// };
-
-// let currentNodeWalls: WallMetaData[] = [];
-// const setCurrentNodeWalls = (newWalls: WallMetaData[]) => {
-// 	currentNodeWalls = newWalls;
-// };
-
-// let binder: any;
-// const setBinder = (val: any) => {
-// 	// if (val == null) {
-// 	// 	console.trace("binder set to null");
-// 	// }
-// 	binder = val;
-// 	return binder;
-// };
-// let lineIntersectionP: any = null;
-// const setLineIntersectionP = (val: any) => {
-// 	lineIntersectionP = val;
-// 	return lineIntersectionP;
-// };
-// let lengthTemp: any = null;
-// const setLengthTemp = (val: any) => {
-// 	lengthTemp = val;
-// };
-// let wallEquations: WallEquationGroup = {
-// 	equation1: null,
-// 	equation2: null,
-// 	equation3: null,
-// };
-// const setWallEquations = (newEquations: WallEquationGroup) => {
-// 	wallEquations = newEquations;
-// };
-// let objectEquationData: ObjectEquationData[] = [];
-// const setObjectEquationData = (newData: ObjectEquationData[]) => {
-// 	objectEquationData = newData;
-// 	return objectEquationData;
-// };
-
-// const followerData: {
-// 	equations: { wall: WallMetaData; eq: WallEquation; type: string }[];
-// 	intersection: Point2D | null;
-// } = { equations: [], intersection: null };
-
-// let viewbox: ViewboxData = {
-// 	width: 0,
-// 	height: 0,
-// 	originX: 0,
-// 	originY: 0,
-// 	zoomFactor: 1,
-// 	zoomLevel: 1,
-// };
-
-// let cross: any = null;
-// const setCross = (val: any) => {
-// 	cross = val;
-// 	return cross;
-// };
-
-// let labelMeasure: any = null;
-// const setLabelMeasure = (val: any) => {
-// 	labelMeasure = val;
-// 	return labelMeasure;
-// };
-
 let shouldUpdateMouseMove = true;
 
 const canvasState = new CanvasState();
-
-// const {
-// 	setMode,
-// 	setAction,
-// 	setBinder,
-// 	setModeOption,
-// 	setCross,
-// 	setCursor,
-// 	setDrag,
-// 	setObjectMeta,
-// 	setCurrentNodeWallObjects,
-// 	setCurrentNodeWalls,
-// 	setLabelMeasure,
-// 	setLengthTemp,
-// 	setLineIntersectionP,
-// 	setObjectEquationData,
-// 	setPoint,
-// 	setRoomMeta,
-// 	setRoomPolygonData,
-// 	setWallDrawPoint,
-// 	setWallMeta,
-// 	setWallEquations,
-// 	setWallEndConstruc,
-// 	setWallStartConstruc,
-// } = canvasState;
-// console.log("state updated");
 
 function App() {
 	const [cursor, setCursor] = useState("default");
@@ -321,7 +155,7 @@ function App() {
 		const onResize = () => {
 			console.log("Window resize deteced. Resetting view box");
 			resetViewbox();
-			engine.onWindowResize(canvasState.viewbox);
+			editor.onWindowResize(canvasState.viewbox);
 		};
 		document.addEventListener("keydown", onKeyPress);
 		window.addEventListener("resize", onResize);
@@ -356,7 +190,7 @@ function App() {
 	const onDoorTypeClicked = (type: string) => {
 		setCursor("crosshair");
 		setBoxInfoText("Add a door");
-		applyMode(Mode.DoorWindow, type);
+		applyMode(Mode.Opening, type);
 	};
 
 	const onWindowTypeClicked = (type: string) => {
@@ -364,7 +198,7 @@ function App() {
 		setBoxInfoText("Add a window");
 		setShowDoorList(false);
 		setShowWindowList(false);
-		applyMode(Mode.DoorWindow, type);
+		applyMode(Mode.Opening, type);
 	};
 
 	const onObjectTypeClicked = (type: string) => {
@@ -391,32 +225,20 @@ function App() {
 		wall.type = "separate";
 		wall.backUp = wall.thick;
 		wall.thick = 0.07;
-		editor.architect(
-			canvasState.wallMeta,
-			canvasState.setRoomPolygonData,
-			canvasState.roomMeta,
-			canvasState.setRoomMeta,
-			canvasState.wallEquations
-		);
+		architect(canvasState);
 		save(canvasState);
 		return true;
 	};
 
 	const makeWallVisible = (wall: Wall) => {
 		wall.makeVisible();
-		editor.architect(
-			canvasState.wallMeta,
-			canvasState.setRoomPolygonData,
-			canvasState.roomMeta,
-			canvasState.setRoomMeta,
-			canvasState.wallEquations
-		);
 		save(canvasState);
 	};
 
 	const handleCameraChange = (lens: string, xmove: number, xview = 0) => {
 		const { w: canvasWidth, h: canvasHeight } = getCanvasDimensions();
 		const viewbox = canvasState.viewbox;
+
 		if (lens == "zoomout" && viewbox.zoomLevel > 1 && viewbox.zoomLevel < 17) {
 			viewbox.zoomLevel--;
 			viewbox.width += xmove;
@@ -481,14 +303,7 @@ function App() {
 
 		canvasState.setWallMeta(wallData);
 		canvasState.setRoomMeta(roomData);
-		editor.architect(
-			wallData,
-			canvasState.setRoomPolygonData,
-			roomData,
-			canvasState.setRoomMeta,
-			canvasState.wallEquations
-		);
-
+		architect(canvasState);
 		editor.showScaleBox(roomData, wallData);
 		updateMeasurementText(canvasState.wallMeta);
 	};
@@ -498,13 +313,7 @@ function App() {
 		const wall = canvasState.binder.wall as Wall;
 		wall.thick = value;
 		wall.type = "normal";
-		editor.architect(
-			canvasState.wallMeta,
-			canvasState.setRoomPolygonData,
-			canvasState.roomMeta,
-			canvasState.setRoomMeta,
-			canvasState.wallEquations
-		);
+		architect(canvasState);
 		var objWall = wall.getObjects(canvasState.objectMeta);
 		for (var w = 0; w < objWall.length; w++) {
 			objWall[w].thick = value;
@@ -547,13 +356,7 @@ function App() {
 		setShowWallTools(false);
 		wall.graph.remove();
 		canvasState.binder.graph.remove();
-		editor.architect(
-			canvasState.wallMeta,
-			canvasState.setRoomPolygonData,
-			canvasState.roomMeta,
-			canvasState.setRoomMeta,
-			canvasState.wallEquations
-		);
+		architect(canvasState);
 		updateMeasurementText(canvasState.wallMeta);
 		canvasState.setMode(Mode.Select);
 		setShowMainPanel(true);
@@ -703,13 +506,7 @@ function App() {
 		// LAST WALL ->
 		const wall = new Wall(initCoords, wallToSplit.end, "normal", initThick);
 		newWallMeta = canvasState.setWallMeta([...newWallMeta, wall]);
-		editor.architect(
-			newWallMeta,
-			canvasState.setRoomPolygonData,
-			canvasState.roomMeta,
-			canvasState.setRoomMeta,
-			canvasState.wallEquations
-		);
+		architect(canvasState);
 		save(canvasState);
 		return true;
 	};
@@ -736,7 +533,7 @@ function App() {
 			canvasState.action
 		) {
 			canvasState.setAction(false);
-			engine.resetWallCreation(canvasState.binder, canvasState.lengthTemp);
+			editor.resetWallCreation(canvasState.binder, canvasState.lengthTemp);
 			canvasState.setBinder(null);
 			canvasState.setLengthTemp(null);
 		}
@@ -860,39 +657,13 @@ function App() {
 					}, throttleMs);
 
 					setShowSub(false);
-					engine._MOUSEMOVE(
+
+					handleMouseMove(
 						e,
-						canvasState.mode,
-						canvasState.modeOption,
-						canvasState.point,
-						canvasState.setPoint,
-						canvasState.wallDrawPoint,
-						canvasState.setWallDrawPoint,
+						canvasState,
 						continuousWallMode,
-						cursor,
-						setCursor,
-						editor,
-						canvasState.roomPolygonData,
-						canvasState.setRoomPolygonData,
-						canvasState.roomMeta,
-						canvasState.setRoomMeta,
-						canvasState.wallMeta,
-						canvasState.objectMeta,
-						canvasState.action,
-						canvasState.drag,
-						canvasState.binder,
-						canvasState.setBinder,
-						canvasState.viewbox,
 						handleCameraChange,
-						canvasState.lengthTemp,
-						canvasState.setLengthTemp,
-						canvasState.setWallEndConstruc,
-						canvasState.currentNodeWallObjectData,
-						canvasState.wallEquations,
-						canvasState.followerData,
-						canvasState.objectEquationData,
 						(): ObjectEquationData[] => canvasState.setObjectEquationData([]),
-						canvasState.currentNodeWalls,
 						setHelperLineSvgData
 					);
 				}}

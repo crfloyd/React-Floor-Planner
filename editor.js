@@ -11,23 +11,26 @@ import {
 export const editor = {
 	colorWall: "#666",
 
-	architect: function (walls, setRooms, roomMeta, setRoomMeta, wallEquations) {
-		refreshWalls(walls, wallEquations);
-		walls.forEach((wall) => {
-			wall.addToScene();
-		});
-
-		const rooms = qSVG.polygonize(walls);
-		setRooms(rooms);
-		editor.roomMaker(rooms, roomMeta, setRoomMeta);
-		return true;
+	resetWallCreation: function (binder, lengthTemp) {
+		binder?.remove();
+		$("#linetemp").remove();
+		$("#line_construc").remove();
+		lengthTemp?.remove();
 	},
 
-	nearWallNode: function (snap, wallMeta, range = Infinity, except = [""]) {
+	onWindowResize: function ({ width, height, originX, originY }) {
+		document
+			.querySelector("#lin")
+			.setAttribute(
+				"viewBox",
+				originX + " " + originY + " " + width + " " + height
+			);
+	},
+
+	nearWallNode: function (snap, wallMeta, range = Infinity, except = []) {
 		var best;
 		var bestWall;
 		var i = 0;
-		var scanDistance;
 		var bestDistance = Infinity;
 		for (var k = 0; k < wallMeta.length; k++) {
 			if (except.indexOf(wallMeta[k]) == -1) {

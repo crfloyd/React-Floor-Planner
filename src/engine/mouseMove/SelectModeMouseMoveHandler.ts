@@ -2,30 +2,27 @@ import { constants } from "../../../constants";
 import * as func from "../../../func";
 import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
-import {
-	ObjectMetaData,
-	Point2D,
-	ViewboxData,
-	WallMetaData,
-} from "../../models";
 import { Object2D } from "../../Object2D";
 import {
 	pointInPolygon,
 	setInWallMeasurementText,
 	updateMeasurementText,
 } from "../../svgTools";
+import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveSelectMode = (
 	event: React.TouchEvent | React.MouseEvent,
-	binder: any,
-	setBinder: (b: any) => any,
 	snap: { x: number; y: number; xMouse: number; yMouse: number },
-	wallMeta: WallMetaData[],
-	objectMeta: ObjectMetaData[],
-	point: Point2D,
-	drag: boolean,
-	setCursor: (c: string) => void,
-	viewbox: ViewboxData,
+	{
+		binder,
+		setBinder,
+		wallMeta,
+		objectMeta,
+		point,
+		drag,
+		setCursor,
+		viewbox,
+	}: CanvasState,
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void
 ) => {
 	if (drag) {
@@ -39,13 +36,6 @@ export const handleMouseMoveSelectMode = (
 			return pointInPolygon(snap, realBboxCoords);
 		});
 		let objTarget = matches.length > 0 ? matches[0] : null;
-		// var objTarget: ObjectMetaData | null = null;
-		// objectMeta.forEach((objMeta) => {
-		// 	var realBboxCoords = objMeta.realBbox;
-		// 	if (pointInPolygon(snap, realBboxCoords)) {
-		// 		objTarget = objMeta;
-		// 	}
-		// });
 		if (objTarget != null) {
 			if (binder && binder.type == "segment") {
 				binder.graph.remove();

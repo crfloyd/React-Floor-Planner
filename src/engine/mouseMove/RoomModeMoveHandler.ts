@@ -1,18 +1,17 @@
 import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
 import { Point2D, RoomMetaData, RoomPolygonData } from "../../models";
+import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveRoomMode = (
-	binder: any,
 	snap: Point2D,
-	roomMeta: RoomMetaData[],
-	polygonData: RoomPolygonData
+	{ binder, setBinder, roomMeta, roomPolygonData: polygonData }: CanvasState
 ) => {
 	if (binder) {
 		if (typeof binder["remove"] === "function") {
 			binder.remove();
 		}
-		binder = null;
+		binder = setBinder(null);
 	}
 
 	const roomTarget = editor.rayCastingRoom(snap, roomMeta);
@@ -47,19 +46,19 @@ export const handleMouseMoveRoomMode = (
 		}
 	}
 
-	binder = qSVG.create("boxbind", "path", {
-		id: "roomSelected",
-		d: pathCreate,
-		fill: "#c9c14c",
-		"fill-opacity": 0.5,
-		stroke: "#c9c14c",
-		"fill-rule": "evenodd",
-		"stroke-width": 3,
-	});
+	binder = setBinder(
+		qSVG.create("boxbind", "path", {
+			id: "roomSelected",
+			d: pathCreate,
+			fill: "#c9c14c",
+			"fill-opacity": 0.5,
+			stroke: "#c9c14c",
+			"fill-rule": "evenodd",
+			"stroke-width": 3,
+		})
+	);
 
 	binder.type = "room";
 	binder.area = roomTarget.area;
 	binder.id = roomMeta.indexOf(roomTarget);
-
-	return binder;
 };

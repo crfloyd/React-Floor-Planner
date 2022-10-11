@@ -8,7 +8,7 @@ import {
 	RoomDisplayData,
 	SvgPathMetaData,
 } from "../../models";
-import { updateMeasurementText } from "../../svgTools";
+import { architect, updateMeasurementText } from "../../svgTools";
 import { calculateSnap } from "../../utils";
 import { Wall } from "../../wall";
 import { CanvasState } from "../CanvasState";
@@ -28,33 +28,7 @@ interface Props {
 }
 
 export const handleMouseUp = ({
-	canvasState: {
-		binder,
-		setBinder,
-		action,
-		setAction,
-		mode,
-		setMode,
-		objectMeta,
-		setObjectMeta,
-		wallMeta,
-		setWallMeta,
-		roomMeta,
-		setRoomMeta,
-		setRoomPolygonData,
-		setDrag,
-		setCursor,
-		wallEquations,
-		point,
-		setPoint,
-		wallDrawPoint,
-		viewbox,
-		wallEndConstruc,
-		setWallEndConstruc,
-		lengthTemp,
-		setLengthTemp,
-		followerData,
-	},
+	canvasState,
 	event,
 	resetMode,
 	save,
@@ -69,6 +43,31 @@ export const handleMouseUp = ({
 	if (showMeasurements) {
 		$("#boxScale").show(200);
 	}
+	let {
+		binder,
+		setBinder,
+		action,
+		setAction,
+		mode,
+		setMode,
+		objectMeta,
+		setObjectMeta,
+		wallMeta,
+		setWallMeta,
+		roomMeta,
+		setDrag,
+		setCursor,
+		wallEquations,
+		point,
+		setPoint,
+		wallDrawPoint,
+		viewbox,
+		wallEndConstruc,
+		setWallEndConstruc,
+		lengthTemp,
+		setLengthTemp,
+		followerData,
+	} = canvasState;
 	setDrag(false);
 	setCursor("default");
 	if (mode == Mode.Select) {
@@ -143,13 +142,7 @@ export const handleMouseUp = ({
 			oldWall.wall.end = { x: oldWall.x, y: oldWall.y };
 			binder.remove();
 			binder = setBinder(null);
-			editor.architect(
-				wallMeta,
-				setRoomPolygonData,
-				roomMeta,
-				setRoomMeta,
-				wallEquations
-			);
+			architect(canvasState);
 			save();
 			break;
 		}
@@ -182,14 +175,7 @@ export const handleMouseUp = ({
 				var wall = new Wall(point, wallDrawPoint, "normal", sizeWall);
 				wallMeta.push(wall);
 				setWallMeta(wallMeta);
-				// WALLS.push(wall);
-				editor.architect(
-					wallMeta,
-					setRoomPolygonData,
-					roomMeta,
-					setRoomMeta,
-					wallEquations
-				);
+				architect(canvasState);
 
 				if (continuousWallMode && !wallEndConstruc) {
 					setCursor("validation");

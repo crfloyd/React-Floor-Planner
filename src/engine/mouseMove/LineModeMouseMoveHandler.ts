@@ -1,93 +1,57 @@
 import { constants } from "../../../constants";
 import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
-import { Mode, Point2D, SvgPathMetaData, WallMetaData } from "../../models";
+import { Mode, Point2D, SvgPathMetaData } from "../../models";
 import { angleBetweenPoints, createWallGuideLine } from "../../svgTools";
+import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveLineMode = (
-	binder: any,
-	action: boolean,
-	mode: string,
-	cursor: string,
-	wallMeta: WallMetaData[],
 	snap: Point2D,
-	point: Point2D,
-	wallDrawPoint: Point2D,
 	setHelperLineSvgData: (l: SvgPathMetaData | null) => void,
 	continuousWallMode: boolean,
-	lengthTemp: any
-): {
-	binder: any;
-	cursor: string;
-	point: Point2D;
-	lengthTemp: any;
-	endWallConstruction: boolean;
-	wallDrawPoint: Point2D;
-} => {
-	if (action) {
-		const result = onActionTrue(
-			binder,
-			cursor,
-			snap,
-			point,
-			mode,
-			wallMeta,
-			continuousWallMode,
-			lengthTemp,
-			setHelperLineSvgData
-		);
-		return {
-			binder: result.binder,
-			cursor: result.cursor,
-			point: result.point,
-			lengthTemp: result.lengthTemp,
-			endWallConstruction: result.wallEndConstruc,
-			wallDrawPoint: result.wallDrawPoint,
-		};
+	canvasState: CanvasState
+) => {
+	if (canvasState.action) {
+		onActionTrue(snap, continuousWallMode, setHelperLineSvgData, canvasState);
 	} else {
-		const {
-			binder: updatedBinder,
-			cursor,
-			point,
-		} = onActionFalse(binder, wallMeta, snap, setHelperLineSvgData);
-		return {
-			binder: updatedBinder,
-			cursor,
-			point,
-			lengthTemp,
-			endWallConstruction: false,
-			wallDrawPoint,
-		};
+		onActionFalse(canvasState, snap, setHelperLineSvgData);
 	}
 };
 
 export const onActionTrue = (
-	binder: any,
-	cursor: string,
 	snap: Point2D,
-	point: Point2D,
-	mode: string,
-	wallMeta: WallMetaData[],
 	continuousWallMode: boolean,
-	lengthTemp: any,
-	setHelperLineSvgData: (l: SvgPathMetaData | null) => void
+	setHelperLineSvgData: (l: SvgPathMetaData | null) => void,
+	{
+		binder,
+		setBinder,
+		setCursor,
+		point,
+		setPoint,
+		lengthTemp,
+		setLengthTemp,
+		mode,
+		wallMeta,
+		wallEndConstruc,
+		setWallEndConstruc,
+		setWallDrawPoint,
+	}: CanvasState
 ) => {
-	let wallDrawPoint = snap;
+	let wallDrawPoint = setWallDrawPoint(snap);
 	if (!$("#line_construc").length) {
 		const wallNode = editor.nearWallNode(snap, wallMeta, 20);
 		if (wallNode) {
-			point = { x: wallNode.x, y: wallNode.y };
+			point = setPoint({ x: wallNode.x, y: wallNode.y });
 			if (wallNode.bestWall == wallMeta.length - 1) {
-				cursor = "validation";
+				setCursor("validation");
 			} else {
-				cursor = "grab";
+				setCursor("grab");
 			}
 		} else {
-			cursor = "crosshair";
+			setCursor("crosshair");
 		}
 	}
 
-	let wallEndConstruc = false;
 	const starter = Math.abs(point.x - snap.x) + Math.abs(point.y - snap.y);
 	if (starter > constants.GRID_SIZE) {
 		if (!$("#line_construc").length) {
@@ -133,61 +97,63 @@ export const onActionTrue = (
 			if (helpConstrucEnd) {
 				// x = setX(helpConstrucEnd.x);
 				// y = setY(helpConstrucEnd.y);
-				wallDrawPoint = {
+				wallDrawPoint = setWallDrawPoint({
 					x: helpConstrucEnd.x,
 					y: helpConstrucEnd.y,
-				};
+				});
 			}
 
-			const nearestWall = editor.nearWall(snap, wallMeta, 12) as boolean;
+			const nearestWall = editor.nearWall(snap, wallMeta, 12) as Point2D;
 			if (nearestWall) {
-				wallEndConstruc = true;
+				wallEndConstruc = setWallEndConstruc(true);
 				// TO SNAP SEGMENT TO FINALIZE X2Y2
-				wallDrawPoint = {
+				wallDrawPoint = setWallDrawPoint({
 					x: nearestWall.x,
 					y: nearestWall.y,
-				};
+				});
 				// x = setX(wallEndConstruc.x);
 				// y = setY(wallEndConstruc.y);
-				cursor = "grab";
+				setCursor("grab");
 			} else {
-				cursor = "crosshair";
+				setCursor("crosshair");
 			}
 
 			// nearNode helped to attach the end of the construc line
 			const wallNode = editor.nearWallNode(snap, wallMeta, 20);
 			if (wallNode) {
 				if (binder == null) {
-					binder = qSVG.create("boxbind", "circle", {
-						id: "circlebinder",
-						class: "circle_css_2",
-						cx: wallNode.x,
-						cy: wallNode.y,
-						r: constants.CIRCLE_BINDER_RADIUS / 1.5,
-					});
+					binder = setBinder(
+						qSVG.create("boxbind", "circle", {
+							id: "circlebinder",
+							class: "circle_css_2",
+							cx: wallNode.x,
+							cy: wallNode.y,
+							r: constants.CIRCLE_BINDER_RADIUS / 1.5,
+						})
+					);
 				}
 				$("#line_construc").attr({
 					x2: wallNode.x,
 					y2: wallNode.y,
 				});
-				wallDrawPoint = { x: wallNode.x, y: wallNode.y };
+				wallDrawPoint = setWallDrawPoint({ x: wallNode.x, y: wallNode.y });
 				// x = setX(wallNode.x);
 				// y = setY(wallNode.y);
 				// x = wallNode.x;
 				// y = wallNode.y;
-				wallEndConstruc = true;
+				wallEndConstruc = setWallEndConstruc(true);
 				setHelperLineSvgData(null);
 				if (wallNode.bestWall == wallMeta.length - 1 && continuousWallMode) {
-					cursor = "validation";
+					setCursor("validation");
 				} else {
-					cursor = "grab";
+					setCursor("grab");
 				}
 			} else {
 				if (binder) {
 					binder.remove();
-					binder = null;
+					binder = setBinder(null);
 				}
-				if (wallEndConstruc === false) cursor = "crosshair";
+				if (wallEndConstruc === false) setCursor("crosshair");
 			}
 			// LINETEMP AND LITLLE SNAPPING FOR HELP TO CONSTRUC ANGLE 0 90 45 *****************************************
 			var fltt = angleBetweenPoints(
@@ -221,7 +187,7 @@ export const onActionTrue = (
 					found = true;
 				}
 
-				wallDrawPoint = { x, y };
+				wallDrawPoint = setWallDrawPoint({ x, y });
 				if (found) {
 					$("#line_construc").attr({ "stroke-opacity": 1 });
 				} else $("#line_construc").attr({ "stroke-opacity": 0.7 });
@@ -269,7 +235,7 @@ export const onActionTrue = (
 				lt.setAttributeNS(null, "stroke-width", "0.6px");
 				lt.setAttributeNS(null, "fill", "#777777");
 				lt.textContent = valueText + "m";
-				lengthTemp = lt;
+				lengthTemp = setLengthTemp(lt);
 				$("#boxbind").append(lengthTemp);
 			}
 			if (lengthTemp && +valueText > 0.1) {
@@ -292,16 +258,14 @@ export const onActionTrue = (
 			}
 		}
 	}
-	return { binder, cursor, point, lengthTemp, wallEndConstruc, wallDrawPoint };
 };
 
 export const onActionFalse = (
-	binder: any,
-	wallMeta: WallMetaData[],
+	{ binder, setBinder, setCursor, setPoint, wallMeta }: CanvasState,
 	snap: Point2D,
 	setHelperLineSvgData: (l: SvgPathMetaData | null) => void
 ) => {
-	let cursor = "grab";
+	setCursor("grab");
 	let point: Point2D = { x: snap.x, y: snap.y };
 	const helpConstruc = createWallGuideLine(
 		snap,
@@ -311,33 +275,33 @@ export const onActionFalse = (
 	);
 	if (helpConstruc) {
 		if (helpConstruc.distance < 10) {
-			point = { x: helpConstruc.x, y: helpConstruc.y };
+			point = setPoint({ x: helpConstruc.x, y: helpConstruc.y });
 		} else {
-			cursor = "crosshair";
+			setCursor("crosshair");
 		}
 	}
 	const wallNode = editor.nearWallNode(snap, wallMeta, 20);
 	if (wallNode) {
-		point = { x: wallNode.x, y: wallNode.y };
-		cursor = "grab";
+		point = setPoint({ x: wallNode.x, y: wallNode.y });
+		setCursor("grab");
 		if (binder == null) {
-			binder = qSVG.create("boxbind", "circle", {
-				id: "circlebinder",
-				class: "circle_css_2",
-				cx: wallNode.x,
-				cy: wallNode.y,
-				r: constants.CIRCLE_BINDER_RADIUS / 1.5,
-			});
+			binder = setBinder(
+				qSVG.create("boxbind", "circle", {
+					id: "circlebinder",
+					class: "circle_css_2",
+					cx: wallNode.x,
+					cy: wallNode.y,
+					r: constants.CIRCLE_BINDER_RADIUS / 1.5,
+				})
+			);
 		}
 		setHelperLineSvgData(null);
 	} else {
-		if (!helpConstruc) cursor = "crosshair";
+		if (!helpConstruc) setCursor("crosshair");
 		if (binder) {
 			if (binder.graph) binder.graph.remove();
 			else binder.remove();
-			binder = null;
+			binder = setBinder(null);
 		}
 	}
-
-	return { binder, cursor, point };
 };

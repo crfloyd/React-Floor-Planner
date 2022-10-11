@@ -24,6 +24,8 @@ import {
 	isObjectsEquals,
 	perpendicularEquation,
 } from "./utils";
+import { CanvasState } from "./engine/CanvasState";
+import { editor } from "../editor";
 
 export const createSvgElement = (id: string, shape: string, attrs: any) => {
 	var svg: SVGElement = document.createElementNS(
@@ -2479,4 +2481,22 @@ export const nearVertice = (
 	}
 	if (bestDistance < range * range) return bestVertice;
 	else return null;
+};
+
+export const architect = ({
+	wallMeta: walls,
+	wallEquations,
+	setRoomPolygonData,
+	roomMeta,
+	setRoomMeta,
+}: CanvasState) => {
+	refreshWalls(walls, wallEquations);
+	walls.forEach((wall) => {
+		wall.addToScene();
+	});
+
+	const updatedPolygons = polygonize(walls);
+	setRoomPolygonData(updatedPolygons);
+	editor.roomMaker(updatedPolygons, roomMeta, setRoomMeta);
+	return true;
 };

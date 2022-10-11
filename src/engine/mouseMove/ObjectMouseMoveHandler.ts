@@ -1,51 +1,49 @@
 import { constants } from "../../../constants";
 import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
-import {
-	ObjectMetaData,
-	Point2D,
-	ViewboxData,
-	WallMetaData,
-} from "../../models";
+import { Point2D } from "../../models";
 import { Object2D } from "../../Object2D";
 import { getAngle } from "../../svgTools";
+import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveOverObject = (
 	snap: Point2D,
-	binder: any,
-	wallMeta: WallMetaData[],
-	modeOption: string,
-	viewbox: ViewboxData
+	{ binder, setBinder, wallMeta, modeOption, viewbox }: CanvasState
 ) => {
 	if (binder == null) {
+		$("#object_list").hide(200);
 		if (modeOption == "simpleStair") {
-			binder = new Object2D(
-				"free",
-				constants.OBJECT_CLASSES.STAIR,
-				"simpleStair",
-				snap,
-				0,
-				false,
-				0,
-				"normal",
-				0,
-				15,
-				viewbox
+			binder = setBinder(
+				new Object2D(
+					"free",
+					constants.OBJECT_CLASSES.STAIR,
+					"simpleStair",
+					snap,
+					0,
+					false,
+					0,
+					"normal",
+					0,
+					15,
+					viewbox
+				)
 			);
 		} else {
 			var typeObj = modeOption;
-			binder = new Object2D(
-				"free",
-				constants.OBJECT_CLASSES.ENERGY,
-				typeObj,
-				snap,
-				0,
-				false,
-				0,
-				"normal",
-				0,
-				0,
-				viewbox
+			binder = setBinder(
+				new Object2D(
+					"free",
+					constants.OBJECT_CLASSES.ENERGY,
+					typeObj,
+					snap,
+					0,
+					false,
+					0,
+					"normal",
+					0,
+					0,
+					viewbox
+				)
 			);
 		}
 		$("#boxbind").append(binder.graph);
@@ -140,5 +138,4 @@ export const handleMouseMoveOverObject = (
 			binder.update();
 		}
 	}
-	return binder;
 };

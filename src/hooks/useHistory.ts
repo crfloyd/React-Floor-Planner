@@ -17,7 +17,12 @@ export const useHistory = () => {
 	// const [historyIndex, setHistoryIndex] = useState(0);
 	let historyIndex = 0;
 
-	const save = (canvasState: CanvasState, boot = false) => {
+	const saveInternal = (
+		objectMeta: ObjectMetaData[],
+		wallMeta: WallMetaData[],
+		roomMeta: RoomMetaData[],
+		boot = false
+	) => {
 		if (boot) {
 			localStorage.removeItem("history");
 		}
@@ -28,9 +33,9 @@ export const useHistory = () => {
 		history = [
 			...history,
 			{
-				objData: canvasState.objectMeta,
-				wallData: canvasState.wallMeta,
-				roomData: canvasState.roomMeta,
+				objData: objectMeta,
+				wallData: wallMeta,
+				roomData: roomMeta,
 			},
 		];
 		try {
@@ -40,6 +45,15 @@ export const useHistory = () => {
 			console.log("Error trying to save state", error);
 		}
 		return true;
+	};
+
+	const save = (canvasState: CanvasState, boot = false) => {
+		return saveInternal(
+			canvasState.objectMeta,
+			canvasState.wallMeta,
+			canvasState.roomMeta,
+			boot
+		);
 	};
 
 	const load = (index: number, viewbox: ViewboxData) => {
@@ -84,7 +98,7 @@ export const useHistory = () => {
 			let historyTemp: HistorySnapshot[] = JSON.parse(localHistory);
 			history = historyTemp;
 			const { objects, walls, rooms } = load(historyTemp.length - 1, viewbox);
-			save(objects, walls, rooms, true);
+			saveInternal(objects, walls, rooms, true);
 			return { objects, walls, rooms };
 		}
 		if (type == "newSquare") {
@@ -220,7 +234,7 @@ export const useHistory = () => {
 			history = [hist];
 			localStorage.setItem("history", JSON.stringify(history));
 			const { objects, walls, rooms } = load(0, viewbox);
-			save(objects, walls, rooms);
+			saveInternal(objects, walls, rooms);
 			return { objects, walls, rooms };
 		}
 		if (type == "newL") {
@@ -407,7 +421,7 @@ export const useHistory = () => {
 			history = [hist];
 			localStorage.setItem("history", JSON.stringify(history));
 			const { objects, walls, rooms } = load(0, viewbox);
-			save(objects, walls, rooms);
+			saveInternal(objects, walls, rooms);
 			return { objects, walls, rooms };
 		}
 

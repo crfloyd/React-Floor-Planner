@@ -1,18 +1,14 @@
 import { constants } from "../../../constants";
-import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
 import { Point2D, ViewboxData, WallMetaData } from "../../models";
 import { Object2D } from "../../Object2D";
 import { getAngle, nearWall } from "../../svgTools";
 import { computeLimit } from "../../utils";
+import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveOpeningMode = (
-	binder: any,
-	setBinder: (b: any) => any,
 	snap: Point2D,
-	wallMeta: WallMetaData[],
-	modeOption: string,
-	viewbox: ViewboxData
+	{ binder, setBinder, wallMeta, modeOption, viewbox }: CanvasState
 ) => {
 	const wallSelect = nearWall(snap, wallMeta);
 	if (wallSelect) {
