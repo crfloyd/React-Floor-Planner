@@ -110,7 +110,6 @@ export const handleMouseUp = ({
 	if (showMeasurements) {
 		$("#boxScale").show(200);
 	}
-	console.log(mode, binder);
 	setDrag(false);
 	setCursor("default");
 	if (mode == Mode.Select) {

@@ -55,7 +55,6 @@ export const handleSelectModeClick = ({
 	setCurrentNodeWallObjects,
 	setCurrentNodeWalls,
 }: Props) => {
-	console.log("HII!!");
 	switch (binder?.type) {
 		case "segment": {
 			setMode(Mode.Bind);

@@ -187,6 +187,8 @@ const setLabelMeasure = (val: any) => {
 	return labelMeasure;
 };
 
+let shouldUpdateMouseMove = true;
+
 function App() {
 	const [cursor, setCursor] = useState("default");
 	const [showSurface, setShowSurface] = useState(true);
@@ -666,7 +668,6 @@ function App() {
 		// LAST WALL ->
 		const wall = new Wall(initCoords, wallToSplit.end, "normal", initThick);
 		wallMeta = setWallMeta([...wallMeta, wall]);
-		console.log("Split into: ", wallMeta);
 		editor.architect(
 			wallMeta,
 			setRoomPolygonData,
@@ -787,7 +788,7 @@ function App() {
 				onMouseDown={(e) =>
 					handleMouseDown({
 						event: e,
-						mode: mode.toString(),
+						mode,
 						setMode,
 						binder,
 						setBinder,
@@ -808,100 +809,64 @@ function App() {
 						setCursor,
 					})
 				}
-				onMouseUp={
-					(e) =>
-						handleMouseUp({
-							event: e,
-							action,
-							setAction,
-							binder,
-							setBinder,
-							mode: mode.toString(),
-							setMode,
-							resetMode: () => {
-								applyMode(Mode.Select);
-								return mode;
-							},
-							objectMeta,
-							setObjectMeta,
-							wallMeta,
-							setWallMeta,
-							roomMeta,
-							setRoomMeta,
-							setRoomPolygonData,
-							showMeasurements: layerSettings.showMeasurements,
-							setDrag,
-							setCursor,
-							save: () => save(objectMeta, wallMeta, roomMeta),
-							updateRoomDisplayData,
-							wallEquations,
-							setHelperLineSvgData,
-							followerData,
-							viewbox,
-							point,
-							setPoint,
-							wallDrawPoint,
-							continuousWallMode,
-							wallEndConstruc,
-							setWallEndConstruc,
-							lengthTemp,
-							setLengthTemp,
-							showObjectTools: updateObjectTools,
-							showOpeningTools,
-							showWallTools: updateWallTools,
-						})
-					// engine._MOUSEUP(
-					// 	e,
-					// 	mode.toString(),
-					// 	setMode,
-					// 	continuousWallMode,
-					// 	() => {
-					// 		applyMode(Mode.Select);
-					// 		return Mode.Select.toString();
-					// 	},
-					// 	setCursor,
-					// 	editor,
-					// 	setRoomPolygonData,
-					// 	roomMeta,
-					// 	setRoomMeta,
-					// 	wallMeta,
-					// 	setWallMeta,
-					// 	objectMeta,
-					// 	setObjectMeta,
-					// 	action,
-					// 	setAction,
-					// 	setDrag,
-					// 	binder,
-					// 	setBinder,
-					// 	viewbox,
-					// 	lineIntersectionP,
-					// 	lengthTemp,
-					// 	(val: any) => (lengthTemp = val),
-					// 	point,
-					// 	setPoint,
-					// 	x,
-					// 	y,
-					// 	wallEndConstruc,
-					// 	setWallEndConstruc,
-					// 	() => {
-					// 		save(objectMeta, wallMeta, roomMeta);
-					// 	},
-					// 	wallEquations,
-					// 	followerData,
-					// 	updateWallTools,
-					// 	updateObjectTools,
-					// 	showOpeningTools,
-					// 	updateRoomDisplayData,
-					// 	layerSettings.showMeasurements,
-					// 	setHelperLineSvgData
-					// )
+				onMouseUp={(e) =>
+					handleMouseUp({
+						event: e,
+						action,
+						setAction,
+						binder,
+						setBinder,
+						mode,
+						setMode,
+						resetMode: () => {
+							applyMode(Mode.Select);
+							return mode;
+						},
+						objectMeta,
+						setObjectMeta,
+						wallMeta,
+						setWallMeta,
+						roomMeta,
+						setRoomMeta,
+						setRoomPolygonData,
+						showMeasurements: layerSettings.showMeasurements,
+						setDrag,
+						setCursor,
+						save: () => save(objectMeta, wallMeta, roomMeta),
+						updateRoomDisplayData,
+						wallEquations,
+						setHelperLineSvgData,
+						followerData,
+						viewbox,
+						point,
+						setPoint,
+						wallDrawPoint,
+						continuousWallMode,
+						wallEndConstruc,
+						setWallEndConstruc,
+						lengthTemp,
+						setLengthTemp,
+						showObjectTools: updateObjectTools,
+						showOpeningTools,
+						showWallTools: updateWallTools,
+					})
 				}
 				onMouseMove={(e) => {
-					//throttle(function (e: React.MouseEvent) {
+					const throttleMs = 17; // ~60fps
+					if (!shouldUpdateMouseMove) {
+						console.log("Not Ready:");
+						return;
+					}
+
+					shouldUpdateMouseMove = false;
+					setTimeout(() => {
+						shouldUpdateMouseMove = true;
+					}, throttleMs);
+
 					setShowSub(false);
 					engine._MOUSEMOVE(
 						e,
-						mode.toString(),
+						mode,
 						modeOption,
 						point,
 						setPoint,
@@ -943,7 +908,6 @@ function App() {
 						setLabelMeasure,
 						setHelperLineSvgData
 					);
-					//}, 30);
 				}}
 				style={{
 					zIndex: 2,
