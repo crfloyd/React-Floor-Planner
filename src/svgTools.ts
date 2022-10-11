@@ -1386,32 +1386,6 @@ export const refreshWalls = (
 	);
 };
 
-export const objFromWall = (
-	wall: WallMetaData,
-	objectMetas: ObjectMetaData[]
-) => {
-	var objList = [];
-	for (var scan = 0; scan < objectMetas.length; scan++) {
-		var search;
-		if (objectMetas[scan].family == "inWall") {
-			var eq = createEquation(
-				wall.start.x,
-				wall.start.y,
-				wall.end.x,
-				wall.end.y
-			);
-			search = nearPointOnEquation(eq, objectMetas[scan]);
-			if (
-				search.distance < 0.01 &&
-				wall.pointInsideWall(objectMetas[scan], false)
-			) {
-				objList.push(objectMetas[scan]);
-			}
-		}
-	}
-	return objList;
-};
-
 export const setInWallMeasurementText = (
 	wall: WallMetaData,
 	objectMetas: ObjectMetaData[],
@@ -1445,9 +1419,9 @@ export const setInWallMeasurementText = (
 		});
 	};
 
-	const objWall = objFromWall(wall, objectMetas);
-	for (let ob in objWall) {
-		const objTarget = objWall[ob];
+	const objectsOnWall = wall.getObjects(objectMetas);
+	for (let ob in objectsOnWall) {
+		const objTarget = objectsOnWall[ob];
 		objTarget.up = [
 			nearPointOnEquation(wall.equations.up, objTarget.limit[0]),
 			nearPointOnEquation(wall.equations.up, objTarget.limit[1]),
@@ -2430,4 +2404,83 @@ export const polygonIntoWalls = (
 	inside.push(inside[0]);
 	outside.push(outside[0]);
 	return { inside: inside, outside: outside };
+};
+
+export const nearWall = (
+	snap: Point2D,
+	wallMeta: WallMetaData[],
+	range = Infinity
+): { x: number; y: number; distance: number; wall: WallMetaData } | null => {
+	let wallDistance = Infinity;
+	let wallSelected: {
+		x: number;
+		y: number;
+		distance: number;
+		wall: WallMetaData;
+	} | null = null;
+	let result;
+	if (wallMeta.length == 0) return null;
+	wallMeta.forEach((wall) => {
+		var eq = createEquation(wall.start.x, wall.start.y, wall.end.x, wall.end.y);
+		result = nearPointOnEquation(eq, snap);
+		if (result.distance < wallDistance && wall.pointInsideWall(result, false)) {
+			wallDistance = result.distance;
+			wallSelected = {
+				wall: wall,
+				x: result.x,
+				y: result.y,
+				distance: result.distance,
+			};
+		}
+	});
+	const vv = nearVertice(snap, wallMeta);
+	if (vv && vv.distance < wallDistance) {
+		wallDistance = vv.distance;
+		wallSelected = {
+			wall: vv.number,
+			x: vv.x,
+			y: vv.y,
+			distance: vv.distance,
+		};
+	}
+	return wallDistance <= range ? wallSelected : null;
+};
+
+export const nearVertice = (
+	snap: Point2D,
+	wallMeta: WallMetaData[],
+	range = 10000
+) => {
+	let bestDistance = Infinity;
+	let bestVertice = null;
+	for (let i = 0; i < wallMeta.length; i++) {
+		const distance1 = qSVG.gap(snap, {
+			x: wallMeta[i].start.x,
+			y: wallMeta[i].start.y,
+		});
+		const distance2 = qSVG.gap(snap, {
+			x: wallMeta[i].end.x,
+			y: wallMeta[i].end.y,
+		});
+		if (distance1 < distance2 && distance1 < bestDistance) {
+			bestDistance = distance1;
+			bestVertice = {
+				number: wallMeta[i],
+				x: wallMeta[i].start.x,
+				y: wallMeta[i].start.y,
+				distance: Math.sqrt(bestDistance),
+			};
+		}
+		if (distance2 < distance1 && distance2 < bestDistance) {
+			bestDistance = distance2;
+			bestVertice = {
+				number: wallMeta[i],
+				x: wallMeta[i].end.x,
+				y: wallMeta[i].end.y,
+				distance: Math.sqrt(bestDistance),
+			};
+		}
+	}
+	if (bestDistance < range * range) return bestVertice;
+	else return null;
 };

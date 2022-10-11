@@ -41,6 +41,21 @@ export interface RoomMetaData {
 	action: string;
 }
 
+export interface RoomDisplayData {
+	size: string;
+	roomIndex: number;
+	surface: string;
+	showSurface: boolean;
+	background: string;
+	name: string;
+	action: string;
+}
+
+export interface RoomPolygonData {
+	polygons: Polygon[];
+	vertex: WallVertex[];
+}
+
 export interface WallEquation {
 	A: number | "h" | "v";
 	B: number;
@@ -143,6 +158,8 @@ export interface ObjectMetaData {
 	up: PointDistance[];
 	down: PointDistance[];
 	params: SVGCreationData;
+
+	update: () => void;
 }
 
 export interface HistorySnapshot {

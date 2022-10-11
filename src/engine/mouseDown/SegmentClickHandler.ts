@@ -20,7 +20,6 @@ export const handleSegmentClicked = (
 		intersection: Point2D | null;
 	}
 ) => {
-	// const wall = { ...binder.wall } as WallMetaData;
 	const wall = Wall.fromWall(binder.wall);
 	binder.before = binder.wall.start;
 	wallEquations.equation2 = wall.getEquation();

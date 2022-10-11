@@ -37,6 +37,7 @@ import { Object2D } from "./src/Object2D";
 import { handleSegmentClicked } from "./src/engine/mouseDown/SegmentClickHandler";
 import { handleObjectMove } from "./src/engine/mouseMove/ObjectMoveHandler";
 import { handleNodeClicked } from "./src/engine/mouseDown/NodeClickHandler";
+import { handleSelectModeClick } from "./src/engine/mouseDown/SelectModeClickHandler";
 
 const Rcirclebinder = 8;
 
@@ -66,11 +67,9 @@ export const _MOUSEMOVE = (
 	modeOption,
 	point,
 	setPoint,
-	x,
-	setX,
-	y,
-	setY,
-	multiChecked,
+	wallDrawPoint,
+	setWallDrawPoint,
+	continuousWallMode,
 	setCursor,
 	editor,
 	rooms,
@@ -550,7 +549,7 @@ export const _MOUSEMOVE = (
 				if (wallUnderCursor.length > 1)
 					wallUnderCursor = wallUnderCursor[wallUnderCursor.length - 1];
 				if (wallUnderCursor && binder == null) {
-					var objWall = editor.objFromWall(wallUnderCursor, objectMeta);
+					var objWall = wallUnderCursor.getObjects(objectMeta);
 					if (objWall.length > 0)
 						editor.inWallRib2(wallUnderCursor, objectMeta);
 					binder = setBinder({ wall: wallUnderCursor, type: "segment" });
@@ -647,8 +646,9 @@ export const _MOUSEMOVE = (
 	// ******************************************************************************************************
 
 	if (action && (mode == Mode.Line || mode == Mode.Partition)) {
-		x = setX(snap.x);
-		y = setY(snap.y);
+		wallDrawPoint = setWallDrawPoint(snap);
+		// x = setX(snap.x);
+		// y = setY(snap.y);
 		// let x = snap.x;
 		// let y = snap.y;
 		if (!$("#line_construc").length) {
@@ -674,8 +674,8 @@ export const _MOUSEMOVE = (
 					id: "line_construc",
 					x1: point.x,
 					y1: point.y,
-					x2: x,
-					y2: y,
+					x2: wallDrawPoint.x,
+					y2: wallDrawPoint.y,
 					"stroke-width": ws,
 					"stroke-linecap": "butt",
 					"stroke-opacity": 0.7,
@@ -687,8 +687,8 @@ export const _MOUSEMOVE = (
 					id: "linetemp",
 					x1: point.x,
 					y1: point.y,
-					x2: x,
-					y2: y,
+					x2: wallDrawPoint.x,
+					y2: wallDrawPoint.y,
 					stroke: "transparent",
 					"stroke-width": 0.5,
 					"stroke-opacity": "0.9",
@@ -697,8 +697,8 @@ export const _MOUSEMOVE = (
 				// THE LINES AND BINDER ARE CREATED
 
 				$("#linetemp").attr({
-					x2: x,
-					y2: y,
+					x2: wallDrawPoint.x,
+					y2: wallDrawPoint.y,
 				});
 
 				helpConstrucEnd = createWallGuideLine(
@@ -710,8 +710,12 @@ export const _MOUSEMOVE = (
 					setHelperLineSvgData
 				);
 				if (helpConstrucEnd) {
-					x = setX(helpConstrucEnd.x);
-					y = setY(helpConstrucEnd.y);
+					// x = setX(helpConstrucEnd.x);
+					// y = setY(helpConstrucEnd.y);
+					wallDrawPoint = setWallDrawPoint({
+						x: helpConstrucEnd.x,
+						y: helpConstrucEnd.y,
+					});
 				}
 
 				wallEndConstruc = setWallEndConstruc(
@@ -719,8 +723,12 @@ export const _MOUSEMOVE = (
 				);
 				if (wallEndConstruc) {
 					// TO SNAP SEGMENT TO FINALIZE X2Y2
-					x = setX(wallEndConstruc.x);
-					y = setY(wallEndConstruc.y);
+					wallDrawPoint = setWallDrawPoint({
+						x: wallEndConstruc.x,
+						y: wallEndConstruc.y,
+					});
+					// x = setX(wallEndConstruc.x);
+					// y = setY(wallEndConstruc.y);
 					setCursor("grab");
 				} else {
 					setCursor("crosshair");
@@ -744,13 +752,14 @@ export const _MOUSEMOVE = (
 						x2: wallNode.x,
 						y2: wallNode.y,
 					});
-					x = setX(wallNode.x);
-					y = setY(wallNode.y);
+					wallDrawPoint = setWallDrawPoint({ x: wallNode.x, y: wallNode.y });
+					// x = setX(wallNode.x);
+					// y = setY(wallNode.y);
 					// x = wallNode.x;
 					// y = wallNode.y;
 					wallEndConstruc = setWallEndConstruc(true);
 					setHelperLineSvgData(null);
-					if (wallNode.bestWall == wallMeta.length - 1 && multiChecked) {
+					if (wallNode.bestWall == wallMeta.length - 1 && continuousWallMode) {
 						setCursor("validation");
 					} else {
 						setCursor("grab");
@@ -763,40 +772,60 @@ export const _MOUSEMOVE = (
 					if (wallEndConstruc === false) setCursor("crosshair");
 				}
 				// LINETEMP AND LITLLE SNAPPING FOR HELP TO CONSTRUC ANGLE 0 90 45 *****************************************
-				var fltt = angleBetweenPoints(point.x, point.y, x, y);
+				var fltt = angleBetweenPoints(
+					point.x,
+					point.y,
+					wallDrawPoint.x,
+					wallDrawPoint.y
+				);
 				var flt = Math.abs(fltt.deg);
 				var coeff = fltt.deg / flt; // -45 -> -1     45 -> 1
 				var phi = point.y - coeff * point.x;
-				var Xdiag = (y - phi) / coeff;
+				var Xdiag = (wallDrawPoint.y - phi) / coeff;
 				if (binder == null) {
 					// HELP FOR H LINE
 					var found = false;
-					if (flt < 15 && Math.abs(point.y - y) < 25) {
-						y = setY(point.y);
-						// y = point.y;
+					let x = wallDrawPoint.x;
+					let y = wallDrawPoint.y;
+					if (flt < 15 && Math.abs(point.y - wallDrawPoint.y) < 25) {
+						y = point.y;
 						found = true;
-					} // HELP FOR V LINE
-					if (flt > 75 && Math.abs(point.x - x) < 25) {
-						x = setX(point.x);
-						// x = point.x;
+					}
+					// HELP FOR V LINE
+					if (flt > 75 && Math.abs(point.x - wallDrawPoint.x) < 25) {
+						x = point.x;
 						found = true;
-					} // HELP FOR DIAG LINE
-					if (flt < 55 && flt > 35 && Math.abs(Xdiag - x) < 20) {
-						x = setX(Xdiag);
+					}
+					// HELP FOR DIAG LINE
+					if (flt < 55 && flt > 35 && Math.abs(Xdiag - wallDrawPoint.x) < 20) {
+						x = Xdiag;
 						// x = Xdiag;
 						found = true;
 					}
-					if (found) $("#line_construc").attr({ "stroke-opacity": 1 });
-					else $("#line_construc").attr({ "stroke-opacity": 0.7 });
+
+					wallDrawPoint = setWallDrawPoint({ x, y });
+					if (found) {
+						$("#line_construc").attr({ "stroke-opacity": 1 });
+					} else $("#line_construc").attr({ "stroke-opacity": 0.7 });
 				}
 				$("#line_construc").attr({
-					x2: x,
-					y2: y,
+					x2: wallDrawPoint.x,
+					y2: wallDrawPoint.y,
 				});
 
 				// SHOW WALL SIZE -------------------------------------------------------------------------
-				var startText = qSVG.middle(point.x, point.y, x, y);
-				var angleText = angleBetweenPoints(point.x, point.y, x, y);
+				var startText = qSVG.middle(
+					point.x,
+					point.y,
+					wallDrawPoint.x,
+					wallDrawPoint.y
+				);
+				var angleText = angleBetweenPoints(
+					point.x,
+					point.y,
+					wallDrawPoint.x,
+					wallDrawPoint.y
+				);
 				var valueText = (
 					qSVG.measure(
 						{
@@ -804,8 +833,8 @@ export const _MOUSEMOVE = (
 							y: point.y,
 						},
 						{
-							x: x,
-							y: y,
+							x: wallDrawPoint.x,
+							y: wallDrawPoint.y,
 						}
 					) / 60
 				).toFixed(2);
@@ -1153,7 +1182,7 @@ export const _MOUSEMOVE = (
 			}
 			// DELETING ALL OBJECT "INWALL" OVERSIZED INTO ITS EDGE (EDGE BY EDGE CONTROL)
 			for (var k in wallMeta) {
-				var objWall = editor.objFromWall(wallMeta[k], objectMeta); // LIST OBJ ON EDGE
+				var objWall = wallMeta[k].getObjects(objectMeta); // LIST OBJ ON EDGE
 				for (var ob in objWall) {
 					var objTarget = objWall[ob];
 					var eq = wallMeta[k].getEquation();
@@ -1171,7 +1200,7 @@ export const _MOUSEMOVE = (
 			}
 
 			objectEquationData = resetObjectEquationData(); // REINIT eqObj -> MAYBE ONE OR PLUS OF OBJDATA REMOVED !!!!
-			var objWall = editor.objFromWall(binder.wall, objectMeta); // LIST OBJ ON EDGE
+			var objWall = binder.wall.getObjects(objectMeta); // LIST OBJ ON EDGE
 			for (var ob = 0; ob < objWall.length; ob++) {
 				var objTarget = objWall[ob];
 				objectEquationData.push({
@@ -1285,134 +1314,6 @@ export const _MOUSEMOVE = (
 	}
 }; // END MOUSEMOVE
 
-// *****************************************************************************************************
-// *****************************************************************************************************
-// *****************************************************************************************************
-// ******************************        MOUSE DOWN            *****************************************
-// *****************************************************************************************************
-// *****************************************************************************************************
-// *****************************************************************************************************
-
-export const _MOUSEDOWN = (
-	event,
-	mode,
-	setMode,
-	setPoint,
-	editor,
-	wallMeta,
-	setWallMeta,
-	objectMeta,
-	action,
-	setAction,
-	setDrag,
-	binder,
-	setBinder,
-	setCurrentNodeWallObjects,
-	wallEquations,
-	setWallEquations,
-	setObjectEquationData,
-	followerData,
-	setCurrentNodeWalls,
-	setCursor,
-	viewbox
-) => {
-	event.preventDefault();
-	let snap;
-	// *******************************************************************
-	// **************************   DISTANCE MODE   **********************
-	// *******************************************************************
-	// if (mode == Mode.Distance) {
-	// 	if (!action) {
-	// 		action = setAction(true);
-	// 		snap = calculateSnap(event, viewbox);
-	// 		setPoint({ x: snap.x, y: snap.y });
-	// 	}
-	// }
-
-	// *******************************************************************
-	// *************************   LINE/WALL MODE   **********************
-	// *******************************************************************
-	if (mode == Mode.Line || mode == Mode.Partition) {
-		if (!action) {
-			snap = calculateSnap(event, viewbox);
-			setPoint({ x: snap.x, y: snap.y });
-			const nearWall = editor.nearWall(snap, wallMeta, 12);
-			if (nearWall) {
-				setPoint({ x: nearWall.x, y: nearWall.y });
-			}
-		}
-		action = setAction(true);
-	}
-	if (mode == Mode.EditDoor) {
-		// ACTION 1 ACTIVATE EDIT DOOR
-		action = setAction(true);
-		setCursor("pointer");
-	}
-
-	// *******************************************************************
-	// **********************   SELECT MODE + BIND   *********************
-	// room, segment, boundingBo, obj, node
-	// *******************************************************************
-	if (mode == Mode.Select) {
-		switch (binder?.type) {
-			case "segment": {
-				setMode(Mode.Bind);
-				action = setAction(true);
-				$("#boxScale").hide(100);
-				const {
-					binder: binderResult,
-					wallMeta: wallMetaResult,
-					objectEquationData: objectEquationsResult,
-					wallEquations: wallEquationsResult,
-				} = handleSegmentClicked(
-					binder,
-					wallMeta,
-					objectMeta,
-					wallEquations,
-					followerData
-				);
-				setBinder(binderResult);
-				setWallMeta(wallMetaResult);
-				setObjectEquationData(objectEquationsResult);
-				setWallEquations(wallEquationsResult);
-				break;
-			}
-			case "node": {
-				setMode(Mode.Bind);
-				setAction(true);
-				$("#boxScale").hide(100);
-				var node = binder.data;
-				setPoint({ x: node.x, y: node.y });
-				var nodeControl = { x: node.x, y: node.y };
-
-				const { nodeWalls, nodeWallObjects } = handleNodeClicked({
-					x: node.x,
-					y: node.y,
-					wallMeta,
-					objectMeta,
-				});
-				setCurrentNodeWallObjects(nodeWallObjects);
-				setCurrentNodeWalls(nodeWalls);
-				break;
-			}
-			case "obj":
-			case "boundingBox": {
-				console.log("MODE: ", binder.type);
-				mode = setMode(Mode.Bind);
-				action = setAction(true);
-				break;
-			}
-			default: {
-				action = setAction(false);
-				setDrag(true);
-				const snap = calculateSnap(event, viewbox);
-				setPoint({ x: snap.xMouse, y: snap.yMouse });
-				break;
-			}
-		}
-	}
-};
-
 //******************************************************************************************************
 //*******************  *****  ******        ************************************************************
 //*******************  *****  ******  ****  ************************************************************
@@ -1425,7 +1326,7 @@ export const _MOUSEUP = (
 	event,
 	mode,
 	setMode,
-	multiChecked,
+	continuousWallMode,
 	resetMode,
 	setCursor,
 	editor,
@@ -1457,11 +1358,7 @@ export const _MOUSEUP = (
 	showWallTools,
 	showObjectTools,
 	showOpeningTools,
-	showRoomTools,
-	cross,
-	setCross,
-	labelMeasure,
-	setLabelMeasure,
+	updateRoomDisplayData,
 	showMeasurements,
 	setHelperLineSvgData
 ) => {
@@ -1570,12 +1467,11 @@ export const _MOUSEUP = (
 		var area = binder.area / 3600;
 		binder.attr({ fill: "none", stroke: "#ddf00a", "stroke-width": 7 });
 		const room = roomMeta[binder.id];
-		showRoomTools({
+		updateRoomDisplayData({
 			size: area.toFixed(2),
 			roomIndex: binder.id,
 			surface: room.surface ?? "",
 			showSurface: room.showSurface,
-			seesArea: room.showSurface,
 			background: room.color,
 			name: room.name,
 			action: room.action,
@@ -1661,7 +1557,7 @@ export const _MOUSEUP = (
 				wallEquations
 			);
 
-			if (multiChecked && !wallEndConstruc) {
+			if (continuousWallMode && !wallEndConstruc) {
 				setCursor("validation");
 				action = setAction(true);
 			} else action = setAction(false);
@@ -1710,10 +1606,8 @@ export const _MOUSEUP = (
 				}
 
 				if (found) {
-					var objWall = editor.objFromWall(binder.wall, objectMeta);
-
 					let isSeparation = binder.wall.type == "separate";
-					showWallTools(binder.wall.thick, isSeparation);
+					showWallTools(isSeparation);
 					mode = setMode(Mode.EditWall);
 				}
 				wallEquations.equation1 = null;

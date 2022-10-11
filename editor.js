@@ -152,25 +152,6 @@ export const editor = {
 	},
 
 	// Returns the objects on a wall
-	objFromWall: function (wall, objectMeta) {
-		var objList = [];
-		for (var scan = 0; scan < objectMeta.length; scan++) {
-			var search;
-			if (objectMeta[scan].family == "inWall") {
-				var eq = createEquation(
-					wall.start.x,
-					wall.start.y,
-					wall.end.x,
-					wall.end.y
-				);
-				search = nearPointOnEquation(eq, objectMeta[scan]);
-				if (search.distance < 0.01 && wall.pointInsideWall(objectMeta[scan])) {
-					objList.push(objectMeta[scan]);
-				}
-			}
-		}
-		return objList;
-	},
 
 	rayCastingWall: function (snap, wallMeta) {
 		var wallList = [];
@@ -199,7 +180,7 @@ export const editor = {
 		ribMaster.push(emptyArray);
 		var distance;
 		var angleTextValue = wall.angle * (180 / Math.PI);
-		var objWall = editor.objFromWall(wall, objectMeta); // LIST OBJ ON EDGE
+		var objWall = wall.getObjects(objectMeta); // LIST OBJ ON EDGE
 		ribMaster[0].push({
 			wall: wall,
 			crossObj: false,
