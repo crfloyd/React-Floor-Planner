@@ -20,7 +20,6 @@ export const handleSegmentClicked = (
 		intersection: Point2D | null;
 	}
 ) => {
-	// const wall = { ...binder.wall } as WallMetaData;
 	const wall = Wall.fromWall(binder.wall);
 	binder.before = binder.wall.start;
 	wallEquations.equation2 = wall.getEquation();
@@ -32,39 +31,36 @@ export const handleSegmentClicked = (
 			wallEquations.equation2?.A
 		);
 		if (angle12 < 20 || angle12 > 160) {
-			var found = true;
-			for (var k in wallMeta) {
+			let found = false;
+			wallMeta.forEach((comparisonWall) => {
+				console.log("bruh");
 				if (
-					pointInPolygon(wall.start, wallMeta[k].coords) &&
-					wallMeta[k].id !== parent?.id &&
-					// !isObjectsEquals(wallMeta[k], wall.parent) &&
-					!isObjectsEquals(wallMeta[k], wall)
+					comparisonWall.id !== parent?.id &&
+					pointInPolygon(wall.start, comparisonWall.coords) &&
+					// !isObjectsEquals(comparisonWall, wall.parent) &&
+					!isObjectsEquals(comparisonWall, wall)
 				) {
 					const parentOfParent = findById(parent?.parent ?? "", wallMeta);
-					if (
-						parent &&
-						parentOfParent != null &&
-						parentOfParent.id === wall.id
-					) {
+					if (parent && parentOfParent && parentOfParent.id === wall.id) {
 						parent.parent = null;
 					}
 
 					const childOfParent = findById(parent?.child ?? "", wallMeta);
 					if (
 						parent &&
-						childOfParent != null &&
+						childOfParent &&
 						childOfParent.id === wall.id
 						// isObjectsEquals(wall, wall.parent.child)
 					) {
 						parent.child = null;
 					}
 					wall.parent = null;
-					found = false;
+					found = true;
 					binder = { ...binder, wall: wall };
-					break;
+					return;
 				}
-			}
-			if (found) {
+			});
+			if (!found) {
 				const parent = findById(wall.parent ?? "", wallMeta);
 				if (parent && parent.end === wall.start) {
 					// if (isObjectsEquals(wall.parent.end, wall.start, "1")) {
@@ -158,13 +154,8 @@ export const handleSegmentClicked = (
 					// !isObjectsEquals(wallMeta[k], wall.child) &&
 					!isObjectsEquals(wallMeta[k], wall)
 				) {
-					if (
-						child?.parent != null &&
-						wall.id === child.parent
-						// isObjectsEquals(wall, wall.child.parent)
-					) {
+					if (child?.parent != null && wall.id === child.parent) {
 						child.parent = null;
-						// wall.child.parent = null;
 					}
 
 					const childOfChild = findById(child?.child ?? "", wallMeta);

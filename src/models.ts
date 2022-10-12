@@ -18,7 +18,7 @@ export const Mode = {
 	Distance: "distance_mode",
 	Room: "room_mode",
 	Node: "node_mode",
-	Door: "door_mode",
+	Opening: "door_mode",
 	Line: "line_mode",
 	Partition: "partition_mode",
 	EditWall: "edit_wall_mode",
@@ -39,6 +39,21 @@ export interface RoomMetaData {
 	color: string;
 	showSurface: boolean;
 	action: string;
+}
+
+export interface RoomDisplayData {
+	size: string;
+	roomIndex: number;
+	surface: string;
+	showSurface: boolean;
+	background: string;
+	name: string;
+	action: string;
+}
+
+export interface RoomPolygonData {
+	polygons: Polygon[];
+	vertex: WallVertex[];
 }
 
 export interface WallEquation {
@@ -99,6 +114,7 @@ export interface WallMetaData {
 	) => boolean;
 	getJunctions(allWalls: WallMetaData[]): WallJunction[];
 	getObjects(objectMeta: ObjectMetaData[]): ObjectMetaData[];
+	addToScene(): void;
 }
 
 export interface NodeWallObjectData {
@@ -119,6 +135,7 @@ export interface BoundingBox {
 	right: number;
 	bottom: number;
 	left: number;
+	origin: Point2D;
 }
 
 export interface ObjectMetaData {
@@ -143,6 +160,8 @@ export interface ObjectMetaData {
 	up: PointDistance[];
 	down: PointDistance[];
 	params: SVGCreationData;
+
+	update: () => void;
 }
 
 export interface HistorySnapshot {

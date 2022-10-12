@@ -1,4 +1,3 @@
-import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
 import { NodeWallObjectData, ObjectMetaData, WallMetaData } from "../../models";
 import { findById, isObjectsEquals } from "../../utils";
@@ -14,7 +13,7 @@ export const handleNodeClicked = ({ x, y, wallMeta, objectMeta }: Props) => {
 	const nodeControl = { x, y };
 	const nodeWallsMeta: WallMetaData[] = [];
 
-	// DETERMINATE DISTANCE OF OPPOSED NODE ON EDGE(s) PARENT(s) OF THIS NODE
+	// Determine distance of opposed node on edge(s) and parent of this node
 	for (var ee = wallMeta.length - 1; ee > -1; ee--) {
 		// Search for youngest wall coords in node
 		if (
@@ -54,7 +53,7 @@ export const handleNodeClicked = ({ x, y, wallMeta, objectMeta }: Props) => {
 			if (isObjectsEquals(nodeWallsMeta[k].start, nodeControl)) {
 				nodeTarget = nodeWallsMeta[k].end;
 			}
-			const objWall = editor.objFromWall(nodeWallsMeta[k], objectMeta);
+			const objWall = nodeWallsMeta[k].getObjects(objectMeta);
 			const wall = nodeWallsMeta[k];
 			for (var i = 0; i < objWall.length; i++) {
 				var objTarget = objWall[i];

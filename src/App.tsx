@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import {
 	onWindowLoad,
@@ -10,33 +10,36 @@ import {
 	setViewboxContent,
 	appendObjects,
 } from "../func";
-import * as engine from "../engine";
 import { qSVG } from "../qSVG";
 import { editor } from "../editor";
 import { computeLimit, intersectionOfEquations } from "./utils";
 
 import "./App.css";
 import {
-	HistorySnapshot,
 	Mode,
 	ObjectEquationData,
 	ObjectMetaData,
 	Point2D,
 	RoomMetaData,
-	WallEquation,
-	WallEquationGroup,
 	WallMetaData,
-	ViewboxData,
 	SvgPathMetaData,
-	NodeWallObjectData,
+	RoomDisplayData,
 } from "./models";
 import { constants } from "../constants";
-import { setInWallMeasurementText, updateMeasurementText } from "./svgTools";
+import {
+	architect,
+	setInWallMeasurementText,
+	updateMeasurementText,
+} from "./svgTools";
 import { Wall } from "./wall";
 import { useHistory } from "./hooks/useHistory";
 import WallTools from "./components/WallTools";
 import ObjectTools from "./components/ObjectTools";
 import DoorWindowTools from "./components/DoorWindowTools";
+import { handleMouseDown } from "./engine/mouseDown/MouseDownHandler";
+import { handleMouseUp } from "./engine/mouseUp/MouseUpHandler";
+import { CanvasState } from "./engine/CanvasState";
+import { handleMouseMove } from "./engine/mouseMove/MouseMoveHandler";
 
 interface LayerSettings {
 	showSurfaces: boolean;
@@ -45,134 +48,9 @@ interface LayerSettings {
 	showEnergy: boolean;
 }
 
-let mode = Mode.Select;
-const setMode = (m: string) => {
-	mode = m;
-	return mode;
-};
-let modeOption = "";
-let wallMeta: WallMetaData[] = [];
+let shouldUpdateMouseMove = true;
 
-const setWallMeta = (w: WallMetaData[]) => {
-	// console.trace("setting wallMeta: ", w);
-	wallMeta = w;
-	return wallMeta;
-};
-
-let rooms: any = {};
-const setRooms = (val: any) => {
-	// console.log("Rooms set to: ", val);
-	rooms = val;
-	return rooms;
-};
-
-let roomMeta: RoomMetaData[] = [];
-const setRoomMeta = (r: RoomMetaData[]) => {
-	// console.log("setting roomMeta: ", r);
-	roomMeta = r;
-	return roomMeta;
-};
-let objectMeta: ObjectMetaData[] = [];
-const setObjectMeta = (o: ObjectMetaData[]) => {
-	objectMeta = o;
-	return objectMeta;
-};
-
-let point: Point2D = { x: 0, y: 0 };
-const setPoint = (p: Point2D) => {
-	point = p;
-	return point;
-};
-let x = 0;
-const setX = (val: number) => {
-	x = val;
-	return x;
-};
-let y = 0;
-const setY = (val: number) => {
-	y = val;
-	return y;
-};
-let action = false;
-const setAction = (a: boolean) => {
-	action = a;
-	return action;
-};
-
-let wallStartConstruc = false;
-const setWallStartConstruc = (val: boolean) => {
-	wallStartConstruc = val;
-	return wallStartConstruc;
-};
-let wallEndConstruc = false;
-const setWallEndConstruc = (val: boolean) => {
-	wallEndConstruc = val;
-	return wallEndConstruc;
-};
-
-let currentNodeWallObjectData: NodeWallObjectData[] = [];
-const setCurrentNodeWallObjectData = (newData: NodeWallObjectData[]) => {
-	currentNodeWallObjectData = newData;
-};
-
-let currentNodeWalls: WallMetaData[] = [];
-const setCurrentNodeWalls = (newWalls: WallMetaData[]) => {
-	currentNodeWalls = newWalls;
-};
-
-let binder: any;
-const setBinder = (val: any) => {
-	// if (val == null) {
-	// 	console.trace("binder set to null");
-	// }
-	binder = val;
-	return binder;
-};
-let lineIntersectionP: any = null;
-const setLineIntersectionP = (val: any) => {
-	lineIntersectionP = val;
-	return lineIntersectionP;
-};
-let lengthTemp: any = null;
-let wallEquations: WallEquationGroup = {
-	equation1: null,
-	equation2: null,
-	equation3: null,
-};
-const setWallEquations = (newEquations: WallEquationGroup) => {
-	wallEquations = newEquations;
-};
-let objectEquationData: ObjectEquationData[] = [];
-const setObjectEquationData = (newData: ObjectEquationData[]) => {
-	objectEquationData = newData;
-	return objectEquationData;
-};
-
-const followerData: {
-	equations: { wall: WallMetaData; eq: WallEquation; type: string }[];
-	intersection: Point2D | null;
-} = { equations: [], intersection: null };
-
-let viewbox: ViewboxData = {
-	width: 0,
-	height: 0,
-	originX: 0,
-	originY: 0,
-	zoomFactor: 1,
-	zoomLevel: 1,
-};
-
-let cross: any = null;
-const setCross = (val: any) => {
-	cross = val;
-	return cross;
-};
-
-let labelMeasure: any = null;
-const setLabelMeasure = (val: any) => {
-	labelMeasure = val;
-	return labelMeasure;
-};
+const canvasState = new CanvasState();
 
 function App() {
 	const [cursor, setCursor] = useState("default");
@@ -221,14 +99,12 @@ function App() {
 	const [showConfigureDoorWindowPanel, setShowConfigureDoorWindowPanel] =
 		useState(false);
 	const [showObjectTools, setShowConfigureObjectPanel] = useState(false);
-	const [showReportTools, setShowReportTools] = useState(false);
 	const [showRoomTools, setShowRoomTools] = useState(false);
-	const [selectedRoomData, setSelectedRoomData] = useState({
+	const [selectedRoomData, setSelectedRoomData] = useState<RoomDisplayData>({
 		size: "",
 		roomIndex: 0,
 		surface: "",
 		showSurface: true,
-		seesArea: "",
 		background: "",
 		name: "",
 		action: "",
@@ -236,7 +112,7 @@ function App() {
 	const [scaleValue, setScaleValue] = useState(1);
 	const [showSub, setShowSub] = useState(false);
 	const [showMyModal, setShowMyModal] = useState(true);
-	const [multiChecked, setMultiChecked] = useState(true);
+	const [continuousWallMode, setContinuousWallMode] = useState(true);
 	const [roomColor, setRoomColor] = useState("gradientNeutral");
 	const [roomType, setRoomType] = useState("None");
 	const [boxInfoText, setBoxInfoText] = useState("");
@@ -251,8 +127,8 @@ function App() {
 
 	const resetViewbox = () => {
 		const { w, h } = getCanvasDimensions();
-		viewbox.width = w || 0;
-		viewbox.height = h || 0;
+		canvasState.viewbox.width = w || 0;
+		canvasState.viewbox.height = h || 0;
 	};
 
 	const onKeyPress = (e: KeyboardEvent) => {
@@ -274,12 +150,12 @@ function App() {
 
 	useEffect(() => {
 		resetViewbox();
-		onWindowLoad(viewbox);
+		onWindowLoad(canvasState.viewbox);
 		setShowMyModal(true);
 		const onResize = () => {
 			console.log("Window resize deteced. Resetting view box");
 			resetViewbox();
-			engine.onWindowResize(viewbox);
+			editor.onWindowResize(canvasState.viewbox);
 		};
 		document.addEventListener("keydown", onKeyPress);
 		window.addEventListener("resize", onResize);
@@ -291,7 +167,7 @@ function App() {
 
 	const onUndoClicked = () => {
 		if (historyIndex - 1 > 0) {
-			const { objects, walls, rooms } = undo(viewbox);
+			const { objects, walls, rooms } = undo(canvasState.viewbox);
 			apply(objects, walls, rooms);
 			setEnableRedo(true);
 		}
@@ -302,7 +178,7 @@ function App() {
 
 	const onRedoClicked = () => {
 		if (historyIndex < history.length) {
-			const { objects, walls, rooms } = redo(viewbox);
+			const { objects, walls, rooms } = redo(canvasState.viewbox);
 			apply(objects, walls, rooms);
 			setEnableUndo(true);
 			if (historyIndex == history.length) {
@@ -314,7 +190,7 @@ function App() {
 	const onDoorTypeClicked = (type: string) => {
 		setCursor("crosshair");
 		setBoxInfoText("Add a door");
-		applyMode(Mode.Door, type);
+		applyMode(Mode.Opening, type);
 	};
 
 	const onWindowTypeClicked = (type: string) => {
@@ -322,7 +198,7 @@ function App() {
 		setBoxInfoText("Add a window");
 		setShowDoorList(false);
 		setShowWindowList(false);
-		applyMode(Mode.Door, type);
+		applyMode(Mode.Opening, type);
 	};
 
 	const onObjectTypeClicked = (type: string) => {
@@ -334,34 +210,35 @@ function App() {
 	};
 
 	const applyMode = (mode: string, option = "") => {
-		save(objectMeta, wallMeta, roomMeta);
+		save(canvasState);
 		setShowSub(false);
 		flush_button();
-		setMode(mode);
-		modeOption = option;
+		canvasState.setMode(mode);
+		canvasState.setModeOption(option);
 
 		setHelperLineSvgData(null);
 	};
 
-	const createInvisibleWall = (wall: any) => {
-		var objWall = editor.objFromWall(binder.wall, objectMeta);
-		if (objWall.length != 0) return false;
+	const createInvisibleWall = (wall: Wall) => {
+		var wallObjects = wall.getObjects(canvasState.objectMeta);
+		if (wallObjects.length != 0) return false;
 		wall.type = "separate";
 		wall.backUp = wall.thick;
 		wall.thick = 0.07;
-		editor.architect(wallMeta, setRooms, roomMeta, setRoomMeta, wallEquations);
-		save(objectMeta, wallMeta, roomMeta);
+		architect(canvasState);
+		save(canvasState);
 		return true;
 	};
 
 	const makeWallVisible = (wall: Wall) => {
 		wall.makeVisible();
-		editor.architect(wallMeta, setRooms, roomMeta, setRoomMeta, wallEquations);
-		save(objectMeta, wallMeta, roomMeta);
+		save(canvasState);
 	};
 
 	const handleCameraChange = (lens: string, xmove: number, xview = 0) => {
 		const { w: canvasWidth, h: canvasHeight } = getCanvasDimensions();
+		const viewbox = canvasState.viewbox;
+
 		if (lens == "zoomout" && viewbox.zoomLevel > 1 && viewbox.zoomLevel < 17) {
 			viewbox.zoomLevel--;
 			viewbox.width += xmove;
@@ -410,7 +287,7 @@ function App() {
 	};
 
 	const initHistory = (type: string) => {
-		const { objects, walls, rooms } = init(type, viewbox);
+		const { objects, walls, rooms } = init(type, canvasState.viewbox);
 		apply(objects, walls, rooms);
 	};
 
@@ -419,41 +296,41 @@ function App() {
 		wallData: WallMetaData[],
 		roomData: RoomMetaData[]
 	) => {
-		setObjectMeta(objectData);
+		canvasState.setObjectMeta(objectData);
 		if (objectData.length > 0) {
 			appendObjects(objectData);
 		}
 
-		setWallMeta(wallData);
-		setRoomMeta(roomData);
-		editor.architect(wallData, setRooms, roomData, setRoomMeta, wallEquations);
-
+		canvasState.setWallMeta(wallData);
+		canvasState.setRoomMeta(roomData);
+		architect(canvasState);
 		editor.showScaleBox(roomData, wallData);
-		updateMeasurementText(wallMeta);
+		updateMeasurementText(canvasState.wallMeta);
 	};
 
 	// Wall Tools
 	const onWallWidthChanged = (value: number) => {
-		binder.wall.thick = value;
-		binder.wall.type = "normal";
-		editor.architect(wallMeta, setRooms, roomMeta, setRoomMeta, wallEquations);
-		var objWall = editor.objFromWall(binder.wall, objectMeta);
+		const wall = canvasState.binder.wall as Wall;
+		wall.thick = value;
+		wall.type = "normal";
+		architect(canvasState);
+		var objWall = wall.getObjects(canvasState.objectMeta);
 		for (var w = 0; w < objWall.length; w++) {
 			objWall[w].thick = value;
 			objWall[w].update();
 		}
-		updateMeasurementText(wallMeta);
+		updateMeasurementText(canvasState.wallMeta);
 	};
 
 	const onWallSplitClicked = () => {
-		splitWall(binder.wall);
-		setMode(Mode.Select);
+		splitWall(canvasState.binder.wall);
+		canvasState.setMode(Mode.Select);
 		setShowMainPanel(true);
 	};
 
 	const onWallSeparationClicked = () => {
-		if (createInvisibleWall(binder.wall)) {
-			setMode(Mode.Select);
+		if (createInvisibleWall(canvasState.binder.wall)) {
+			canvasState.setMode(Mode.Select);
 			setShowMainPanel(true);
 		} else {
 			setBoxInfoText("Walls containing doors or windows cannot be separated!");
@@ -461,36 +338,37 @@ function App() {
 	};
 
 	const onTransformToWallClicked = () => {
-		makeWallVisible(binder.wall);
-		setMode(Mode.Select);
+		makeWallVisible(canvasState.binder.wall);
+		canvasState.setMode(Mode.Select);
 		setShowMainPanel(true);
 	};
 
 	const onWallTrashClicked = () => {
-		const wall = binder.wall;
-		for (var k in wallMeta) {
-			if (wallMeta[k].child === wall.id) wallMeta[k].child = null;
-			if (wallMeta[k].parent === wall.id) {
-				wallMeta[k].parent = null;
+		const wall = canvasState.binder.wall;
+		for (var k in canvasState.wallMeta) {
+			if (canvasState.wallMeta[k].child === wall.id)
+				canvasState.wallMeta[k].child = null;
+			if (canvasState.wallMeta[k].parent === wall.id) {
+				canvasState.wallMeta[k].parent = null;
 			}
 		}
-		wallMeta.splice(wallMeta.indexOf(wall), 1);
+		canvasState.wallMeta.splice(canvasState.wallMeta.indexOf(wall), 1);
 		setShowWallTools(false);
 		wall.graph.remove();
-		binder.graph.remove();
-		editor.architect(wallMeta, setRooms, roomMeta, setRoomMeta, wallEquations);
-		updateMeasurementText(wallMeta);
-		setMode(Mode.Select);
+		canvasState.binder.graph.remove();
+		architect(canvasState);
+		updateMeasurementText(canvasState.wallMeta);
+		canvasState.setMode(Mode.Select);
 		setShowMainPanel(true);
 	};
 
 	// Object Tools
 	const onObjectWidthChanged = (val: number) => {
-		var objTarget = binder.obj;
+		var objTarget = canvasState.binder.obj;
 		objTarget.size = (val / 100) * constants.METER_SIZE;
 		objTarget.update();
-		binder.size = (val / 100) * constants.METER_SIZE;
-		binder.update();
+		canvasState.binder.size = (val / 100) * constants.METER_SIZE;
+		canvasState.binder.update();
 	};
 
 	const onConfigureObjectBackClicked = () => {
@@ -498,29 +376,29 @@ function App() {
 		setBoxInfoText("Mode selection");
 		setShowConfigureObjectPanel(false);
 		setShowMainPanel(true);
-		binder.graph.remove();
-		binder = null;
+		canvasState.binder.graph.remove();
+		canvasState.setBinder(null);
 	};
 
 	const onObjectHeightChanged = (val: number) => {
-		var objTarget = binder.obj;
+		var objTarget = canvasState.binder.obj;
 		objTarget.thick = (val / 100) * constants.METER_SIZE;
 		objTarget.update();
-		binder.thick = (val / 100) * constants.METER_SIZE;
-		binder.update();
+		canvasState.binder.thick = (val / 100) * constants.METER_SIZE;
+		canvasState.binder.update();
 	};
 
 	const onObjectNumStepsChanged = (val: number) => {
-		binder.obj.value = val;
-		binder.obj.update();
+		canvasState.binder.obj.value = val;
+		canvasState.binder.obj.update();
 	};
 
 	const onObjectRotationChanged = (val: number) => {
-		var objTarget = binder.obj;
+		var objTarget = canvasState.binder.obj;
 		objTarget.angle = val;
 		objTarget.update();
-		binder.angle = val;
-		binder.update();
+		canvasState.binder.angle = val;
+		canvasState.binder.update();
 	};
 
 	const onObjectTrashClicked = () => {
@@ -529,26 +407,28 @@ function App() {
 		setShowMainPanel(true);
 		applyMode(Mode.Select);
 
-		var obj = binder.obj;
+		var obj = canvasState.binder.obj;
 		obj.graph.remove();
-		setObjectMeta([...objectMeta.filter((o) => o != obj)]);
-		binder.graph.remove();
-		setBinder(null);
-		updateMeasurementText(wallMeta);
+		canvasState.setObjectMeta([
+			...canvasState.objectMeta.filter((o) => o != obj),
+		]);
+		canvasState.binder.graph.remove();
+		canvasState.setBinder(null);
+		updateMeasurementText(canvasState.wallMeta);
 	};
 
 	// Door/Window Tools
 	const onFlipOpeningClicked = () => {
 		console.log("on flip clicked");
-		var target = binder.obj;
+		var target = canvasState.binder.obj;
 		var hingeStatus = target.hinge; // normal - reverse
 		target.hinge = hingeStatus == "normal" ? "reverse" : "normal";
 		target.update();
 	};
 
 	const onOpeningWidthChanged = (val: number) => {
-		var objTarget = binder.obj;
-		let wallBind = editor.rayCastingWall(objTarget, wallMeta);
+		var objTarget = canvasState.binder.obj;
+		let wallBind = editor.rayCastingWall(objTarget, canvasState.wallMeta);
 		if (wallBind.length > 1) {
 			wallBind = wallBind[wallBind.length - 1];
 		}
@@ -560,18 +440,18 @@ function App() {
 			objTarget.size = val;
 			objTarget.limit = limits;
 			objTarget.update();
-			binder.size = val;
-			binder.limit = limits;
-			binder.update();
+			canvasState.binder.size = val;
+			canvasState.binder.limit = limits;
+			canvasState.binder.update();
 		}
 		// wallBind.inWallRib(objectMeta);
-		setInWallMeasurementText(wallBind, objectMeta);
+		setInWallMeasurementText(wallBind, canvasState.objectMeta);
 	};
 
 	const onWallModeClicked = () => {
 		setCursor("crosshair");
 		setBoxInfoText("Wall creation");
-		setAction(false);
+		canvasState.setAction(false);
 		applyMode(Mode.Line);
 	};
 
@@ -580,12 +460,12 @@ function App() {
 		var wallToSplitLength = qSVG.gap(wallToSplit.start, wallToSplit.end);
 		var newWalls: { distance: number; coords: Point2D }[] = [];
 
-		wallMeta.forEach((wall) => {
+		canvasState.wallMeta.forEach((wall) => {
 			var eq = wall.getEquation();
 			var inter = intersectionOfEquations(eqWall, eq);
 			if (
 				inter &&
-				binder.wall.pointInsideWall(inter, true) &&
+				canvasState.binder.wall.pointInsideWall(inter, true) &&
 				wall.pointInsideWall(inter, true)
 			) {
 				var distance = qSVG.gap(wallToSplit.start, inter);
@@ -603,7 +483,7 @@ function App() {
 		var initThick = wallToSplit.thick;
 
 		// Clear the wall to split from its parents and children
-		wallMeta.forEach((wall) => {
+		canvasState.wallMeta.forEach((wall) => {
 			if (wall.child === wallToSplit.id) {
 				wall.child = null;
 			} else if (wall.parent === wallToSplit.id) {
@@ -612,27 +492,28 @@ function App() {
 		});
 
 		// Remove the wall to split from the list of walls
-		wallMeta = setWallMeta([...wallMeta.filter((w) => w.id != wallToSplit.id)]);
+		let newWallMeta = canvasState.setWallMeta([
+			...canvasState.wallMeta.filter((w) => w.id != wallToSplit.id),
+		]);
 
 		newWalls.forEach((newWall) => {
 			const wall = new Wall(initCoords, newWall.coords, "normal", initThick);
-			wall.child = wallMeta[wallMeta.length - 1].id;
+			wall.child = newWallMeta[newWallMeta.length - 1].id;
 			initCoords = newWall.coords;
-			wallMeta = setWallMeta([...wallMeta, wall]);
+			newWallMeta = canvasState.setWallMeta([...newWallMeta, wall]);
 		});
 
 		// LAST WALL ->
 		const wall = new Wall(initCoords, wallToSplit.end, "normal", initThick);
-		wallMeta = setWallMeta([...wallMeta, wall]);
-		console.log("Split into: ", wallMeta);
-		editor.architect(wallMeta, setRooms, roomMeta, setRoomMeta, wallEquations);
-		save(objectMeta, wallMeta, roomMeta);
+		newWallMeta = canvasState.setWallMeta([...newWallMeta, wall]);
+		architect(canvasState);
+		save(canvasState);
 		return true;
 	};
 
 	const enterSelectMode = () => {
 		setBoxInfoText("Selection mode");
-		binder = null;
+		canvasState.setBinder(null);
 		setCursor("default");
 		applyMode(Mode.Select);
 	};
@@ -647,11 +528,14 @@ function App() {
 	};
 
 	const cancelWallCreation = () => {
-		if ((mode == Mode.Line || mode == Mode.Partition) && action) {
-			setAction(false);
-			engine.resetWallCreation(binder, lengthTemp);
-			binder = null;
-			lengthTemp = null;
+		if (
+			(canvasState.mode == Mode.Line || canvasState.mode == Mode.Partition) &&
+			canvasState.action
+		) {
+			canvasState.setAction(false);
+			editor.resetWallCreation(canvasState.binder, canvasState.lengthTemp);
+			canvasState.setBinder(null);
+			canvasState.setLengthTemp(null);
 		}
 	};
 
@@ -668,6 +552,56 @@ function App() {
 			default:
 				return str;
 		}
+	};
+
+	const updateRoomDisplayData = (roomData: RoomDisplayData) => {
+		setSelectedRoomData(roomData);
+		if (roomData.background) {
+			setRoomColor(roomData.background);
+		}
+		setShowMainPanel(false);
+		setShowRoomTools(true);
+		setCursor("default");
+		setBoxInfoText("Configure the room");
+	};
+
+	const showOpeningTools = (min: number, max: number, value: number) => {
+		setSelectedOpening({
+			minWidth: min,
+			maxWidth: max,
+			width: value,
+		});
+		setCursor("default");
+		setBoxInfoText("Configure the door/window");
+		setShowMainPanel(false);
+		setShowConfigureDoorWindowPanel(true);
+	};
+
+	const updateObjectTools = () => {
+		setShowMainPanel(false);
+		setShowConfigureObjectPanel(true);
+		const objTarget = canvasState.binder.obj;
+		const limit = objTarget.params.resizeLimit;
+		console.log(objTarget.class);
+		setSelectedObject({
+			minWidth: +limit.width.min,
+			maxWidth: +limit.width.max,
+			width: +objTarget.width * 100,
+			minHeight: +limit.height.min,
+			maxHeight: +limit.height.max,
+			height: +objTarget.height * 100,
+			rotation: +objTarget.angle,
+			showStepCounter: objTarget.class === "stair",
+			stepCount: +objTarget.value,
+		});
+		setBoxInfoText("Modify the object");
+	};
+
+	const updateWallTools = (separation: boolean) => {
+		setWallToolsSeparation(separation);
+		setBoxInfoText(`Modify the ${wallToolsSeparation ? "separation" : "wall"}`);
+		setShowMainPanel(false);
+		setShowWallTools(true);
 	};
 
 	const addSvgPath = (data: SvgPathMetaData) => {};
@@ -687,186 +621,51 @@ function App() {
 				}}
 				onClick={(e) => e.preventDefault()}
 				onMouseDown={(e) =>
-					engine._MOUSEDOWN(
-						e,
-						mode.toString(),
-						setMode,
-						setPoint,
-						editor,
-						wallMeta,
-						setWallMeta,
-						objectMeta,
-						action,
-						setAction,
-						setDrag,
-						binder,
-						setBinder,
-						setCurrentNodeWallObjectData,
-						wallEquations,
-						setWallEquations,
-						setObjectEquationData,
-						followerData,
-						setCurrentNodeWalls,
-						setCursor,
-						viewbox
-					)
+					handleMouseDown({
+						event: e,
+						canvasState,
+					})
 				}
-				onMouseUp={(e) =>
-					engine._MOUSEUP(
-						e,
-						mode.toString(),
-						setMode,
-						multiChecked,
-						() => {
+				onMouseUp={(e) => {
+					handleMouseUp({
+						event: e,
+						canvasState,
+						resetMode: () => {
 							applyMode(Mode.Select);
-							return Mode.Select.toString();
+							return canvasState.mode;
 						},
-						setCursor,
-						editor,
-						setRooms,
-						roomMeta,
-						setRoomMeta,
-						wallMeta,
-						setWallMeta,
-						objectMeta,
-						setObjectMeta,
-						action,
-						setAction,
-						setDrag,
-						binder,
-						setBinder,
-						viewbox,
-						lineIntersectionP,
-						lengthTemp,
-						(val: any) => (lengthTemp = val),
-						point,
-						setPoint,
-						x,
-						y,
-						wallEndConstruc,
-						setWallEndConstruc,
-						() => {
-							save(objectMeta, wallMeta, roomMeta);
-						},
-						wallEquations,
-						followerData,
-						(value: number, separation: boolean) => {
-							// setWallWidth(value);
-							setWallToolsSeparation(separation);
-							// setShowWallToolsSeparateSlider(wallLength > 0 && !separation);
-							setBoxInfoText(
-								`Modify the ${wallToolsSeparation ? "separation" : "wall"}`
-							);
-							setShowMainPanel(false);
-							setShowWallTools(true);
-						},
-						() => {
-							setShowMainPanel(false);
-							setShowConfigureObjectPanel(true);
-							const objTarget = binder.obj;
-							const limit = objTarget.params.resizeLimit;
-							console.log(objTarget.class);
-							setSelectedObject({
-								minWidth: +limit.width.min,
-								maxWidth: +limit.width.max,
-								width: +objTarget.width * 100,
-								minHeight: +limit.height.min,
-								maxHeight: +limit.height.max,
-								height: +objTarget.height * 100,
-								rotation: +objTarget.angle,
-								showStepCounter: objTarget.class === "stair",
-								stepCount: +objTarget.value,
-							});
-							setBoxInfoText("Modify the object");
-						},
-						(min: number, max: number, value: number) => {
-							setSelectedOpening({
-								minWidth: min,
-								maxWidth: max,
-								width: value,
-							});
-							setCursor("default");
-							setBoxInfoText("Configure the door/window");
-							setShowMainPanel(false);
-							setShowConfigureDoorWindowPanel(true);
-						},
-						(roomData: {
-							size: string;
-							roomIndex: number;
-							surface: string;
-							showSurface: boolean;
-							seesArea: string;
-							background: string;
-							name: string;
-							action: string;
-						}) => {
-							setSelectedRoomData(roomData);
-							if (roomData.background) {
-								setRoomColor(roomData.background);
-							}
-							setShowMainPanel(false);
-							setShowRoomTools(true);
-							setCursor("default");
-							setBoxInfoText("Configure the room");
-						},
-						cross,
-						setCross,
-						labelMeasure,
-						setLabelMeasure,
-						layerSettings.showMeasurements,
-						setHelperLineSvgData
-					)
-				}
+						showMeasurements: layerSettings.showMeasurements,
+						save: () => save(canvasState),
+						updateRoomDisplayData,
+						setHelperLineSvgData,
+						continuousWallMode,
+						showObjectTools: updateObjectTools,
+						showOpeningTools,
+						showWallTools: updateWallTools,
+					});
+				}}
 				onMouseMove={(e) => {
-					//throttle(function (e: React.MouseEvent) {
+					const throttleMs = 17; // ~60fps
+					if (!shouldUpdateMouseMove) {
+						// console.log("Not Ready:");
+						return;
+					}
+
+					shouldUpdateMouseMove = false;
+					setTimeout(() => {
+						shouldUpdateMouseMove = true;
+					}, throttleMs);
+
 					setShowSub(false);
-					engine._MOUSEMOVE(
+
+					handleMouseMove(
 						e,
-						mode.toString(),
-						modeOption,
-						point,
-						setPoint,
-						x,
-						setX,
-						y,
-						setY,
-						multiChecked,
-						setCursor,
-						editor,
-						rooms,
-						setRooms,
-						roomMeta,
-						setRoomMeta,
-						wallMeta,
-						setWallMeta,
-						objectMeta,
-						setObjectMeta,
-						action,
-						drag,
-						binder,
-						setBinder,
-						viewbox,
+						canvasState,
+						continuousWallMode,
 						handleCameraChange,
-						lineIntersectionP,
-						setLineIntersectionP,
-						lengthTemp,
-						(val: any) => (lengthTemp = val),
-						setWallStartConstruc,
-						wallEndConstruc,
-						setWallEndConstruc,
-						currentNodeWallObjectData,
-						wallEquations,
-						followerData,
-						objectEquationData,
-						(): ObjectEquationData[] => setObjectEquationData([]),
-						currentNodeWalls,
-						cross,
-						setCross,
-						labelMeasure,
-						setLabelMeasure,
+						(): ObjectEquationData[] => canvasState.setObjectEquationData([]),
 						setHelperLineSvgData
 					);
-					//}, 30);
 				}}
 				style={{
 					zIndex: 2,
@@ -1276,7 +1075,7 @@ function App() {
 
 			{showWallTools && (
 				<WallTools
-					binder={binder}
+					binder={canvasState.binder}
 					onWallWidthChanged={onWallWidthChanged}
 					onSeparationClicked={onWallSeparationClicked}
 					onSplitClicked={onWallSplitClicked}
@@ -1317,8 +1116,8 @@ function App() {
 							setShowConfigureObjectPanel(false);
 							setShowMainPanel(true);
 
-							binder.graph.remove();
-							updateMeasurementText(wallMeta);
+							canvasState.binder.graph.remove();
+							updateMeasurementText(canvasState.wallMeta);
 						}}
 					/>
 				</div>
@@ -1597,7 +1396,7 @@ function App() {
 						}}
 						onClick={() => {
 							setRoomColor("roomGradientRed");
-							onRoomColorClicked("roomGradientRed", binder);
+							onRoomColorClicked("roomGradientRed", canvasState.binder);
 						}}
 					></div>
 					<div
@@ -1608,7 +1407,7 @@ function App() {
 						}}
 						onClick={() => {
 							setRoomColor("roomGradientGreen");
-							onRoomColorClicked("roomGradientGreen", binder);
+							onRoomColorClicked("roomGradientGreen", canvasState.binder);
 						}}
 					></div>
 					<div
@@ -1619,7 +1418,7 @@ function App() {
 						}}
 						onClick={() => {
 							setRoomColor("roomGradientOrange");
-							onRoomColorClicked("roomGradientOrange", binder);
+							onRoomColorClicked("roomGradientOrange", canvasState.binder);
 						}}
 					></div>
 					<div
@@ -1630,7 +1429,7 @@ function App() {
 						}}
 						onClick={() => {
 							setRoomColor("roomGradientBlue");
-							onRoomColorClicked("roomGradientBlue", binder);
+							onRoomColorClicked("roomGradientBlue", canvasState.binder);
 						}}
 					></div>
 					<div
@@ -1641,7 +1440,7 @@ function App() {
 						}}
 						onClick={() => {
 							setRoomColor("roomGradientGray");
-							onRoomColorClicked("roomGradientGray", binder);
+							onRoomColorClicked("roomGradientGray", canvasState.binder);
 						}}
 					></div>
 					{/* <div
@@ -1823,11 +1622,11 @@ function App() {
 							setShowMainPanel(true);
 							onApplySurfaceClicked(
 								editor,
-								rooms,
-								roomMeta,
-								setRoomMeta,
-								binder,
-								setBinder
+								canvasState.roomPolygonData,
+								canvasState.roomMeta,
+								canvasState.setRoomMeta,
+								canvasState.binder,
+								canvasState.setBinder
 							);
 							setBoxInfoText("Room modified");
 							applyMode(Mode.Select);
@@ -1844,8 +1643,8 @@ function App() {
 							setShowMainPanel(true);
 							setBoxInfoText("Room modified");
 							applyMode(Mode.Select);
-							if (binder && binder.remove) {
-								binder.remove();
+							if (canvasState.binder && canvasState.binder.remove) {
+								canvasState.binder.remove();
 							}
 							// onResetRoomToolsClicked(binder, setBinder);
 						}}
@@ -1944,8 +1743,8 @@ function App() {
 									<input
 										type="checkbox"
 										id="multi"
-										checked={multiChecked}
-										onChange={() => setMultiChecked((prev) => !prev)}
+										checked={continuousWallMode}
+										onChange={() => setContinuousWallMode((prev) => !prev)}
 									/>
 									<label htmlFor="multi">Continuous</label>
 								</div>
