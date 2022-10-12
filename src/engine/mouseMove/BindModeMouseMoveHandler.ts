@@ -1,6 +1,7 @@
 import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
 import {
+	CursorType,
 	NodeWallObjectData,
 	ObjectEquationData,
 	ObjectMetaData,
@@ -33,6 +34,7 @@ export const handleMouseMoveBindMode = (
 	snap: Point2D,
 	resetObjectEquationData: () => ObjectEquationData[],
 	setHelperLineSvgData: (l: SvgPathMetaData | null) => void,
+	setCursor: (crsr: CursorType) => void,
 	canvasState: CanvasState
 ) => {
 	const {
@@ -45,7 +47,6 @@ export const handleMouseMoveBindMode = (
 		roomMeta,
 		setRoomMeta,
 		wallEquations,
-		setCursor,
 		roomPolygonData,
 		setRoomPolygonData,
 		followerData,

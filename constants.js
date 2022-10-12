@@ -5,14 +5,6 @@ export const constants = {
 	PARTITION_SIZE: 8,
 	CIRCLE_BINDER_RADIUS: 8,
 
-	COLOR_WALL: "#777",
-	COLOR_ROOM_RED: "#A63A50",
-	COLOR_ROOM_GREEN: "#43BA8F",
-	COLOR_ROOM_GRAY: "#6E8197",
-	COLOR_ROOM_ORANGE: "#CF5C36",
-	COLOR_ROOM_BLUE: "#111924",
-	COLOR_ROOM_BLACK: "#121212",
-
 	OBJECT_CLASSES: {
 		HOVER_BOX: "hoverBox",
 		DOOR_WINDOW: "doorWindow",
@@ -32,4 +24,12 @@ export const constants = {
 		"url('https://cdn4.iconfinder.com/data/icons/common-toolbar/36/Cancel-32.png'), auto",
 	VALIDATION_CURSOR:
 		"url('https://cdn-icons-png.flaticon.com/512/4225/4225683.png'), auto",
+
+	COLOR_WALL: "#777",
+	COLOR_ROOM_RED: "#A63A50",
+	COLOR_ROOM_GREEN: "#43BA8F",
+	COLOR_ROOM_GRAY: "#6E8197",
+	COLOR_ROOM_ORANGE: "#CF5C36",
+	COLOR_ROOM_BLUE: "#111924",
+	COLOR_ROOM_BLACK: "#121212",
 };

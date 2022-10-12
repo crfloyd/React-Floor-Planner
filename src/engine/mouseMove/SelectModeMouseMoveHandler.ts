@@ -9,6 +9,7 @@ import {
 	updateMeasurementText,
 } from "../../svgTools";
 import { CanvasState } from "../CanvasState";
+import { CursorType } from "../../models";
 
 export const handleMouseMoveSelectMode = (
 	event: React.TouchEvent | React.MouseEvent,
@@ -20,9 +21,9 @@ export const handleMouseMoveSelectMode = (
 		objectMeta,
 		point,
 		drag,
-		setCursor,
 		viewbox,
 	}: CanvasState,
+	setCursor: (crsr: CursorType) => void,
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void
 ) => {
 	if (drag) {

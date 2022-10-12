@@ -26,7 +26,7 @@ export class Wall implements WallMetaData {
 	angle = 0;
 	equations: WallSideEquations;
 	graph: any;
-	coords = [];
+	coords: Point2D[] = [];
 	backUp: any = false;
 	dPath: string | null = null;
 
@@ -34,7 +34,8 @@ export class Wall implements WallMetaData {
 		public start: Point2D,
 		public end: Point2D,
 		public type: string,
-		public thick: number
+		public thick: number,
+		init?: Partial<Wall>
 	) {
 		this.id = uuid();
 		this.parent = null;
@@ -45,6 +46,7 @@ export class Wall implements WallMetaData {
 			base: { A: 0, B: 0 },
 		};
 		this.graph = {};
+		Object.assign(this, init);
 	}
 
 	static fromWall = (from: Wall): Wall => {

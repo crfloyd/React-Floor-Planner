@@ -7,6 +7,7 @@ import {
 	Mode,
 	RoomDisplayData,
 	SvgPathMetaData,
+	CursorType,
 } from "../../models";
 import { architect, updateMeasurementText } from "../../svgTools";
 import { calculateSnap } from "../../utils";
@@ -25,6 +26,7 @@ interface Props {
 	showObjectTools: () => void;
 	showOpeningTools: (min: number, max: number, value: number) => void;
 	showWallTools: (separation: boolean) => void;
+	setCursor: (crsr: CursorType) => void;
 }
 
 export const handleMouseUp = ({
@@ -39,6 +41,7 @@ export const handleMouseUp = ({
 	showObjectTools,
 	showOpeningTools,
 	showWallTools,
+	setCursor,
 }: Props) => {
 	if (showMeasurements) {
 		$("#boxScale").show(200);
@@ -56,7 +59,6 @@ export const handleMouseUp = ({
 		setWallMeta,
 		roomMeta,
 		setDrag,
-		setCursor,
 		wallEquations,
 		point,
 		setPoint,

@@ -25,21 +25,6 @@ export class CanvasState {
 		return this.mode;
 	};
 
-	cursor = "default";
-	setCursor = (
-		val:
-			| "crosshair"
-			| "move"
-			| "pointer"
-			| "validation"
-			| "default"
-			| "trash"
-			| "scissor"
-			| "grab"
-	) => {
-		this.cursor = val;
-	};
-
 	modeOption = "";
 	setModeOption = (val: string) => {
 		this.modeOption = val;

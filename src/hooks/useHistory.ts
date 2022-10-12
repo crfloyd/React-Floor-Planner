@@ -108,7 +108,7 @@ export const useHistory = () => {
 			const hist: HistorySnapshot = {
 				objData: [],
 				wallData: [
-					{
+					new Wall({ x: 540, y: 194 }, { x: 540, y: 734 }, "normal", 20, {
 						id: ids[0],
 						thick: 20,
 						start: { x: 540, y: 194 },
@@ -129,8 +129,8 @@ export const useHistory = () => {
 							{ x: 550, y: 724 },
 						],
 						graph: { 0: {}, context: {}, length: 1 },
-					},
-					{
+					}),
+					new Wall({ x: 540, y: 734 }, { x: 1080, y: 734 }, "normal", 20, {
 						id: ids[1],
 						thick: 20,
 						start: { x: 540, y: 734 },
@@ -151,8 +151,8 @@ export const useHistory = () => {
 							{ x: 1070, y: 724 },
 						],
 						graph: { 0: {}, context: {}, length: 1 },
-					},
-					{
+					}),
+					new Wall({ x: 1080, y: 734 }, { x: 1080, y: 194 }, "normal", 20, {
 						id: ids[2],
 						thick: 20,
 						start: { x: 1080, y: 734 },
@@ -173,8 +173,8 @@ export const useHistory = () => {
 							{ x: 1070, y: 204 },
 						],
 						graph: { 0: {}, context: {}, length: 1 },
-					},
-					{
+					}),
+					new Wall({ x: 1080, y: 194 }, { x: 540, y: 194 }, "normal", 20, {
 						id: ids[3],
 						thick: 20,
 						start: { x: 1080, y: 194 },
@@ -195,7 +195,7 @@ export const useHistory = () => {
 							{ x: 550, y: 204 },
 						],
 						graph: { 0: {}, context: {}, length: 1 },
-					},
+					}),
 				],
 				roomData: [
 					{
@@ -244,7 +244,7 @@ export const useHistory = () => {
 			const hist: HistorySnapshot = {
 				objData: [],
 				wallData: [
-					{
+					new Wall({ x: 447, y: 458 }, { x: 447, y: 744 }, "normal", 20, {
 						id: ids[0],
 						thick: 20,
 						start: { x: 447, y: 458 },
@@ -265,8 +265,8 @@ export const useHistory = () => {
 							{ x: 457, y: 734 },
 						],
 						graph: { 0: {}, context: {}, length: 1 },
-					},
-					{
+					}),
+					new Wall({ x: 447, y: 744 }, { x: 1347, y: 744 }, "normal", 20, {
 						id: ids[1],
 						thick: 20,
 						start: { x: 447, y: 744 },
@@ -287,8 +287,8 @@ export const useHistory = () => {
 							{ x: 1337, y: 734 },
 						],
 						graph: { 0: {}, context: {}, length: 1 },
-					},
-					{
+					}),
+					new Wall({ x: 1347, y: 744 }, { x: 1347, y: 144 }, "normal", 20, {
 						id: ids[2],
 						thick: 20,
 						start: { x: 1347, y: 744 },
@@ -309,8 +309,8 @@ export const useHistory = () => {
 							{ x: 1337, y: 154 },
 						],
 						graph: { 0: {}, context: {}, length: 1 },
-					},
-					{
+					}),
+					new Wall({ x: 1347, y: 144 }, { x: 1020, y: 144 }, "normal", 20, {
 						id: ids[3],
 						thick: 20,
 						start: { x: 1347, y: 144 },
@@ -331,8 +331,8 @@ export const useHistory = () => {
 							{ x: 1030, y: 154 },
 						],
 						graph: { 0: {}, context: {}, length: 1 },
-					},
-					{
+					}),
+					new Wall({ x: 1020, y: 144 }, { x: 1020, y: 458 }, "normal", 20, {
 						id: ids[4],
 						thick: 20,
 						start: { x: 1020, y: 144 },
@@ -353,8 +353,8 @@ export const useHistory = () => {
 							{ x: 1030, y: 468 },
 						],
 						graph: { 0: {}, context: {}, length: 1 },
-					},
-					{
+					}),
+					new Wall({ x: 1020, y: 458 }, { x: 447, y: 458 }, "normal", 20, {
 						id: ids[5],
 						thick: 20,
 						start: { x: 1020, y: 458 },
@@ -375,7 +375,7 @@ export const useHistory = () => {
 							{ x: 457, y: 468 },
 						],
 						graph: { 0: {}, context: {}, length: 1 },
-					},
+					}),
 				],
 				roomData: [
 					{

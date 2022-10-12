@@ -1,4 +1,4 @@
-import { Mode } from "../../models";
+import { CursorType, Mode } from "../../models";
 import { nearWall } from "../../svgTools";
 import { calculateSnap } from "../../utils";
 import { CanvasState } from "../CanvasState";
@@ -7,13 +7,13 @@ import { handleSelectModeClick } from "./SelectModeClickHandler";
 interface Props {
 	event: React.TouchEvent | React.MouseEvent;
 	canvasState: CanvasState;
+	setCursor: (crsr: CursorType) => void;
 }
 
-export const handleMouseDown = ({ event, canvasState }: Props) => {
+export const handleMouseDown = ({ event, canvasState, setCursor }: Props) => {
 	event?.preventDefault();
 
-	const { mode, action, viewbox, setPoint, wallMeta, setAction, setCursor } =
-		canvasState;
+	const { mode, action, viewbox, setPoint, wallMeta, setAction } = canvasState;
 	switch (mode) {
 		case Mode.Line:
 		case Mode.Partition: {

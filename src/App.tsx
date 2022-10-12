@@ -17,13 +17,14 @@ import { computeLimit, intersectionOfEquations } from "./utils";
 import "./App.css";
 import {
 	Mode,
-	ObjectEquationData,
 	ObjectMetaData,
 	Point2D,
 	RoomMetaData,
 	WallMetaData,
 	SvgPathMetaData,
 	RoomDisplayData,
+	LayerSettings,
+	CursorType,
 } from "./models";
 import { constants } from "../constants";
 import {
@@ -36,24 +37,13 @@ import { useHistory } from "./hooks/useHistory";
 import WallTools from "./components/WallTools";
 import ObjectTools from "./components/ObjectTools";
 import DoorWindowTools from "./components/DoorWindowTools";
-import { handleMouseDown } from "./engine/mouseDown/MouseDownHandler";
-import { handleMouseUp } from "./engine/mouseUp/MouseUpHandler";
 import { CanvasState } from "./engine/CanvasState";
-import { handleMouseMove } from "./engine/mouseMove/MouseMoveHandler";
-
-interface LayerSettings {
-	showSurfaces: boolean;
-	showMeasurements: boolean;
-	showTexture: boolean;
-	showEnergy: boolean;
-}
-
-let shouldUpdateMouseMove = true;
+import FloorPlannerCanvas from "./components/FloorPlannerCanvas/FloorPlannerCanvas";
 
 const canvasState = new CanvasState();
 
 function App() {
-	const [cursor, setCursor] = useState("default");
+	const [cursor, setCursor] = useState<CursorType>("default");
 	const [showSurface, setShowSurface] = useState(true);
 	const [addSurface, setAddSurface] = useState(true);
 	const [ignoreSurface, setIgnoreSurface] = useState(false);
@@ -87,9 +77,6 @@ function App() {
 	const [enableUndo, setEnableUndo] = useState(false);
 	const [enableRedo, setEnableRedo] = useState(false);
 
-	const [helperLineSvgData, setHelperLineSvgData] =
-		useState<SvgPathMetaData | null>();
-
 	const [showMainPanel, setShowMainPanel] = useState(true);
 	const [showBoxScale, setShowBoxScale] = useState(true);
 	const [showWallTools, setShowWallTools] = useState(false);
@@ -110,18 +97,14 @@ function App() {
 		action: "",
 	});
 	const [scaleValue, setScaleValue] = useState(1);
-	const [showSub, setShowSub] = useState(false);
-	const [showMyModal, setShowMyModal] = useState(true);
+	const [showSubMenu, setShowSubMenu] = useState(false);
 	const [continuousWallMode, setContinuousWallMode] = useState(true);
 	const [roomColor, setRoomColor] = useState("gradientNeutral");
-	const [roomType, setRoomType] = useState("None");
 	const [boxInfoText, setBoxInfoText] = useState("");
 	const [showDoorList, setShowDoorList] = useState(false);
 	const [showWindowList, setShowWindowList] = useState(false);
 	const [showEnergyList, setShowEnergyList] = useState(false);
 	const [showLayerList, setShowLayerList] = useState(false);
-	const [drag, setDrag] = useState(false);
-	const [boxCarpentryItems, setBoxCarpentryItems] = useState<any[]>([]);
 
 	const { save, init, undo, redo, historyIndex } = useHistory();
 
@@ -151,7 +134,6 @@ function App() {
 	useEffect(() => {
 		resetViewbox();
 		onWindowLoad(canvasState.viewbox);
-		setShowMyModal(true);
 		const onResize = () => {
 			console.log("Window resize deteced. Resetting view box");
 			resetViewbox();
@@ -202,7 +184,7 @@ function App() {
 	};
 
 	const onObjectTypeClicked = (type: string) => {
-		setShowSub(false);
+		setShowSubMenu(false);
 		setShowDoorList(false);
 		setCursor("move");
 		setBoxInfoText("Add an object");
@@ -211,12 +193,10 @@ function App() {
 
 	const applyMode = (mode: string, option = "") => {
 		save(canvasState);
-		setShowSub(false);
+		setShowSubMenu(false);
 		flush_button();
 		canvasState.setMode(mode);
 		canvasState.setModeOption(option);
-
-		setHelperLineSvgData(null);
 	};
 
 	const createInvisibleWall = (wall: Wall) => {
@@ -604,472 +584,25 @@ function App() {
 		setShowWallTools(true);
 	};
 
-	const addSvgPath = (data: SvgPathMetaData) => {};
-
 	return (
 		<>
 			<header>React Floor Planner Ver.0.1</header>
 
-			<svg
-				id="lin"
-				viewBox="0 0 1100 700"
-				preserveAspectRatio="xMidYMin slice"
-				xmlns="http://www.w3.org/2000/svg"
-				onWheel={(e) => {
-					e.preventDefault();
-					onMouseWheel(e);
-				}}
-				onClick={(e) => e.preventDefault()}
-				onMouseDown={(e) =>
-					handleMouseDown({
-						event: e,
-						canvasState,
-					})
-				}
-				onMouseUp={(e) => {
-					handleMouseUp({
-						event: e,
-						canvasState,
-						resetMode: () => {
-							applyMode(Mode.Select);
-							return canvasState.mode;
-						},
-						showMeasurements: layerSettings.showMeasurements,
-						save: () => save(canvasState),
-						updateRoomDisplayData,
-						setHelperLineSvgData,
-						continuousWallMode,
-						showObjectTools: updateObjectTools,
-						showOpeningTools,
-						showWallTools: updateWallTools,
-					});
-				}}
-				onMouseMove={(e) => {
-					const throttleMs = 17; // ~60fps
-					if (!shouldUpdateMouseMove) {
-						// console.log("Not Ready:");
-						return;
-					}
-
-					shouldUpdateMouseMove = false;
-					setTimeout(() => {
-						shouldUpdateMouseMove = true;
-					}, throttleMs);
-
-					setShowSub(false);
-
-					handleMouseMove(
-						e,
-						canvasState,
-						continuousWallMode,
-						handleCameraChange,
-						(): ObjectEquationData[] => canvasState.setObjectEquationData([]),
-						setHelperLineSvgData
-					);
-				}}
-				style={{
-					zIndex: 2,
-					margin: 0,
-					padding: 0,
-					width: "100vw",
-					height: "100vh",
-					position: "absolute",
-					top: 0,
-					left: 0,
-					right: 0,
-					bottom: 0,
-				}}
-				cursor={getCursorImg(cursor)}
-			>
-				<defs>
-					<linearGradient
-						id="roomGradientRed"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop
-							offset="0%"
-							stopColor={constants.COLOR_ROOM_RED}
-							stopOpacity="1"
-						/>
-						<stop
-							offset="100%"
-							stopColor={constants.COLOR_ROOM_RED}
-							stopOpacity="1"
-						/>
-					</linearGradient>
-					<linearGradient
-						id="roomGradientOrange"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop
-							offset="0%"
-							stopColor={constants.COLOR_ROOM_ORANGE}
-							stopOpacity="1"
-						/>
-						<stop
-							offset="100%"
-							stopColor={constants.COLOR_ROOM_ORANGE}
-							stopOpacity="1"
-						/>
-					</linearGradient>
-					<linearGradient
-						id="roomGradientBlue"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop
-							offset="0%"
-							stopColor={constants.COLOR_ROOM_BLUE}
-							stopOpacity="1"
-						/>
-						<stop
-							offset="100%"
-							stopColor={constants.COLOR_ROOM_BLUE}
-							stopOpacity="1"
-						/>
-					</linearGradient>
-					<linearGradient
-						id="roomGradientGreen"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop
-							offset="0%"
-							stopColor={constants.COLOR_ROOM_GREEN}
-							stopOpacity="1"
-						/>
-						<stop
-							offset="100%"
-							stopColor={constants.COLOR_ROOM_GREEN}
-							stopOpacity="1"
-						/>
-					</linearGradient>
-					<linearGradient
-						id="roomGradientGray"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop
-							offset="0%"
-							stopColor={constants.COLOR_ROOM_GRAY}
-							stopOpacity="1"
-						/>
-						<stop
-							offset="100%"
-							stopColor={constants.COLOR_ROOM_GRAY}
-							stopOpacity="1"
-						/>
-					</linearGradient>
-					<linearGradient
-						id="roomGradientBlack"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop
-							offset="0%"
-							stopColor={constants.COLOR_ROOM_BLACK}
-							stopOpacity="1"
-						/>
-						<stop
-							offset="100%"
-							stopColor={constants.COLOR_ROOM_BLACK}
-							stopOpacity="1"
-						/>
-					</linearGradient>
-					<linearGradient
-						id="gradientRed"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop offset="0%" stopColor="#e65d5e" stopOpacity="1" />
-						<stop offset="100%" stopColor="#e33b3c" stopOpacity="1" />
-					</linearGradient>
-					<linearGradient
-						id="gradientYellow"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop offset="0%" stopColor="#FDEB71" stopOpacity="1" />
-						<stop offset="100%" stopColor="#F8D800" stopOpacity="1" />
-					</linearGradient>
-					<linearGradient
-						id="gradientGreen"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop offset="0%" stopColor="#c0f7d9" stopOpacity="1" />
-						<stop offset="100%" stopColor="#6ce8a3" stopOpacity="1" />
-					</linearGradient>
-					<linearGradient
-						id="gradientSky"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop offset="0%" stopColor="#c4e0f4" stopOpacity="1" />
-						<stop offset="100%" stopColor="#87c8f7" stopOpacity="1" />
-					</linearGradient>
-					<linearGradient
-						id="gradientOrange"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop offset="0%" stopColor="#f9ad67" stopOpacity="1" />
-						<stop offset="100%" stopColor="#f97f00" stopOpacity="1" />
-					</linearGradient>
-					<linearGradient
-						id="gradientWhite"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
-						<stop offset="100%" stopColor="#f0f0f0" stopOpacity="1" />
-					</linearGradient>
-					<linearGradient
-						id="gradientGrey"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop offset="0%" stopColor="#666" stopOpacity="1" />
-						<stop offset="100%" stopColor="#aaa" stopOpacity="1" />
-					</linearGradient>
-					<linearGradient
-						id="gradientBlue"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop offset="0%" stopColor="#4f72a6" stopOpacity="1" />
-						<stop offset="100%" stopColor="#365987" stopOpacity="1" />
-					</linearGradient>
-					<linearGradient
-						id="gradientPurple"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop offset="0%" stopColor="#E2B0FF" stopOpacity="1" />
-						<stop offset="100%" stopColor="#9F44D3" stopOpacity="1" />
-					</linearGradient>
-					<linearGradient
-						id="gradientPink"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop offset="0%" stopColor="#f6c4dd" stopOpacity="1" />
-						<stop offset="100%" stopColor="#f699c7" stopOpacity="1" />
-					</linearGradient>
-					<linearGradient
-						id="gradientBlack"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop offset="0%" stopColor="#3c3b3b" stopOpacity="1" />
-						<stop offset="100%" stopColor="#000000" stopOpacity="1" />
-					</linearGradient>
-					<linearGradient
-						id="gradientNeutral"
-						x1="0%"
-						y1="0%"
-						x2="100%"
-						y2="100%"
-						spreadMethod="pad"
-					>
-						<stop offset="0%" stopColor="#dbc6a0" stopOpacity="1" />
-						<stop offset="100%" stopColor="#c69d56" stopOpacity="1" />
-					</linearGradient>
-
-					<pattern
-						id="grass"
-						patternUnits="userSpaceOnUse"
-						width="256"
-						height="256"
-					>
-						<image
-							xlinkHref="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRWh5nEP_Trwo96CJjev6lnKe0_dRdA63RJFaoc3-msedgxveJd"
-							x="0"
-							y="0"
-							width="256"
-							height="256"
-						/>
-					</pattern>
-					<pattern
-						id="wood"
-						patternUnits="userSpaceOnUse"
-						width="32"
-						height="256"
-					>
-						<image
-							xlinkHref="https://orig00.deviantart.net/e1f2/f/2015/164/8/b/old_oak_planks___seamless_texture_by_rls0812-d8x6htl.jpg"
-							x="0"
-							y="0"
-							width="256"
-							height="256"
-						/>
-					</pattern>
-					<pattern
-						id="tiles"
-						patternUnits="userSpaceOnUse"
-						width="25"
-						height="25"
-					>
-						<image
-							xlinkHref="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrkoI2Eiw8ya3J_swhfpZdi_ug2sONsI6TxEd1xN5af3DX9J3R"
-							x="0"
-							y="0"
-							width="256"
-							height="256"
-						/>
-					</pattern>
-					<pattern
-						id="granite"
-						patternUnits="userSpaceOnUse"
-						width="256"
-						height="256"
-					>
-						<image
-							xlinkHref="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9_nEMhnWVV47lxEn5T_HWxvFwkujFTuw6Ff26dRTl4rDaE8AdEQ"
-							x="0"
-							y="0"
-							width="256"
-							height="256"
-						/>
-					</pattern>
-					<pattern
-						id="smallGrid"
-						width="60"
-						height="60"
-						patternUnits="userSpaceOnUse"
-					>
-						<path
-							d="M 60 0 L 0 0 0 60"
-							fill="none"
-							stroke="#777"
-							strokeWidth="0.25"
-						/>
-					</pattern>
-					<pattern
-						id="grid"
-						width="180"
-						height="180"
-						patternUnits="userSpaceOnUse"
-					>
-						<rect width="180" height="180" fill="url(#smallGrid)" />
-						<path
-							d="M 200 10 L 200 0 L 190 0 M 0 10 L 0 0 L 10 0 M 0 190 L 0 200 L 10 200 M 190 200 L 200 200 L 200 190"
-							fill="none"
-							stroke="#999"
-							strokeWidth="0.8"
-						/>
-					</pattern>
-					<pattern
-						id="hatch"
-						width="5"
-						height="5"
-						patternTransform="rotate(50 0 0)"
-						patternUnits="userSpaceOnUse"
-					>
-						<path
-							d="M 0 0 L 0 5 M 10 0 L 10 10 Z"
-							style={{ stroke: "#666", strokeWidth: 5 }}
-						/>
-					</pattern>
-				</defs>
-				<g id="boxgrid">
-					<rect
-						width="8000"
-						height="5000"
-						x="-3500"
-						y="-2000"
-						fill="url(#grid)"
-					/>
-				</g>
-				<g id="boxpath"></g>
-				<g id="boxSurface"></g>
-				<g
-					id="boxRoom"
-					visibility={layerSettings.showTexture ? "visible" : "hidden"}
-				></g>
-				<g id="boxwall"></g>
-				<g id="boxcarpentry">{boxCarpentryItems}</g>
-				<g
-					id="boxEnergy"
-					visibility={layerSettings.showEnergy ? "visible" : "hidden"}
-				></g>
-				<g id="boxFurniture"></g>
-				<g id="boxbind">
-					{helperLineSvgData && (
-						<path
-							stroke={helperLineSvgData.stroke}
-							d={`M${helperLineSvgData.p1.x},${helperLineSvgData.p1.y} L${helperLineSvgData.p2.x},${helperLineSvgData.p2.y} L${helperLineSvgData.p3.x},${helperLineSvgData.p3.y}`}
-							strokeWidth="0.75"
-							strokeOpacity="1"
-							fill="none"
-						></path>
-					)}
-				</g>
-				<g
-					id="boxArea"
-					visibility={layerSettings.showSurfaces ? "visible" : "hidden"}
-				></g>
-				<g
-					id="boxRib"
-					visibility={layerSettings.showMeasurements ? "visible" : "hidden"}
-				></g>
-				<g id="boxScale" visibility={showBoxScale ? "visible" : "hidden"}></g>
-				<g id="boxText"></g>
-				<g id="boxDebug"></g>
-			</svg>
+			<FloorPlannerCanvas
+				layerSettings={layerSettings}
+				canvasState={canvasState}
+				applyMode={applyMode}
+				continuousWallMode={continuousWallMode}
+				handleCameraChange={handleCameraChange}
+				showBoxScale={showBoxScale}
+				showObjectTools={updateObjectTools}
+				showOpeningTools={showOpeningTools}
+				showWallTools={updateWallTools}
+				updateRoomDisplayData={updateRoomDisplayData}
+				onMouseMove={() => setShowSubMenu(false)}
+				cursor={cursor}
+				setCursor={setCursor}
+			/>
 
 			<div id="areaValue"></div>
 
@@ -1454,13 +987,13 @@ function App() {
 							onRoomColorClicked("roomGradientBlack", binder);
 						}}
 					></div> */}
-					{/* <div
+					<div
 						className="roomColor"
 						data-type="gradientYellow"
 						style={{ background: "linear-gradient(30deg,#e4c06e, #ffb000)" }}
 						onClick={() => {
 							setRoomColor("gradientYellow");
-							onRoomColorClicked("gradientYellow", binder);
+							onRoomColorClicked("gradientYellow", canvasState.binder);
 						}}
 					></div>
 					<div
@@ -1469,7 +1002,7 @@ function App() {
 						style={{ background: "linear-gradient(30deg,#88cc6c, #60c437)" }}
 						onClick={() => {
 							setRoomColor("gradientGreen");
-							onRoomColorClicked("gradientGreen", binder);
+							onRoomColorClicked("gradientGreen", canvasState.binder);
 						}}
 					></div>
 					<div
@@ -1478,7 +1011,7 @@ function App() {
 						style={{ background: "linear-gradient(30deg,#77e1f4, #00d9ff)" }}
 						onClick={() => {
 							setRoomColor("gradientSky");
-							onRoomColorClicked("gradientSky", binder);
+							onRoomColorClicked("gradientSky", canvasState.binder);
 						}}
 					></div>
 					<div
@@ -1487,7 +1020,7 @@ function App() {
 						style={{ background: "linear-gradient(30deg,#4f72a6, #284d7e)" }}
 						onClick={() => {
 							setRoomColor("gradientBlue");
-							onRoomColorClicked("gradientBlue", binder);
+							onRoomColorClicked("gradientBlue", canvasState.binder);
 						}}
 					></div>
 					<div
@@ -1496,7 +1029,7 @@ function App() {
 						style={{ background: "linear-gradient(30deg,#666666, #aaaaaa)" }}
 						onClick={() => {
 							setRoomColor("gradientGrey");
-							onRoomColorClicked("gradientGrey", binder);
+							onRoomColorClicked("gradientGrey", canvasState.binder);
 						}}
 					></div>
 					<div
@@ -1505,7 +1038,7 @@ function App() {
 						style={{ background: "linear-gradient(30deg,#fafafa, #eaeaea)" }}
 						onClick={() => {
 							setRoomColor("gradientWhite");
-							onRoomColorClicked("gradientWhite", binder);
+							onRoomColorClicked("gradientWhite", canvasState.binder);
 						}}
 					></div>
 					<div
@@ -1514,7 +1047,7 @@ function App() {
 						style={{ background: "linear-gradient(30deg, #f9ad67, #f97f00)" }}
 						onClick={() => {
 							setRoomColor("gradientOrange");
-							onRoomColorClicked("gradientOrange", binder);
+							onRoomColorClicked("gradientOrange", canvasState.binder);
 						}}
 					></div>
 					<div
@@ -1523,7 +1056,7 @@ function App() {
 						style={{ background: "linear-gradient(30deg,#a784d9, #8951da)" }}
 						onClick={() => {
 							setRoomColor("gradientPurple");
-							onRoomColorClicked("gradientPurple", binder);
+							onRoomColorClicked("gradientPurple", canvasState.binder);
 						}}
 					></div>
 					<div
@@ -1532,7 +1065,7 @@ function App() {
 						style={{ background: "linear-gradient(30deg,#df67bd, #e22aae)" }}
 						onClick={() => {
 							setRoomColor("gradientPink");
-							onRoomColorClicked("gradientPink", binder);
+							onRoomColorClicked("gradientPink", canvasState.binder);
 						}}
 					></div>
 					<div
@@ -1541,7 +1074,7 @@ function App() {
 						style={{ background: "linear-gradient(30deg,#3c3b3b, #000000)" }}
 						onClick={() => {
 							setRoomColor("gradientBlack");
-							onRoomColorClicked("gradientBlack", binder);
+							onRoomColorClicked("gradientBlack", canvasState.binder);
 						}}
 					></div>
 					<div
@@ -1550,60 +1083,11 @@ function App() {
 						style={{ background: "linear-gradient(30deg,#e2c695, #c69d56)" }}
 						onClick={() => {
 							setRoomColor("gradientNeutral");
-							onRoomColorClicked("gradientNeutral", binder);
+							onRoomColorClicked("gradientNeutral", canvasState.binder);
 						}}
-					></div> */}
+					></div>
 					<br />
 					<br />
-					{/* <p>Matérials</p>
-					<div
-						className="roomColor"
-						data-type="wood"
-						style={{
-							background:
-								"url('https://orig00.deviantart.net/e1f2/f/2015/164/8/b/old_oak_planks___seamless_texture_by_rls0812-d8x6htl.jpg')",
-						}}
-						onClick={() => {
-							setRoomColor("wood");
-							onRoomColorClicked("wood", binder);
-						}}
-					></div>
-					<div
-						className="roomColor"
-						data-type="tiles"
-						style={{
-							background:
-								"url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrkoI2Eiw8ya3J_swhfpZdi_ug2sONsI6TxEd1xN5af3DX9J3R')",
-						}}
-						onClick={() => {
-							setRoomColor("tiles");
-							onRoomColorClicked("tiles", binder);
-						}}
-					></div>
-					<div
-						className="roomColor"
-						data-type="granite"
-						style={{
-							background:
-								"url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9_nEMhnWVV47lxEn5T_HWxvFwkujFTuw6Ff26dRTl4rDaE8AdEQ')",
-						}}
-						onClick={() => {
-							setRoomColor("granite");
-							onRoomColorClicked("granite", binder);
-						}}
-					></div>
-					<div
-						className="roomColor"
-						data-type="grass"
-						style={{
-							background:
-								"url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRWh5nEP_Trwo96CJjev6lnKe0_dRdA63RJFaoc3-msedgxveJd')",
-						}}
-						onClick={() => {
-							setRoomColor("grass");
-							onRoomColorClicked("grass", binder);
-						}}
-					></div> */}
 					<div data-type="#ff008a" style={{ clear: "both" }}></div>
 					<br />
 					<br />
@@ -1723,7 +1207,7 @@ function App() {
 							>
 								WALL
 							</button>
-							{/* <button
+							<button
 								className="btn btn-default fully "
 								style={{ marginBottom: "8px" }}
 								id="partition_mode"
@@ -1737,7 +1221,7 @@ function App() {
 								}}
 							>
 								PARTITION
-							</button> */}
+							</button>
 							<div className="funkyradio" style={{ fontSize: "1em" }}>
 								<div className="funkyradio-success">
 									<input
@@ -1767,7 +1251,7 @@ function App() {
 							</button>
 						</li>
 						<br />
-						{showDoorList && !showSub && (
+						{showDoorList && !showSubMenu && (
 							<div
 								id="door_list"
 								className="list-unstyled sub"
@@ -1809,7 +1293,7 @@ function App() {
 								>
 									Double
 								</button>
-								{/* <button
+								<button
 									className="btn btn-default fully door"
 									id="pocket"
 									onClick={() => {
@@ -1817,7 +1301,7 @@ function App() {
 									}}
 								>
 									Pocket
-								</button> */}
+								</button>
 							</div>
 						)}
 						<li>
@@ -1825,20 +1309,16 @@ function App() {
 								className="btn btn-default fully "
 								id="door_mode"
 								onClick={() => {
-									setShowSub(false);
-									// $(".sub").hide();
-
+									setShowSubMenu(false);
 									setShowDoorList(!showDoorList);
 									setShowWindowList(false);
-									// $("#door_list").toggle(200);
-									// $("#window_list").hide();
 								}}
 							>
 								DOOR
 							</button>
 						</li>
 
-						{showWindowList && !showSub && (
+						{showWindowList && !showSubMenu && (
 							<div
 								id="window_list"
 								className="list-unstyled sub"
@@ -1896,13 +1376,10 @@ function App() {
 								className="btn btn-default fully "
 								id="window_mode"
 								onClick={() => {
-									setShowSub(false);
+									setShowSubMenu(false);
 									setShowWindowList(!showWindowList);
 									setShowDoorList(false);
 									setShowEnergyList(false);
-									// $(".sub").hide();
-									// $("#window_list").toggle(200);
-									// $("#door_list").hide();
 								}}
 							>
 								WINDOW
@@ -1923,7 +1400,7 @@ function App() {
 							</button>
 						</li>
 						<br />
-						{showEnergyList && !showSub && (
+						{showEnergyList && !showSubMenu && (
 							<div
 								id="energy_list"
 								className="list-unstyled sub"
@@ -2020,85 +1497,6 @@ function App() {
 											</button>
 										</div>
 									</div>
-									{/* <div
-										style={{
-											width: "130px",
-											float: "left",
-											padding: "10px",
-											margin: "5px",
-											border: "1px solid #ddd",
-											borderRadius: "5px",
-										}}
-									>
-										<p>Low Current</p>
-										<button
-											className="btn btn-default fully object"
-											id="www"
-											onClick={() => {
-												onObjectTypeClicked("www");
-											}}
-										>
-											Internet access
-										</button>
-										<button
-											className="btn btn-default fully object"
-											id="rj45"
-											onClick={() => {
-												onObjectTypeClicked("rj45");
-											}}
-										>
-											RJ45 Socket
-										</button>
-										<button
-											className="btn btn-default fully object"
-											id="tv"
-											onClick={() => {
-												onObjectTypeClicked("tv");
-											}}
-										>
-											TV Antenne
-										</button>
-									</div>
-
-									<div
-										style={{
-											width: "130px",
-											float: "left",
-											padding: "10px",
-											margin: "5px",
-											border: "1px solid #ddd",
-											borderRadius: "5px",
-										}}
-									>
-										<p>Thermal</p>
-										<button
-											className="btn btn-default fully object"
-											id="boiler"
-											onClick={() => {
-												onObjectTypeClicked("boiler");
-											}}
-										>
-											Hot water heater
-										</button>
-										<button
-											className="btn btn-default fully object"
-											id="heater"
-											onClick={() => {
-												onObjectTypeClicked("heater");
-											}}
-										>
-											Heater
-										</button>
-										<button
-											className="btn btn-default fully object"
-											id="radiator"
-											onClick={() => {
-												onObjectTypeClicked("radiator");
-											}}
-										>
-											Radiator
-										</button>
-									</div> */}
 								</div>
 							</div>
 						)}
@@ -2107,7 +1505,7 @@ function App() {
 								className="btn btn-default fully "
 								id="object_mode"
 								onClick={() => {
-									setShowSub(false);
+									setShowSubMenu(false);
 									setShowEnergyList(!showEnergyList);
 									setShowDoorList(false);
 									setShowWindowList(false);
@@ -2116,7 +1514,6 @@ function App() {
 								DEVICES
 							</button>
 						</li>
-						{/* <!-- <li><button className="btn btn-default fully " id="object_mode" onClick={() => { $('.sub').hide();$('#object_list').toggle(200); }}>FURNITURE</button></li> --> */}
 						<br />
 
 						<li>
@@ -2124,17 +1521,15 @@ function App() {
 								className="btn btn-default fully "
 								id="layer_mode"
 								onClick={() => {
-									setShowSub(false);
+									setShowSubMenu(false);
 									setShowLayerList(!showLayerList);
-									// $(".sub").hide();
-									// $("#layer_list").toggle(200);
 								}}
 							>
 								Layers
 							</button>
 						</li>
 
-						{showLayerList && !showSub && (
+						{showLayerList && !showSubMenu && (
 							<div
 								id="layer_list"
 								className="list-unstyled sub"
@@ -2158,7 +1553,7 @@ function App() {
 											checked={layerSettings.showMeasurements}
 											onChange={() => {
 												const nextVal = !layerSettings.showMeasurements;
-												setLayerSettings((prev) => ({
+												setLayerSettings((prev: any) => ({
 													...prev,
 													showMeasurements: nextVal,
 												}));
@@ -2220,44 +1615,6 @@ function App() {
 							</div>
 						)}
 
-						{/* <li>
-						<button
-							className="btn btn-default halfy "
-							id="report_mode"
-							title="Show report"
-							onClick={() => func.onShowReportModeClicked()}
-						>
-							<i className="fa fa-calculator" aria-hidden="true"></i>
-						</button>
-						<button
-							className="btn btn-default halfy pull-right"
-							onClick={() => {
-								fullscreen();
-								this.style.display = "none";
-								$("#nofull_mode").show();
-							}}
-							id="full_mode"
-							title="Full screen"
-						>
-							<i className="fa fa-expand" aria-hidden="true"></i>
-						</button>
-						<button
-							className="btn btn-default halfy pull-right"
-							style={{ display: "none" }}
-							onClick={() => {
-								outFullscreen();
-								this.style.display = "none";
-								$("#full_mode").show();
-							}}
-							id="nofull_mode"
-							data-toggle="tooltip"
-							data-placement="right"
-							title="Full screen"
-						>
-							<i className="fa fa-compress" aria-hidden="true"></i>
-						</button>
-					</li> */}
-
 						<div style={{ clear: "both" }}></div>
 					</ul>
 				</div>
@@ -2296,7 +1653,6 @@ function App() {
 									onClick={() => {
 										initHistory("recovery");
 										modalToggle();
-										setShowMyModal((prev) => !prev);
 										// $("#myModal").modal("toggle");
 									}}
 								>
@@ -2320,7 +1676,6 @@ function App() {
 										onClick={() => {
 											initHistory("");
 											modalToggle();
-											setShowMyModal((prev) => !prev);
 											// $("#myModal").modal("toggle");
 										}}
 									/>
@@ -2340,7 +1695,6 @@ function App() {
 										onClick={() => {
 											initHistory("newSquare");
 											modalToggle();
-											setShowMyModal((prev) => !prev);
 											// $("#myModal").modal("toggle");
 										}}
 									/>
@@ -2360,7 +1714,6 @@ function App() {
 										onClick={() => {
 											initHistory("newL");
 											modalToggle();
-											setShowMyModal((prev) => !prev);
 											// $("#myModal").modal("toggle");
 										}}
 									/>

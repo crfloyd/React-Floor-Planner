@@ -1,5 +1,10 @@
 import React from "react";
-import { Mode, ObjectEquationData, SvgPathMetaData } from "../../models";
+import {
+	CursorType,
+	Mode,
+	ObjectEquationData,
+	SvgPathMetaData,
+} from "../../models";
 import { calculateSnap } from "../../utils";
 import { CanvasState } from "../CanvasState";
 import { handleMouseMoveBindMode } from "./BindModeMouseMoveHandler";
@@ -15,7 +20,8 @@ export const handleMouseMove = (
 	continuousWallMode: boolean,
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void,
 	resetObjectEquationData: () => ObjectEquationData[],
-	setHelperLineSvgData: (l: SvgPathMetaData | null) => void
+	setHelperLineSvgData: (l: SvgPathMetaData | null) => void,
+	setCursor: (crsr: CursorType) => void
 ) => {
 	event.preventDefault();
 
@@ -45,7 +51,13 @@ export const handleMouseMove = (
 			handleMouseMoveOpeningMode(snap, canvasState);
 			break;
 		case Mode.Select:
-			handleMouseMoveSelectMode(event, snap, canvasState, handleCameraChange);
+			handleMouseMoveSelectMode(
+				event,
+				snap,
+				canvasState,
+				setCursor,
+				handleCameraChange
+			);
 			break;
 		case Mode.Line:
 		case Mode.Partition:
@@ -53,6 +65,7 @@ export const handleMouseMove = (
 				snap,
 				setHelperLineSvgData,
 				continuousWallMode,
+				setCursor,
 				canvasState
 			);
 			break;
@@ -61,6 +74,7 @@ export const handleMouseMove = (
 				snap,
 				resetObjectEquationData,
 				setHelperLineSvgData,
+				setCursor,
 				canvasState
 			);
 			break;

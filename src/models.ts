@@ -238,3 +238,20 @@ export interface Polygon {
 	realArea: number;
 	inside?: number[];
 }
+
+export interface LayerSettings {
+	showSurfaces: boolean;
+	showMeasurements: boolean;
+	showTexture: boolean;
+	showEnergy: boolean;
+}
+
+export type CursorType =
+	| "crosshair"
+	| "move"
+	| "pointer"
+	| "validation"
+	| "default"
+	| "trash"
+	| "scissor"
+	| "grab";

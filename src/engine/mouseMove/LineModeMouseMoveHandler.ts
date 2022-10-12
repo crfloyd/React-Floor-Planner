@@ -1,7 +1,7 @@
 import { constants } from "../../../constants";
 import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
-import { Mode, Point2D, SvgPathMetaData } from "../../models";
+import { CursorType, Mode, Point2D, SvgPathMetaData } from "../../models";
 import { angleBetweenPoints, createWallGuideLine } from "../../svgTools";
 import { CanvasState } from "../CanvasState";
 
@@ -9,12 +9,19 @@ export const handleMouseMoveLineMode = (
 	snap: Point2D,
 	setHelperLineSvgData: (l: SvgPathMetaData | null) => void,
 	continuousWallMode: boolean,
+	setCursor: (crsr: CursorType) => void,
 	canvasState: CanvasState
 ) => {
 	if (canvasState.action) {
-		onActionTrue(snap, continuousWallMode, setHelperLineSvgData, canvasState);
+		onActionTrue(
+			snap,
+			continuousWallMode,
+			setHelperLineSvgData,
+			setCursor,
+			canvasState
+		);
 	} else {
-		onActionFalse(canvasState, snap, setHelperLineSvgData);
+		onActionFalse(canvasState, setCursor, snap, setHelperLineSvgData);
 	}
 };
 
@@ -22,10 +29,10 @@ export const onActionTrue = (
 	snap: Point2D,
 	continuousWallMode: boolean,
 	setHelperLineSvgData: (l: SvgPathMetaData | null) => void,
+	setCursor: (crsr: CursorType) => void,
 	{
 		binder,
 		setBinder,
-		setCursor,
 		point,
 		setPoint,
 		lengthTemp,
@@ -261,7 +268,8 @@ export const onActionTrue = (
 };
 
 export const onActionFalse = (
-	{ binder, setBinder, setCursor, setPoint, wallMeta }: CanvasState,
+	{ binder, setBinder, setPoint, wallMeta }: CanvasState,
+	setCursor: (crsr: CursorType) => void,
 	snap: Point2D,
 	setHelperLineSvgData: (l: SvgPathMetaData | null) => void
 ) => {
