@@ -1,4 +1,4 @@
-import { Mode } from "../../models";
+import { Mode, ViewboxData } from "../../models";
 import { calculateSnap } from "../../utils";
 import { CanvasState } from "../CanvasState";
 import { handleNodeClicked } from "./NodeClickHandler";
@@ -7,6 +7,7 @@ import { handleSegmentClicked } from "./SegmentClickHandler";
 interface Props {
 	event: React.TouchEvent | React.MouseEvent;
 	canvasState: CanvasState;
+	viewbox: ViewboxData;
 }
 
 export const handleSelectModeClick = ({
@@ -25,10 +26,10 @@ export const handleSelectModeClick = ({
 		setWallEquations,
 		setPoint,
 		setDrag,
-		viewbox,
 		setCurrentNodeWallObjects,
 		setCurrentNodeWalls,
 	},
+	viewbox,
 }: Props) => {
 	switch (binder?.type) {
 		case "segment": {

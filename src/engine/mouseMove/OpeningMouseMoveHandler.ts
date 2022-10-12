@@ -8,7 +8,8 @@ import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveOpeningMode = (
 	snap: Point2D,
-	{ binder, setBinder, wallMeta, modeOption, viewbox }: CanvasState
+	{ binder, setBinder, wallMeta, modeOption }: CanvasState,
+	viewbox: ViewboxData
 ) => {
 	const wallSelect = nearWall(snap, wallMeta);
 	if (wallSelect) {

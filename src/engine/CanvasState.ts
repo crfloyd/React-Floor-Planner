@@ -131,15 +131,6 @@ export class CanvasState {
 		intersection: Point2D | null;
 	} = { equations: [], intersection: null };
 
-	viewbox: ViewboxData = {
-		width: 0,
-		height: 0,
-		originX: 0,
-		originY: 0,
-		zoomFactor: 1,
-		zoomLevel: 1,
-	};
-
 	cross: any = null;
 	setCross = (val: any) => {
 		this.cross = val;

@@ -15,6 +15,8 @@ import {
 	WallJunction,
 	WallVertex,
 	Polygon,
+	RoomPolygonData,
+	RoomMetaData,
 } from "./models";
 import { v4 as uuid } from "uuid";
 import {
@@ -2497,6 +2499,234 @@ export const architect = ({
 
 	const updatedPolygons = polygonize(walls);
 	setRoomPolygonData(updatedPolygons);
-	editor.roomMaker(updatedPolygons, roomMeta, setRoomMeta);
+	renderRoom(updatedPolygons, roomMeta, setRoomMeta);
 	return true;
+};
+
+export const renderRoom = (
+	roomPolygonData: RoomPolygonData,
+	roomMeta: RoomMetaData[],
+	setRoomMeta: (r: RoomMetaData[]) => RoomMetaData[]
+) => {
+	let globalArea = 0;
+	if (roomPolygonData.polygons.length == 0) {
+		roomMeta = setRoomMeta([]);
+	}
+	for (var pp = 0; pp < roomPolygonData.polygons.length; pp++) {
+		let foundRoom = false;
+		let roomPoly = roomPolygonData.polygons[pp];
+		// for (let rr = 0; rr < roomMeta.length; rr++) {
+		roomMeta.forEach((room) => {
+			let countCoords = roomPoly.coords.length;
+			const diffCoords = qSVG.diffObjIntoArray(roomPoly.coords, room.coords);
+			if (roomPoly.way.length == room.way.length) {
+				if (
+					qSVG.diffArray(roomPoly.way, room.way).length == 0 ||
+					diffCoords == 0
+				) {
+					countCoords = 0;
+				}
+			}
+			if (roomPoly.way.length == room.way.length + 1) {
+				if (
+					qSVG.diffArray(roomPoly.way, room.way).length == 1 ||
+					diffCoords == 2
+				) {
+					countCoords = 0;
+				}
+			}
+			if (roomPoly.way.length == room.way.length - 1) {
+				if (qSVG.diffArray(roomPoly.way, room.way).length == 1) {
+					countCoords = 0;
+				}
+			}
+			if (countCoords == 0) {
+				foundRoom = true;
+				roomMeta = setRoomMeta([
+					...roomMeta.filter((r) => r !== room),
+					{
+						...room,
+						area: roomPoly.area,
+						inside: roomPoly.inside ?? [],
+						coords: roomPoly.coords,
+						coordsOutside: roomPoly.coordsOutside,
+						way: roomPoly.way,
+						coordsInside: roomPoly.coordsInside ?? [],
+					},
+				]);
+				return;
+			}
+		});
+		// }
+		if (!foundRoom) {
+			roomMeta = setRoomMeta([
+				...roomMeta,
+				{
+					coords: roomPoly.coords,
+					coordsOutside: roomPoly.coordsOutside,
+					coordsInside: roomPoly.coordsInside ?? [],
+					inside: roomPoly.inside ?? [],
+					way: roomPoly.way,
+					area: roomPoly.area,
+					surface: "",
+					name: "",
+					color: "gradientWhite",
+					showSurface: true,
+					action: "add",
+				},
+			]);
+		}
+	}
+
+	var toSplice = [];
+	for (var rr = 0; rr < roomMeta.length; rr++) {
+		var found = true;
+		for (var pp = 0; pp < roomPolygonData.polygons.length; pp++) {
+			var countRoom = roomMeta[rr].coords.length;
+			let roomPoly = roomPolygonData.polygons[pp];
+			var diffCoords = qSVG.diffObjIntoArray(
+				roomPoly.coords,
+				roomMeta[rr].coords
+			);
+			if (roomPoly.way.length == roomMeta[rr].way.length) {
+				if (
+					qSVG.diffArray(roomPoly.way, roomMeta[rr].way).length == 0 ||
+					diffCoords == 0
+				) {
+					countRoom = 0;
+				}
+			}
+			if (roomPoly.way.length == roomMeta[rr].way.length + 1) {
+				if (
+					qSVG.diffArray(roomPoly.way, roomMeta[rr].way).length == 1 ||
+					diffCoords == 2
+				) {
+					countRoom = 0;
+				}
+			}
+			if (roomPoly.way.length == roomMeta[rr].way.length - 1) {
+				if (qSVG.diffArray(roomPoly.way, roomMeta[rr].way).length == 1) {
+					countRoom = 0;
+				}
+			}
+			if (countRoom == 0) {
+				found = true;
+				break;
+			} else found = false;
+		}
+		if (!found) toSplice.push(rr);
+	}
+
+	toSplice.sort(function (a, b) {
+		return b - a;
+	});
+
+	for (var ss = 0; ss < toSplice.length; ss++) {
+		roomMeta.splice(toSplice[ss], 1);
+	}
+	setRoomMeta(roomMeta);
+	$("#boxRoom").empty();
+	$("#boxSurface").empty();
+	$("#boxArea").empty();
+	for (var rr = 0; rr < roomMeta.length; rr++) {
+		if (roomMeta[rr].action == "add")
+			globalArea = globalArea + roomMeta[rr].area;
+
+		var pathSurface = roomMeta[rr].coords;
+		var pathCreate = "M" + pathSurface[0].x + "," + pathSurface[0].y;
+		for (var p = 1; p < pathSurface.length; p++) {
+			pathCreate =
+				pathCreate + " " + "L" + pathSurface[p].x + "," + pathSurface[p].y;
+		}
+		if (roomMeta[rr].inside.length > 0) {
+			for (var ins = 0; ins < roomMeta[rr].inside.length; ins++) {
+				pathCreate =
+					pathCreate +
+					" M" +
+					roomPolygonData.polygons[roomMeta[rr].inside[ins]].coords[
+						roomPolygonData.polygons[roomMeta[rr].inside[ins]].coords.length - 1
+					].x +
+					"," +
+					roomPolygonData.polygons[roomMeta[rr].inside[ins]].coords[
+						roomPolygonData.polygons[roomMeta[rr].inside[ins]].coords.length - 1
+					].y;
+				for (
+					var free =
+						roomPolygonData.polygons[roomMeta[rr].inside[ins]].coords.length -
+						2;
+					free > -1;
+					free--
+				) {
+					pathCreate =
+						pathCreate +
+						" L" +
+						roomPolygonData.polygons[roomMeta[rr].inside[ins]].coords[free].x +
+						"," +
+						roomPolygonData.polygons[roomMeta[rr].inside[ins]].coords[free].y;
+				}
+			}
+		}
+		createSvgElement("boxRoom", "path", {
+			d: pathCreate,
+			fill: "url(#" + roomMeta[rr].color + ")",
+			"fill-opacity": 1,
+			stroke: "none",
+			"fill-rule": "evenodd",
+			class: "room",
+		});
+
+		createSvgElement("boxSurface", "path", {
+			d: pathCreate,
+			fill: "#fff",
+			"fill-opacity": 1,
+			stroke: "none",
+			"fill-rule": "evenodd",
+			class: "room",
+		});
+
+		var centroid = qSVG.polygonVisualCenter(roomMeta[rr], roomMeta);
+
+		if (roomMeta[rr].name != "") {
+			const styled = { color: "#343938" };
+			if (
+				roomMeta[rr].color == "gradientBlack" ||
+				roomMeta[rr].color == "gradientBlue"
+			)
+				styled.color = "white";
+			qSVG.textOnDiv(roomMeta[rr].name, centroid, styled, "boxArea");
+		}
+
+		if (roomMeta[rr].name != "") centroid.y = centroid.y + 20;
+		let area =
+			(
+				roomMeta[rr].area /
+				(constants.METER_SIZE * constants.METER_SIZE)
+			).toFixed(2) + " m²";
+		const styled = {
+			color: "#343938",
+			fontSize: "12.5px",
+			fontWeight: "normal",
+		};
+		if (roomMeta[rr].surface != "") {
+			styled.fontWeight = "bold";
+			area = roomMeta[rr].surface + " m²";
+		}
+		if (
+			roomMeta[rr].color == "gradientBlack" ||
+			roomMeta[rr].color == "gradientBlue"
+		)
+			styled.color = "white";
+		if (roomMeta[rr].showSurface)
+			qSVG.textOnDiv(area, centroid, styled, "boxArea");
+	}
+	if (globalArea <= 0) {
+		globalArea = 0;
+		$("#areaValue").html("");
+	} else {
+		$("#areaValue").html(
+			'<i class="fa fa-map-o" aria-hidden="true"></i> ' +
+				(globalArea / 3600).toFixed(1) +
+				" m²"
+		);
+	}
 };

@@ -9,20 +9,13 @@ import {
 	updateMeasurementText,
 } from "../../svgTools";
 import { CanvasState } from "../CanvasState";
-import { CursorType } from "../../models";
+import { CursorType, ViewboxData } from "../../models";
 
 export const handleMouseMoveSelectMode = (
 	event: React.TouchEvent | React.MouseEvent,
 	snap: { x: number; y: number; xMouse: number; yMouse: number },
-	{
-		binder,
-		setBinder,
-		wallMeta,
-		objectMeta,
-		point,
-		drag,
-		viewbox,
-	}: CanvasState,
+	{ binder, setBinder, wallMeta, objectMeta, point, drag }: CanvasState,
+	viewbox: ViewboxData,
 	setCursor: (crsr: CursorType) => void,
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void
 ) => {

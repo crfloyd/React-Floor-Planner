@@ -18,6 +18,7 @@ import {
 	pointInPolygon,
 	polygonize,
 	refreshWalls,
+	renderRoom,
 	setInWallMeasurementText,
 	updateMeasurementText,
 } from "../../svgTools";
@@ -179,7 +180,7 @@ export const handleMouseMoveBindMode = (
 		$("#boxSurface").empty();
 		const polygonData = polygonize(wallMeta);
 		setRoomPolygonData(polygonData);
-		editor.roomMaker(polygonData, roomMeta, setRoomMeta);
+		renderRoom(polygonData, roomMeta, setRoomMeta);
 	}
 
 	// WALL MOVING ----BINDER TYPE SEGMENT-------- FUNCTION FOR H,V and Calculate Vectorial Translation
@@ -390,7 +391,7 @@ export const handleMouseMoveBindMode = (
 
 		$("#boxRoom").empty();
 		$("#boxSurface").empty();
-		editor.roomMaker(roomPolygonData, roomMeta, setRoomMeta);
+		renderRoom(roomPolygonData, roomMeta, setRoomMeta);
 		setCursor("pointer");
 	}
 

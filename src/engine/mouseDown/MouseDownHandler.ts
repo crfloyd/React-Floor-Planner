@@ -1,4 +1,4 @@
-import { CursorType, Mode } from "../../models";
+import { CursorType, Mode, ViewboxData } from "../../models";
 import { nearWall } from "../../svgTools";
 import { calculateSnap } from "../../utils";
 import { CanvasState } from "../CanvasState";
@@ -8,12 +8,18 @@ interface Props {
 	event: React.TouchEvent | React.MouseEvent;
 	canvasState: CanvasState;
 	setCursor: (crsr: CursorType) => void;
+	viewbox: ViewboxData;
 }
 
-export const handleMouseDown = ({ event, canvasState, setCursor }: Props) => {
+export const handleMouseDown = ({
+	event,
+	canvasState,
+	setCursor,
+	viewbox,
+}: Props) => {
 	event?.preventDefault();
 
-	const { mode, action, viewbox, setPoint, wallMeta, setAction } = canvasState;
+	const { mode, action, setPoint, wallMeta, setAction } = canvasState;
 	switch (mode) {
 		case Mode.Line:
 		case Mode.Partition: {
@@ -34,7 +40,7 @@ export const handleMouseDown = ({ event, canvasState, setCursor }: Props) => {
 			break;
 		}
 		case Mode.Select: {
-			handleSelectModeClick({ event, canvasState });
+			handleSelectModeClick({ event, canvasState, viewbox });
 		}
 	}
 };

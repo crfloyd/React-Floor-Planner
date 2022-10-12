@@ -3,25 +3,20 @@ import React, { useEffect, useState } from "react";
 import {
 	onWindowLoad,
 	flush_button,
-	onRoomColorClicked,
-	onApplySurfaceClicked,
 	modalToggle,
-	getCanvasDimensions,
-	setViewboxContent,
 	appendObjects,
 } from "../func";
 import { qSVG } from "../qSVG";
 import { editor } from "../editor";
 import { computeLimit, intersectionOfEquations } from "./utils";
 
-import "./App.css";
+import "./App.scss";
 import {
 	Mode,
 	ObjectMetaData,
 	Point2D,
 	RoomMetaData,
 	WallMetaData,
-	SvgPathMetaData,
 	RoomDisplayData,
 	LayerSettings,
 	CursorType,
@@ -29,6 +24,7 @@ import {
 import { constants } from "../constants";
 import {
 	architect,
+	renderRoom,
 	setInWallMeasurementText,
 	updateMeasurementText,
 } from "./svgTools";
@@ -39,22 +35,18 @@ import ObjectTools from "./components/ObjectTools";
 import DoorWindowTools from "./components/DoorWindowTools";
 import { CanvasState } from "./engine/CanvasState";
 import FloorPlannerCanvas from "./components/FloorPlannerCanvas/FloorPlannerCanvas";
+import { useCameraTools } from "./hooks/useCameraTools";
 
 const canvasState = new CanvasState();
 
 function App() {
 	const [cursor, setCursor] = useState<CursorType>("default");
-	const [showSurface, setShowSurface] = useState(true);
-	const [addSurface, setAddSurface] = useState(true);
-	const [ignoreSurface, setIgnoreSurface] = useState(false);
 	const [layerSettings, setLayerSettings] = useState<LayerSettings>({
 		showSurfaces: true,
-		showEnergy: true,
+		showDevices: true,
 		showMeasurements: true,
 		showTexture: true,
 	});
-
-	// const [wallWidth, setWallWidth] = useState(7);
 
 	const [selectedObject, setSelectedObject] = useState({
 		minWidth: 0,
@@ -96,7 +88,6 @@ function App() {
 		name: "",
 		action: "",
 	});
-	const [scaleValue, setScaleValue] = useState(1);
 	const [showSubMenu, setShowSubMenu] = useState(false);
 	const [continuousWallMode, setContinuousWallMode] = useState(true);
 	const [roomColor, setRoomColor] = useState("gradientNeutral");
@@ -105,14 +96,15 @@ function App() {
 	const [showWindowList, setShowWindowList] = useState(false);
 	const [showEnergyList, setShowEnergyList] = useState(false);
 	const [showLayerList, setShowLayerList] = useState(false);
+	const [canvasDimensions, setCanvasDimenions] = useState({
+		width: 0,
+		height: 0,
+	});
 
 	const { save, init, undo, redo, historyIndex } = useHistory();
 
-	const resetViewbox = () => {
-		const { w, h } = getCanvasDimensions();
-		canvasState.viewbox.width = w || 0;
-		canvasState.viewbox.height = h || 0;
-	};
+	const { viewbox, scaleValue, handleCameraChange } =
+		useCameraTools(canvasDimensions);
 
 	const onKeyPress = (e: KeyboardEvent) => {
 		// console.log(e);
@@ -132,24 +124,51 @@ function App() {
 	};
 
 	useEffect(() => {
-		resetViewbox();
-		onWindowLoad(canvasState.viewbox);
-		const onResize = () => {
-			console.log("Window resize deteced. Resetting view box");
-			resetViewbox();
-			editor.onWindowResize(canvasState.viewbox);
-		};
+		onWindowLoad(viewbox);
 		document.addEventListener("keydown", onKeyPress);
-		window.addEventListener("resize", onResize);
 		return () => {
-			window.removeEventListener("resize", onResize);
 			document.removeEventListener("keydown", onKeyPress);
 		};
 	}, []);
 
+	const onRoomColorClicked = (val: string) => {
+		setSelectedRoomData({ ...selectedRoomData, background: val });
+		canvasState.binder.attr({ fill: "url(#" + val + ")" });
+	};
+
+	const onApplySurfaceClicked = () => {
+		setShowRoomTools(false);
+		setShowMainPanel(true);
+
+		canvasState.binder.remove();
+		canvasState.setBinder(null);
+
+		const roomMetaCopy = [...canvasState.roomMeta];
+		const id = $("#roomIndex").val() as number;
+
+		let roomMeta = roomMetaCopy[id];
+		if (!roomMeta) return;
+
+		roomMeta.color = selectedRoomData.background;
+		roomMeta.name = selectedRoomData.name;
+		roomMeta.surface = selectedRoomData.surface;
+		roomMeta.showSurface = selectedRoomData.showSurface;
+
+		canvasState.setRoomMeta(roomMetaCopy);
+
+		renderRoom(
+			canvasState.roomPolygonData,
+			roomMetaCopy,
+			canvasState.setRoomMeta
+		);
+
+		setBoxInfoText("Room modified");
+		applyMode(Mode.Select);
+	};
+
 	const onUndoClicked = () => {
 		if (historyIndex - 1 > 0) {
-			const { objects, walls, rooms } = undo(canvasState.viewbox);
+			const { objects, walls, rooms } = undo(viewbox);
 			apply(objects, walls, rooms);
 			setEnableRedo(true);
 		}
@@ -160,7 +179,7 @@ function App() {
 
 	const onRedoClicked = () => {
 		if (historyIndex < history.length) {
-			const { objects, walls, rooms } = redo(canvasState.viewbox);
+			const { objects, walls, rooms } = redo(viewbox);
 			apply(objects, walls, rooms);
 			setEnableUndo(true);
 			if (historyIndex == history.length) {
@@ -215,59 +234,8 @@ function App() {
 		save(canvasState);
 	};
 
-	const handleCameraChange = (lens: string, xmove: number, xview = 0) => {
-		const { w: canvasWidth, h: canvasHeight } = getCanvasDimensions();
-		const viewbox = canvasState.viewbox;
-
-		if (lens == "zoomout" && viewbox.zoomLevel > 1 && viewbox.zoomLevel < 17) {
-			viewbox.zoomLevel--;
-			viewbox.width += xmove;
-			var ratioWidthZoom = canvasWidth / viewbox.width;
-			const ratio_viewbox = viewbox.height / viewbox.width;
-			viewbox.height = viewbox.width * ratio_viewbox;
-			setScaleValue(ratioWidthZoom);
-			viewbox.originX = viewbox.originX - xmove / 2;
-			viewbox.originY = viewbox.originY - (xmove / 2) * ratio_viewbox;
-		}
-		if (lens == "zoomin" && viewbox.zoomLevel < 14 && viewbox.zoomLevel > 0) {
-			viewbox.zoomLevel++;
-			viewbox.width -= xmove;
-			var ratioWidthZoom = canvasWidth / viewbox.width;
-			const ratio_viewbox = viewbox.height / viewbox.width;
-			viewbox.height = viewbox.width * ratio_viewbox;
-			setScaleValue(ratioWidthZoom);
-			viewbox.originX = viewbox.originX + xmove / 2;
-			viewbox.originY = viewbox.originY + (xmove / 2) * ratio_viewbox;
-		}
-		viewbox.zoomFactor = viewbox.width / canvasWidth;
-		if (lens == "zoomreset") {
-			viewbox.originX = 0;
-			viewbox.originY = 0;
-			viewbox.width = canvasWidth;
-			viewbox.height = canvasHeight;
-			viewbox.zoomFactor = 1;
-		}
-		if (lens == "zoomright") {
-			viewbox.originX += xview;
-		}
-		if (lens == "zoomleft") {
-			viewbox.originX -= xview;
-		}
-		if (lens == "zoomtop") {
-			viewbox.originY -= xview;
-		}
-		if (lens == "zoombottom") {
-			viewbox.originY += xview;
-		}
-		if (lens == "zoomdrag") {
-			viewbox.originX -= xmove;
-			viewbox.originY -= xview;
-		}
-		setViewboxContent(viewbox);
-	};
-
 	const initHistory = (type: string) => {
-		const { objects, walls, rooms } = init(type, canvasState.viewbox);
+		const { objects, walls, rooms } = init(type, viewbox);
 		apply(objects, walls, rooms);
 	};
 
@@ -498,15 +466,6 @@ function App() {
 		applyMode(Mode.Select);
 	};
 
-	const onMouseWheel = (e: React.WheelEvent<SVGSVGElement>) => {
-		// e.preventDefault();
-		if (e.deltaY > 0) {
-			handleCameraChange("zoomin", 100);
-		} else {
-			handleCameraChange("zoomout", 100);
-		}
-	};
-
 	const cancelWallCreation = () => {
 		if (
 			(canvasState.mode == Mode.Line || canvasState.mode == Mode.Partition) &&
@@ -516,21 +475,6 @@ function App() {
 			editor.resetWallCreation(canvasState.binder, canvasState.lengthTemp);
 			canvasState.setBinder(null);
 			canvasState.setLengthTemp(null);
-		}
-	};
-
-	const getCursorImg = (str: string) => {
-		switch (str) {
-			case "grab":
-				return constants.GRAB_CURSOR;
-			case "scissor":
-				return constants.SCISSOR_CURSOR;
-			case "trash":
-				return constants.TRASH_CURSOR;
-			case "validation":
-				return constants.VALIDATION_CURSOR;
-			default:
-				return str;
 		}
 	};
 
@@ -602,6 +546,10 @@ function App() {
 				onMouseMove={() => setShowSubMenu(false)}
 				cursor={cursor}
 				setCursor={setCursor}
+				onCanvasDimensionsChanged={(w: number, h: number) =>
+					setCanvasDimenions({ width: w, height: h })
+				}
+				viewbox={viewbox}
 			/>
 
 			<div id="areaValue"></div>
@@ -674,12 +622,13 @@ function App() {
 							placeholder="actual area"
 							aria-describedby="basic-addon2"
 							value={selectedRoomData.surface}
-							onChange={(e) =>
+							onChange={(e) => {
+								console.log(e.target.value);
 								setSelectedRoomData((prev) => ({
 									...prev,
 									surface: e.target.value,
-								}))
-							}
+								}));
+							}}
 						/>
 						<span className="input-group-addon" id="basic-addon2">
 							m²
@@ -702,186 +651,243 @@ function App() {
 							{/* <span className="caret">{roomType}</span> */}
 						</button>
 						<ul className="dropdown-menu">
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({ ...selectedRoomData, name: "None" });
-								}}
-							>
-								<a href="#">None</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({ ...selectedRoomData, name: "None" });
+									}}
+								>
+									None
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Living Room",
-									});
-								}}
-							>
-								<a href="#">Living Room</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Living Room",
+										});
+									}}
+								>
+									Living Room
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({ ...selectedRoomData, name: "Kitchen" });
-								}}
-							>
-								<a href="#">Kitchen</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Kitchen",
+										});
+									}}
+								>
+									Kitchen
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Bathroom",
-									});
-								}}
-							>
-								<a href="#">Bathroom</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={(e) => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Bathroom",
+										});
+									}}
+								>
+									Bathroom
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Bathroom 2",
-									});
-								}}
-							>
-								<a href="#">Bathroom 2</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Bathroom 2",
+										});
+									}}
+								>
+									Bathroom 2
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Bedroom 1",
-									});
-								}}
-							>
-								<a href="#">Bedroom 1</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Bedroom 1",
+										});
+									}}
+								>
+									Bedroom 1
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Bedroom 2",
-									});
-								}}
-							>
-								<a href="#">Bedroom 2</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Bedroom 2",
+										});
+									}}
+								>
+									Bedroom 2
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Bedroom 3",
-									});
-								}}
-							>
-								<a href="#">Bedroom 3</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Bedroom 3",
+										});
+									}}
+								>
+									Bedroom 3
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Bedroom 4",
-									});
-								}}
-							>
-								<a href="#">Bedroom 4</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Bedroom 4",
+										});
+									}}
+								>
+									Bedroom 4
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Bedroom 5",
-									});
-								}}
-							>
-								<a href="#">Bedroom 5</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Bedroom 5",
+										});
+									}}
+								>
+									Bedroom 5
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Closet",
-									});
-								}}
-							>
-								<a href="#">Closet</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Closet",
+										});
+									}}
+								>
+									Closet
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Office",
-									});
-								}}
-							>
-								<a href="#">Office</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Office",
+										});
+									}}
+								>
+									Office
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Hall",
-									});
-								}}
-							>
-								<a href="#">Hall</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Hall",
+										});
+									}}
+								>
+									Hall
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Foyer",
-									});
-								}}
-							>
-								<a href="#">Foyer</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Foyer",
+										});
+									}}
+								>
+									Foyer
+								</button>
 							</li>
 							<li className="divider"></li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Balcony",
-									});
-								}}
-							>
-								<a href="#">Balcony</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Balcony",
+										});
+									}}
+								>
+									Balcony
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Terrace",
-									});
-								}}
-							>
-								<a href="#">Terrace</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Terrace",
+										});
+									}}
+								>
+									Terrace
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Garage",
-									});
-								}}
-							>
-								<a href="#">Garage</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Garage",
+										});
+									}}
+								>
+									Garage
+								</button>
 							</li>
-							<li
-								onClick={(e) => {
-									setSelectedRoomData({
-										...selectedRoomData,
-										name: "Clearance",
-									});
-								}}
-							>
-								<a href="#">clearance</a>
+							<li>
+								<button
+									className="dropdown-item"
+									onClick={() => {
+										setSelectedRoomData({
+											...selectedRoomData,
+											name: "Clearance",
+										});
+									}}
+								>
+									clearance
+								</button>
 							</li>
 						</ul>
 					</div>
 					<br />
 					<br />
-					Meter :
+					{/* Meter :
 					<div className="funkyradio">
 						<div className="funkyradio-success">
 							<input
@@ -889,8 +895,13 @@ function App() {
 								name="roomShow"
 								value="showSurface"
 								id="seeArea"
-								checked={showSurface}
-								onChange={() => setShowSurface(!showSurface)}
+								checked={selectedRoomData.showSurface}
+								onChange={() =>
+									setSelectedRoomData({
+										...selectedRoomData,
+										showSurface: !selectedRoomData.showSurface,
+									})
+								}
 							/>
 							<label htmlFor="seeArea">Show the surface</label>
 						</div>
@@ -918,7 +929,7 @@ function App() {
 							/>
 							<label htmlFor="passAction">Ignore the surface</label>
 						</div>
-					</div>
+					</div> */}
 					<hr />
 					<p>Colors</p>
 					<div
@@ -928,8 +939,7 @@ function App() {
 							background: `linear-gradient(30deg, ${constants.COLOR_ROOM_RED}, ${constants.COLOR_ROOM_RED})`,
 						}}
 						onClick={() => {
-							setRoomColor("roomGradientRed");
-							onRoomColorClicked("roomGradientRed", canvasState.binder);
+							onRoomColorClicked("roomGradientRed");
 						}}
 					></div>
 					<div
@@ -939,8 +949,7 @@ function App() {
 							background: `linear-gradient(30deg, ${constants.COLOR_ROOM_GREEN}, ${constants.COLOR_ROOM_GREEN})`,
 						}}
 						onClick={() => {
-							setRoomColor("roomGradientGreen");
-							onRoomColorClicked("roomGradientGreen", canvasState.binder);
+							onRoomColorClicked("roomGradientGreen");
 						}}
 					></div>
 					<div
@@ -950,8 +959,7 @@ function App() {
 							background: `linear-gradient(30deg, ${constants.COLOR_ROOM_ORANGE}, ${constants.COLOR_ROOM_ORANGE})`,
 						}}
 						onClick={() => {
-							setRoomColor("roomGradientOrange");
-							onRoomColorClicked("roomGradientOrange", canvasState.binder);
+							onRoomColorClicked("roomGradientOrange");
 						}}
 					></div>
 					<div
@@ -961,8 +969,7 @@ function App() {
 							background: `linear-gradient(30deg, ${constants.COLOR_ROOM_BLUE}, ${constants.COLOR_ROOM_BLUE})`,
 						}}
 						onClick={() => {
-							setRoomColor("roomGradientBlue");
-							onRoomColorClicked("roomGradientBlue", canvasState.binder);
+							onRoomColorClicked("roomGradientBlue");
 						}}
 					></div>
 					<div
@@ -972,8 +979,7 @@ function App() {
 							background: `linear-gradient(30deg, ${constants.COLOR_ROOM_GRAY}, ${constants.COLOR_ROOM_GRAY})`,
 						}}
 						onClick={() => {
-							setRoomColor("roomGradientGray");
-							onRoomColorClicked("roomGradientGray", canvasState.binder);
+							onRoomColorClicked("roomGradientGray");
 						}}
 					></div>
 					{/* <div
@@ -992,8 +998,7 @@ function App() {
 						data-type="gradientYellow"
 						style={{ background: "linear-gradient(30deg,#e4c06e, #ffb000)" }}
 						onClick={() => {
-							setRoomColor("gradientYellow");
-							onRoomColorClicked("gradientYellow", canvasState.binder);
+							onRoomColorClicked("gradientYellow");
 						}}
 					></div>
 					<div
@@ -1001,8 +1006,7 @@ function App() {
 						data-type="gradientGreen"
 						style={{ background: "linear-gradient(30deg,#88cc6c, #60c437)" }}
 						onClick={() => {
-							setRoomColor("gradientGreen");
-							onRoomColorClicked("gradientGreen", canvasState.binder);
+							onRoomColorClicked("gradientGreen");
 						}}
 					></div>
 					<div
@@ -1010,8 +1014,7 @@ function App() {
 						data-type="gradientSky"
 						style={{ background: "linear-gradient(30deg,#77e1f4, #00d9ff)" }}
 						onClick={() => {
-							setRoomColor("gradientSky");
-							onRoomColorClicked("gradientSky", canvasState.binder);
+							onRoomColorClicked("gradientSky");
 						}}
 					></div>
 					<div
@@ -1019,8 +1022,7 @@ function App() {
 						data-type="gradientBlue"
 						style={{ background: "linear-gradient(30deg,#4f72a6, #284d7e)" }}
 						onClick={() => {
-							setRoomColor("gradientBlue");
-							onRoomColorClicked("gradientBlue", canvasState.binder);
+							onRoomColorClicked("gradientBlue");
 						}}
 					></div>
 					<div
@@ -1028,8 +1030,7 @@ function App() {
 						data-type="gradientGrey"
 						style={{ background: "linear-gradient(30deg,#666666, #aaaaaa)" }}
 						onClick={() => {
-							setRoomColor("gradientGrey");
-							onRoomColorClicked("gradientGrey", canvasState.binder);
+							onRoomColorClicked("gradientGrey");
 						}}
 					></div>
 					<div
@@ -1037,8 +1038,7 @@ function App() {
 						data-type="gradientWhite"
 						style={{ background: "linear-gradient(30deg,#fafafa, #eaeaea)" }}
 						onClick={() => {
-							setRoomColor("gradientWhite");
-							onRoomColorClicked("gradientWhite", canvasState.binder);
+							onRoomColorClicked("gradientWhite");
 						}}
 					></div>
 					<div
@@ -1046,8 +1046,7 @@ function App() {
 						data-type="gradientOrange"
 						style={{ background: "linear-gradient(30deg, #f9ad67, #f97f00)" }}
 						onClick={() => {
-							setRoomColor("gradientOrange");
-							onRoomColorClicked("gradientOrange", canvasState.binder);
+							onRoomColorClicked("gradientOrange");
 						}}
 					></div>
 					<div
@@ -1055,8 +1054,7 @@ function App() {
 						data-type="gradientPurple"
 						style={{ background: "linear-gradient(30deg,#a784d9, #8951da)" }}
 						onClick={() => {
-							setRoomColor("gradientPurple");
-							onRoomColorClicked("gradientPurple", canvasState.binder);
+							onRoomColorClicked("gradientPurple");
 						}}
 					></div>
 					<div
@@ -1064,8 +1062,7 @@ function App() {
 						data-type="gradientPink"
 						style={{ background: "linear-gradient(30deg,#df67bd, #e22aae)" }}
 						onClick={() => {
-							setRoomColor("gradientPink");
-							onRoomColorClicked("gradientPink", canvasState.binder);
+							onRoomColorClicked("gradientPink");
 						}}
 					></div>
 					<div
@@ -1073,8 +1070,7 @@ function App() {
 						data-type="gradientBlack"
 						style={{ background: "linear-gradient(30deg,#3c3b3b, #000000)" }}
 						onClick={() => {
-							setRoomColor("gradientBlack");
-							onRoomColorClicked("gradientBlack", canvasState.binder);
+							onRoomColorClicked("gradientBlack");
 						}}
 					></div>
 					<div
@@ -1082,8 +1078,7 @@ function App() {
 						data-type="gradientNeutral"
 						style={{ background: "linear-gradient(30deg,#e2c695, #c69d56)" }}
 						onClick={() => {
-							setRoomColor("gradientNeutral");
-							onRoomColorClicked("gradientNeutral", canvasState.binder);
+							onRoomColorClicked("gradientNeutral");
 						}}
 					></div>
 					<br />
@@ -1091,7 +1086,11 @@ function App() {
 					<div data-type="#ff008a" style={{ clear: "both" }}></div>
 					<br />
 					<br />
-					<input type="hidden" id="roomBackground" value={roomColor} />
+					<input
+						type="hidden"
+						id="roomBackground"
+						value={selectedRoomData.background}
+					/>
 					<input
 						type="hidden"
 						id="roomIndex"
@@ -1102,18 +1101,7 @@ function App() {
 						className="btn btn-primary"
 						id="applySurface"
 						onClick={() => {
-							setShowRoomTools(false);
-							setShowMainPanel(true);
-							onApplySurfaceClicked(
-								editor,
-								canvasState.roomPolygonData,
-								canvasState.roomMeta,
-								canvasState.setRoomMeta,
-								canvasState.binder,
-								canvasState.setBinder
-							);
-							setBoxInfoText("Room modified");
-							applyMode(Mode.Select);
+							onApplySurfaceClicked();
 						}}
 					>
 						Apply
@@ -1600,16 +1588,16 @@ function App() {
 									<div className="funkyradio-info">
 										<input
 											type="checkbox"
-											id="showLayerEnergy"
-											checked={layerSettings.showEnergy}
+											id="showLayerDevices"
+											checked={layerSettings.showDevices}
 											onChange={() =>
 												setLayerSettings((prev) => ({
 													...prev,
-													showEnergy: !prev.showEnergy,
+													showDevices: !prev.showDevices,
 												}))
 											}
 										/>
-										<label htmlFor="showLayerEnergy">Energy</label>
+										<label htmlFor="showLayerDevices">Devices</label>
 									</div>
 								</div>
 							</div>
@@ -1661,63 +1649,66 @@ function App() {
 								<hr />
 								<p>Or would you prefer to start a new plan?</p>
 							</div>
-							<div className="row">
-								<div
+							<div className="row new-plan-button-row">
+								<button
 									className="col-md-3 col-xs-3 boxMouseOver"
 									style={{
 										minHeight: "140px",
 										margin: "15px",
 										background: "url('newPlanEmpty.jpg')",
+									}}
+									onClick={() => {
+										initHistory("");
+										modalToggle();
+										// $("#myModal").modal("toggle");
 									}}
 								>
 									<img
 										src="newPlanEmpty.jpg"
 										className="img-responsive"
-										onClick={() => {
-											initHistory("");
-											modalToggle();
-											// $("#myModal").modal("toggle");
-										}}
+										alt="newPlanEmpty"
 									/>
-								</div>
-								<div
+								</button>
+								<button
 									className="col-md-3 col-xs-3 boxMouseOver"
 									style={{
 										minHeight: "140px",
 										margin: "15px",
 										background: "url('newPlanEmpty.jpg')",
+									}}
+									onClick={() => {
+										initHistory("newSquare");
+										modalToggle();
+										// $("#myModal").modal("toggle");
 									}}
 								>
 									<img
 										src="newPlanSquare.jpg"
 										className="img-responsive"
+										alt="newPlanSquare"
 										style={{ marginTop: "10px" }}
-										onClick={() => {
-											initHistory("newSquare");
-											modalToggle();
-											// $("#myModal").modal("toggle");
-										}}
 									/>
-								</div>
-								<div
+								</button>
+								<button
 									className="col-md-3 col-xs-3 boxMouseOver"
 									style={{
 										minHeight: "140px",
 										margin: "15px",
 										background: "url('newPlanEmpty.jpg')",
 									}}
+									onClick={() => {
+										initHistory("newL");
+										modalToggle();
+										// $("#myModal").modal("toggle");
+									}}
 								>
 									<img
 										src="newPlanL.jpg"
+										alt="newPlanL"
 										className="img-responsive"
 										style={{ marginTop: "20px" }}
-										onClick={() => {
-											initHistory("newL");
-											modalToggle();
-											// $("#myModal").modal("toggle");
-										}}
 									/>
-								</div>
+								</button>
 							</div>
 						</div>
 					</div>

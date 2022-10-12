@@ -30,6 +30,7 @@ export const useHistory = () => {
 		if (historyIndex < history.length) {
 			history = history.slice(0, historyIndex);
 		}
+		console.log(objectMeta);
 		history = [
 			...history,
 			{
@@ -73,6 +74,7 @@ export const useHistory = () => {
 				viewbox
 			);
 			obj.limit = objHistory.limit;
+			obj.id = objHistory.id;
 			obj.update();
 			return obj;
 		});
@@ -221,7 +223,7 @@ export const useHistory = () => {
 							{ x: 1070, y: 724 },
 						],
 						inside: [],
-						way: ["0", "2", "3", "1", "0"],
+						way: [0, 2, 3, 1, 0],
 						area: 270400,
 						surface: "",
 						name: "",
@@ -407,7 +409,7 @@ export const useHistory = () => {
 							{ x: 1337, y: 734 },
 						],
 						inside: [],
-						way: ["0", "2", "3", "4", "5", "1", "0"],
+						way: [0, 2, 3, 4, 5, 1, 0],
 						area: 330478,
 						surface: "",
 						name: "",

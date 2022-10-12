@@ -31,8 +31,8 @@ export interface RoomMetaData {
 	coords: Point2D[];
 	coordsOutside: Point2D[];
 	coordsInside: Point2D[];
-	inside: Point2D[];
-	way: string[];
+	inside: number[];
+	way: number[];
 	area: number;
 	surface: string;
 	name: string;
@@ -243,7 +243,7 @@ export interface LayerSettings {
 	showSurfaces: boolean;
 	showMeasurements: boolean;
 	showTexture: boolean;
-	showEnergy: boolean;
+	showDevices: boolean;
 }
 
 export type CursorType =

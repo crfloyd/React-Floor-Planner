@@ -4,6 +4,7 @@ import {
 	Mode,
 	ObjectEquationData,
 	SvgPathMetaData,
+	ViewboxData,
 } from "../../models";
 import { calculateSnap } from "../../utils";
 import { CanvasState } from "../CanvasState";
@@ -18,6 +19,7 @@ export const handleMouseMove = (
 	event: React.TouchEvent | React.MouseEvent,
 	canvasState: CanvasState,
 	continuousWallMode: boolean,
+	viewbox: ViewboxData,
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void,
 	resetObjectEquationData: () => ObjectEquationData[],
 	setHelperLineSvgData: (l: SvgPathMetaData | null) => void,
@@ -38,23 +40,24 @@ export const handleMouseMove = (
 	)
 		return;
 
-	const snap = calculateSnap(event, canvasState.viewbox);
+	const snap = calculateSnap(event, viewbox);
 
 	switch (canvasState.mode) {
 		case Mode.Object:
-			handleMouseMoveOverObject(snap, canvasState);
+			handleMouseMoveOverObject(snap, canvasState, viewbox);
 			break;
 		case Mode.Room:
 			handleMouseMoveRoomMode(snap, canvasState);
 			break;
 		case Mode.Opening:
-			handleMouseMoveOpeningMode(snap, canvasState);
+			handleMouseMoveOpeningMode(snap, canvasState, viewbox);
 			break;
 		case Mode.Select:
 			handleMouseMoveSelectMode(
 				event,
 				snap,
 				canvasState,
+				viewbox,
 				setCursor,
 				handleCameraChange
 			);

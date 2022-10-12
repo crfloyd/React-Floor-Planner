@@ -1,14 +1,15 @@
 import { constants } from "../../../constants";
 import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
-import { Point2D } from "../../models";
+import { Point2D, ViewboxData } from "../../models";
 import { Object2D } from "../../Object2D";
 import { getAngle } from "../../svgTools";
 import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveOverObject = (
 	snap: Point2D,
-	{ binder, setBinder, wallMeta, modeOption, viewbox }: CanvasState
+	{ binder, setBinder, wallMeta, modeOption }: CanvasState,
+	viewbox: ViewboxData
 ) => {
 	if (binder == null) {
 		$("#object_list").hide(200);

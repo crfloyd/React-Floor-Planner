@@ -32,78 +32,10 @@ export const modalToggle = () => {
 };
 
 export const onWindowLoad = (viewbox) => {
-	setViewboxContent(viewbox);
 	if (!localStorage.getItem("history")) {
 		$("#recover").html("<p>Select a plan type.");
 	}
-	// console.log("done");
 	$("#myModal").modal();
-};
-
-export const throttle = (callback, delay) => {
-	var last;
-	var timer;
-	return function () {
-		var context = this;
-		var now = +new Date();
-		var args = arguments;
-		if (last && now < last + delay) {
-			// le délai n'est pas écoulé on reset le timer
-			clearTimeout(timer);
-			timer = setTimeout(function () {
-				last = now;
-				callback.apply(context, args);
-			}, delay);
-		} else {
-			last = now;
-			callback.apply(context, args);
-		}
-	};
-};
-
-export const onApplySurfaceClicked = (
-	editor,
-	rooms,
-	roomMeta,
-	setRoomMeta,
-	binder,
-	setBinder
-) => {
-	// $("#roomTools").hide(100);
-	// $("#panel").show(200);
-	binder.remove();
-	setBinder(null);
-
-	const roomMetaCopy = [...roomMeta];
-	var id = $("#roomIndex").val();
-
-	//COLOR
-	var data = $("#roomBackground").val();
-	roomMetaCopy[id].color = data;
-
-	//ROOM NAME
-	var roomName = $("#roomName").val();
-	if (roomName == "None") roomName = "";
-	roomMetaCopy[id].name = roomName;
-
-	//ROOM SURFACE
-	var area = $("#roomSurface").val();
-	roomMetaCopy[id].surface = area;
-
-	//SHOW SURFACE
-	var show = document.querySelector("#seeArea").checked;
-	roomMetaCopy[id].showSurface = show;
-
-	//ACTION PARAM
-	var action = document.querySelector("input[type=radio]:checked").value;
-	roomMetaCopy[id].action = action;
-	if (action == "sub") roomMetaCopy[id].color = "hatch";
-	if (action != "sub" && data == "hatch")
-		roomMetaCopy[id].color = "gradientNeutral";
-	roomMeta = setRoomMeta(roomMetaCopy);
-	$("#boxRoom").empty();
-	$("#boxSurface").empty();
-	editor.roomMaker(rooms, roomMetaCopy, setRoomMeta);
 };
 
 export const onRoomColorClicked = (val, binder) => {
