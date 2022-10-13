@@ -267,7 +267,7 @@ export class Wall implements WallMetaData {
 		$("#boxwall").append(this.graph);
 	};
 
-	pointInsideWall = (point: Point2D, round = false) => {
+	pointInsideWall = (point: Point2D, round: boolean) => {
 		let p = { ...point };
 		let start = { ...this.start };
 		let end = { ...this.end };
@@ -293,7 +293,7 @@ export class Wall implements WallMetaData {
 					this.end.y
 				);
 				const searchResult = nearPointOnEquation(eq, obj);
-				if (searchResult.distance < 0.01 && this.pointInsideWall(obj)) {
+				if (searchResult.distance < 0.01 && this.pointInsideWall(obj, false)) {
 					objectsOnWall.push(obj);
 				}
 			}

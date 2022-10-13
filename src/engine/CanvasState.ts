@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
 	Mode,
 	NodeWallObjectData,
@@ -11,6 +12,16 @@ import {
 	WallEquationGroup,
 	WallMetaData,
 } from "../models";
+
+const useRoomState = () => {
+	const [roomPolygonData, setRoomPolygonData] = useState<RoomPolygonData>({
+		polygons: [],
+		vertex: [],
+	});
+	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
+
+	return { roomPolygonData, setRoomPolygonData, roomMetaData, setRoomMetaData };
+};
 
 export class CanvasState {
 	binder: any;
@@ -31,31 +42,33 @@ export class CanvasState {
 		return this.modeOption;
 	};
 
-	wallMeta: WallMetaData[] = [];
-	setWallMeta = (w: WallMetaData[]) => {
-		this.wallMeta = w;
-		return this.wallMeta;
-	};
+	// wallMeta: WallMetaData[] = [];
+	// setWallMeta = (w: WallMetaData[]) => {
+	// 	this.wallMeta = w;
+	// 	return this.wallMeta;
+	// };
 
-	roomPolygonData: RoomPolygonData = { polygons: [], vertex: [] };
-	setRoomPolygonData = (val: RoomPolygonData) => {
-		// console.log("Rooms set to: ", val);
-		this.roomPolygonData = val;
-		return this.roomPolygonData;
-	};
+	// roomPolygonData: RoomPolygonData = { polygons: [], vertex: [] };
+	// setRoomPolygonData: (val: RoomPolygonData) => void;
+	// setRoomPolygonData = (val: RoomPolygonData) => {
+	// 	// console.log("Rooms set to: ", val);
+	// 	this.roomPolygonData = val;
+	// 	return this.roomPolygonData;
+	// };
 
-	roomMeta: RoomMetaData[] = [];
-	setRoomMeta = (r: RoomMetaData[]) => {
-		// console.log("setting roomMeta: ", r);
-		this.roomMeta = r;
-		return this.roomMeta;
-	};
+	// roomMeta: RoomMetaData[] = [];
+	// setRoomMeta: (r: RoomMetaData[]) => void;
+	// setRoomMeta = (r: RoomMetaData[]) => {
+	// 	// console.log("setting roomMeta: ", r);
+	// 	this.roomMeta = r;
+	// 	return this.roomMeta;
+	// };
 
-	objectMeta: ObjectMetaData[] = [];
-	setObjectMeta = (o: ObjectMetaData[]) => {
-		this.objectMeta = o;
-		return this.objectMeta;
-	};
+	// objectMeta: ObjectMetaData[] = [];
+	// setObjectMeta = (o: ObjectMetaData[]) => {
+	// 	this.objectMeta = o;
+	// 	return this.objectMeta;
+	// };
 
 	point: Point2D = { x: 0, y: 0 };
 	setPoint = (p: Point2D) => {

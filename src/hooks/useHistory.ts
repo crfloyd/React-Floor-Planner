@@ -30,7 +30,7 @@ export const useHistory = () => {
 		if (historyIndex < history.length) {
 			history = history.slice(0, historyIndex);
 		}
-		console.log(objectMeta);
+		// console.log(objectMeta);
 		history = [
 			...history,
 			{
@@ -48,13 +48,13 @@ export const useHistory = () => {
 		return true;
 	};
 
-	const save = (canvasState: CanvasState, boot = false) => {
-		return saveInternal(
-			canvasState.objectMeta,
-			canvasState.wallMeta,
-			canvasState.roomMeta,
-			boot
-		);
+	const save = (
+		wallMeta: WallMetaData[],
+		objectMeta: ObjectMetaData[],
+		roomMeta: RoomMetaData[],
+		boot = false
+	) => {
+		return saveInternal(objectMeta, wallMeta, roomMeta, boot);
 	};
 
 	const load = (index: number, viewbox: ViewboxData) => {
@@ -74,7 +74,7 @@ export const useHistory = () => {
 				viewbox
 			);
 			obj.limit = objHistory.limit;
-			obj.id = objHistory.id;
+			// obj.id = objHistory.id;
 			obj.update();
 			return obj;
 		});

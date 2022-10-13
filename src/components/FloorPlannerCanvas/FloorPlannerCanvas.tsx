@@ -1,5 +1,6 @@
-import { createRef, useEffect, useMemo, useRef, useState } from "react";
+import React, { createRef, useEffect, useMemo, useRef, useState } from "react";
 import { constants } from "../../../constants";
+import { qSVG } from "../../../qSVG";
 import { CanvasState } from "../../engine/CanvasState";
 import { handleMouseDown } from "../../engine/mouseDown/MouseDownHandler";
 import { handleMouseMove } from "../../engine/mouseMove/MouseMoveHandler";
@@ -12,7 +13,13 @@ import {
 	SvgPathMetaData,
 	CursorType,
 	ViewboxData,
+	RoomPolygonData,
+	RoomMetaData,
+	ObjectMetaData,
+	WallMetaData,
+	Point2D,
 } from "../../models";
+import { polygonize, refreshWalls, renderRooms } from "../../svgTools";
 import { GradientData } from "./GradientData";
 import LinearGradient from "./LinearGradient";
 import Patterns from "./Patterns";
@@ -35,6 +42,20 @@ interface Props {
 	setCursor: (crsr: CursorType) => void;
 	onCanvasDimensionsChanged: (width: number, height: number) => void;
 	viewbox: ViewboxData;
+	roomPolygonData: RoomPolygonData;
+	setRoomPolygonData: (r: RoomPolygonData) => void;
+	roomMetaData: RoomMetaData[];
+	setRoomMetaData: (r: RoomMetaData[]) => void;
+	objectMetaData: ObjectMetaData[];
+	setObjectMetaData: (o: ObjectMetaData[]) => void;
+	wallMetaData: WallMetaData[];
+	setWallMetaData: (w: WallMetaData[]) => void;
+}
+
+interface RoomPathData {
+	room: RoomMetaData;
+	path: string;
+	centerPoint: Point2D;
 }
 
 const FloorPlannerCanvas: React.FC<Props> = ({
@@ -53,10 +74,20 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	setCursor,
 	onCanvasDimensionsChanged,
 	viewbox,
+	roomPolygonData,
+	setRoomPolygonData,
+	roomMetaData,
+	setRoomMetaData,
+	objectMetaData,
+	setObjectMetaData,
+	wallMetaData,
+	setWallMetaData,
 }) => {
 	const [cursorImg, setCursorImg] = useState("default");
 	const [helperLineSvgData, setHelperLineSvgData] =
 		useState<SvgPathMetaData | null>();
+	const [roomPathInfo, setRoomPathInfo] = useState<RoomPathData[]>([]);
+	const [renderWalls, setRenderWalls] = useState<WallMetaData[]>([]);
 
 	const gradientData = useMemo<
 		{ id: string; color1: string; color2: string }[]
@@ -89,6 +120,68 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	const { save } = useHistory();
 
 	const canvasRef = createRef<SVGSVGElement>();
+
+	useEffect(() => {
+		// console.log("walls updated", wallMetaData.length);
+		refreshWalls(wallMetaData, canvasState.wallEquations);
+		setRenderWalls(wallMetaData);
+		// wallMetaData.forEach((wall) => {
+		// 	wall.addToScene();
+		// });
+
+		const updatedPolygons = polygonize(wallMetaData);
+		setRoomPolygonData(updatedPolygons);
+
+		renderRooms(updatedPolygons, roomMetaData, setRoomMetaData);
+	}, [wallMetaData]);
+
+	useEffect(() => {
+		let globalArea = 0;
+		const pathData: RoomPathData[] = [];
+		roomMetaData.forEach((room) => {
+			if (room.action == "add") globalArea = globalArea + room.area;
+			var pathSurface = room.coords;
+			// var pathCreate = "M" + pathSurface[0].x + "," + pathSurface[0].y;
+			const data: RoomPathData = {
+				room: room,
+				path: "M" + pathSurface[0].x + "," + pathSurface[0].y,
+				centerPoint: qSVG.polygonVisualCenter(room, roomMetaData),
+			};
+			pathData.push(data);
+			for (var p = 1; p < pathSurface.length; p++) {
+				data.path =
+					data.path + " " + "L" + pathSurface[p].x + "," + pathSurface[p].y;
+			}
+			if (room.inside.length > 0) {
+				for (var ins = 0; ins < room.inside.length; ins++) {
+					data.path =
+						data.path +
+						" M" +
+						roomPolygonData.polygons[room.inside[ins]].coords[
+							roomPolygonData.polygons[room.inside[ins]].coords.length - 1
+						].x +
+						"," +
+						roomPolygonData.polygons[room.inside[ins]].coords[
+							roomPolygonData.polygons[room.inside[ins]].coords.length - 1
+						].y;
+					for (
+						var free =
+							roomPolygonData.polygons[room.inside[ins]].coords.length - 2;
+						free > -1;
+						free--
+					) {
+						data.path =
+							data.path +
+							" L" +
+							roomPolygonData.polygons[room.inside[ins]].coords[free].x +
+							"," +
+							roomPolygonData.polygons[room.inside[ins]].coords[free].y;
+					}
+				}
+			}
+		});
+		setRoomPathInfo(pathData);
+	}, [roomMetaData]);
 
 	useEffect(() => {
 		const { width, height } = getCanvasDimensions();
@@ -133,6 +226,10 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					canvasState,
 					setCursor,
 					viewbox,
+					wallMetaData,
+					setWallMetaData,
+					objectMetaData,
+					setObjectMetaData,
 				})
 			}
 			onMouseUp={(e) => {
@@ -144,7 +241,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 						return canvasState.mode;
 					},
 					showMeasurements: layerSettings.showMeasurements,
-					save: () => save(canvasState),
+					save: () => save(wallMetaData, objectMetaData, roomMetaData),
 					updateRoomDisplayData,
 					setHelperLineSvgData,
 					continuousWallMode,
@@ -153,6 +250,13 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					showWallTools,
 					setCursor,
 					viewbox,
+					setRoomPolygonData,
+					roomMetaData,
+					setRoomMetaData,
+					objectMetaData,
+					setObjectMetaData,
+					wallMetaData,
+					setWallMetaData,
 				});
 			}}
 			onMouseMove={(e) => {
@@ -174,6 +278,13 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					canvasState,
 					continuousWallMode,
 					viewbox,
+					wallMetaData,
+					setWallMetaData,
+					roomMetaData,
+					setRoomMetaData,
+					roomPolygonData,
+					setRoomPolygonData,
+					objectMetaData,
 					handleCameraChange,
 					() => canvasState.setObjectEquationData([]),
 					setHelperLineSvgData,
@@ -215,12 +326,53 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 				/>
 			</g>
 			{/* <g id="boxpath"></g> */}
-			<g id="boxSurface"></g>
+			<g id="boxSurface">
+				{roomPathInfo &&
+					roomPathInfo.map((data, i) => (
+						<path
+							key={i}
+							d={data.path}
+							fill="#fff"
+							fillOpacity="1"
+							stroke="none"
+							fillRule="evenodd"
+							className="room"
+						></path>
+					))}
+			</g>
 			<g
 				id="boxRoom"
 				visibility={layerSettings.showTexture ? "visible" : "hidden"}
-			></g>
-			<g id="boxwall"></g>
+			>
+				{roomPathInfo &&
+					roomPathInfo.map((data, i) => (
+						<path
+							key={i}
+							d={data.path}
+							fill={`url(#${data.room.color})`}
+							fillOpacity="1"
+							stroke="none"
+							fillRule="evenodd"
+							className="room"
+						></path>
+					))}
+			</g>
+			<g id="boxwall">
+				{renderWalls &&
+					renderWalls.map((wall, i) => (
+						<path
+							key={wall.id + i}
+							d={wall.dPath ?? ""}
+							stroke="none"
+							fill={constants.COLOR_WALL}
+							strokeWidth={1}
+							strokeLinecap="butt"
+							strokeLinejoin="miter"
+							strokeMiterlimit={4}
+							fillRule="nonzero"
+						></path>
+					))}
+			</g>
 			<g id="boxcarpentry"></g>
 			<g
 				id="boxEnergy"
@@ -241,7 +393,54 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			<g
 				id="boxArea"
 				visibility={layerSettings.showSurfaces ? "visible" : "hidden"}
-			></g>
+			>
+				{roomPathInfo &&
+					roomPathInfo
+						.filter((d) => d.centerPoint)
+						.map((data, i) => (
+							<React.Fragment key={i + "room-name"}>
+								<text
+									x={data.centerPoint.x}
+									y={data.centerPoint.y}
+									style={{
+										fill:
+											data.room.color == "gradientBlack" ||
+											data.room.color == "gradientBlue"
+												? "white"
+												: "#343938",
+									}}
+									textAnchor="middle"
+								>
+									{data.room.name}
+								</text>
+								<text
+									x={data.centerPoint.x}
+									y={
+										data.room.name
+											? data.centerPoint.y + 20
+											: data.centerPoint.y
+									}
+									style={{
+										fill:
+											data.room.color == "gradientBlack" ||
+											data.room.color == "gradientBlue"
+												? "white"
+												: "#343938",
+									}}
+									fontSize="12.5px"
+									fontWeight={data.room.surface ? "normal" : "bold"}
+									textAnchor="middle"
+								>
+									{data.room.surface
+										? data.room.surface + " m²"
+										: (
+												data.room.area /
+												(constants.METER_SIZE * constants.METER_SIZE)
+										  ).toFixed(2) + " m²"}
+								</text>
+							</React.Fragment>
+						))}
+			</g>
 			<g
 				id="boxRib"
 				visibility={layerSettings.showMeasurements ? "visible" : "hidden"}

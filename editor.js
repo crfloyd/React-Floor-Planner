@@ -2,7 +2,6 @@ import { qSVG } from "./qSVG";
 import { constants } from "./constants";
 import {
 	createSvgElement,
-	refreshWalls,
 	createEquation,
 	pointInPolygon,
 	nearPointOnEquation,

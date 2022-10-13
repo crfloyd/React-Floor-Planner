@@ -1,15 +1,16 @@
 import { constants } from "../../../constants";
 import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
-import { Point2D, ViewboxData } from "../../models";
+import { Point2D, ViewboxData, WallMetaData } from "../../models";
 import { Object2D } from "../../Object2D";
 import { getAngle } from "../../svgTools";
 import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveOverObject = (
 	snap: Point2D,
-	{ binder, setBinder, wallMeta, modeOption }: CanvasState,
-	viewbox: ViewboxData
+	{ binder, setBinder, modeOption }: CanvasState,
+	viewbox: ViewboxData,
+	wallMetaData: WallMetaData[]
 ) => {
 	if (binder == null) {
 		$("#object_list").hide(200);
@@ -51,7 +52,7 @@ export const handleMouseMoveOverObject = (
 	} else {
 		if (
 			(binder.family != "stick" && binder.family != "collision") ||
-			wallMeta.length == 0
+			wallMetaData.length == 0
 		) {
 			binder.x = snap.x;
 			binder.y = snap.y;
@@ -65,7 +66,7 @@ export const handleMouseMoveOverObject = (
 			if (
 				editor.rayCastingWall(
 					{ x: binder.bbox.left, y: binder.bbox.top },
-					wallMeta
+					wallMetaData
 				)
 			)
 				found = true;
@@ -73,7 +74,7 @@ export const handleMouseMoveOverObject = (
 				!found &&
 				editor.rayCastingWall(
 					{ x: binder.bbox.left, y: binder.bbox.bottom },
-					wallMeta
+					wallMetaData
 				)
 			)
 				found = true;
@@ -81,7 +82,7 @@ export const handleMouseMoveOverObject = (
 				!found &&
 				editor.rayCastingWall(
 					{ x: binder.bbox.right, y: binder.bbox.top },
-					wallMeta
+					wallMetaData
 				)
 			)
 				found = true;
@@ -92,7 +93,7 @@ export const handleMouseMoveOverObject = (
 						x: binder.bbox.right,
 						y: binder.bbox.bottom,
 					},
-					wallMeta
+					wallMetaData
 				)
 			)
 				found = true;
@@ -110,7 +111,7 @@ export const handleMouseMoveOverObject = (
 			}
 		}
 		if (binder.family == "stick") {
-			const pos: any = editor.stickOnWall(snap, wallMeta);
+			const pos: any = editor.stickOnWall(snap, wallMetaData);
 			binder.oldX = pos.x;
 			binder.oldY = pos.y;
 			let angleWall = getAngle(pos.wall.start, pos.wall.end, "deg").deg;

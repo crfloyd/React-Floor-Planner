@@ -1,4 +1,4 @@
-import { Mode, ViewboxData } from "../../models";
+import { Mode, ObjectMetaData, ViewboxData, WallMetaData } from "../../models";
 import { calculateSnap } from "../../utils";
 import { CanvasState } from "../CanvasState";
 import { handleNodeClicked } from "./NodeClickHandler";
@@ -8,6 +8,10 @@ interface Props {
 	event: React.TouchEvent | React.MouseEvent;
 	canvasState: CanvasState;
 	viewbox: ViewboxData;
+	objectMetaData: ObjectMetaData[];
+	setObjectMetaData: (o: ObjectMetaData[]) => void;
+	wallMetaData: WallMetaData[];
+	setWallMetaData: (w: WallMetaData[]) => void;
 }
 
 export const handleSelectModeClick = ({
@@ -17,9 +21,6 @@ export const handleSelectModeClick = ({
 		setBinder,
 		setMode,
 		setAction,
-		wallMeta,
-		setWallMeta,
-		objectMeta,
 		wallEquations,
 		followerData,
 		setObjectEquationData,
@@ -30,6 +31,10 @@ export const handleSelectModeClick = ({
 		setCurrentNodeWalls,
 	},
 	viewbox,
+	objectMetaData,
+	setObjectMetaData,
+	wallMetaData,
+	setWallMetaData,
 }: Props) => {
 	switch (binder?.type) {
 		case "segment": {
@@ -43,13 +48,13 @@ export const handleSelectModeClick = ({
 				wallEquations: wallEquationsResult,
 			} = handleSegmentClicked(
 				binder,
-				wallMeta,
-				objectMeta,
+				wallMetaData,
+				objectMetaData,
 				wallEquations,
 				followerData
 			);
 			setBinder(binderResult);
-			setWallMeta(wallMetaResult);
+			setWallMetaData(wallMetaResult);
 			setObjectEquationData(objectEquationsResult);
 			setWallEquations(wallEquationsResult);
 			break;
@@ -64,8 +69,8 @@ export const handleSelectModeClick = ({
 			const { nodeWalls, nodeWallObjects } = handleNodeClicked({
 				x: node.x,
 				y: node.y,
-				wallMeta,
-				objectMeta,
+				wallMeta: wallMetaData,
+				objectMeta: objectMetaData,
 			});
 
 			setCurrentNodeWallObjects(nodeWallObjects);

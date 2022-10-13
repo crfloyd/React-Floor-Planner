@@ -18,7 +18,6 @@ import {
 	pointInPolygon,
 	polygonize,
 	refreshWalls,
-	renderRoom,
 	setInWallMeasurementText,
 	updateMeasurementText,
 } from "../../svgTools";
@@ -36,20 +35,21 @@ export const handleMouseMoveBindMode = (
 	resetObjectEquationData: () => ObjectEquationData[],
 	setHelperLineSvgData: (l: SvgPathMetaData | null) => void,
 	setCursor: (crsr: CursorType) => void,
-	canvasState: CanvasState
+	canvasState: CanvasState,
+	wallMeta: WallMetaData[],
+	objectMeta: ObjectMetaData[],
+	roomMeta: RoomMetaData[],
+	setRoomMeta: (r: RoomMetaData[]) => void,
+	roomPolygonData: RoomPolygonData,
+	setRoomPolygonData: (r: RoomPolygonData) => void,
+	setWallMeta: (w: WallMetaData[]) => void
 ) => {
 	const {
 		binder,
 		action,
 		currentNodeWalls,
 		currentNodeWallObjectData,
-		wallMeta,
-		objectMeta,
-		roomMeta,
-		setRoomMeta,
 		wallEquations,
-		roomPolygonData,
-		setRoomPolygonData,
 		followerData,
 		objectEquationData,
 	} = canvasState;
@@ -132,10 +132,14 @@ export const handleMouseMoveBindMode = (
 		}
 		binder.data = coords;
 
-		refreshWalls(wallMeta, wallEquations); // UPDATE FALSE
-		wallMeta.forEach((wall) => {
-			wall.addToScene();
-		});
+		// refreshWalls(wallMeta, wallEquations); // UPDATE FALSE
+		// wallMeta.forEach((wall: WallMetaData) => {
+		// 	wall.addToScene();
+		// });
+
+		// $("#boxRoom").empty();
+		// $("#boxSurface").empty();
+		setWallMeta([...wallMeta]);
 
 		for (var k in currentNodeWallObjectData) {
 			const wall = currentNodeWallObjectData[k].wall;
@@ -176,11 +180,11 @@ export const handleMouseMoveBindMode = (
 			}
 		}
 		// for (k in toClean)
-		$("#boxRoom").empty();
-		$("#boxSurface").empty();
-		const polygonData = polygonize(wallMeta);
-		setRoomPolygonData(polygonData);
-		renderRoom(polygonData, roomMeta, setRoomMeta);
+		// $("#boxRoom").empty();
+		// $("#boxSurface").empty();
+		// const polygonData = polygonize(wallMeta);
+		// setRoomPolygonData(polygonData);
+		// renderRooms(polygonData, roomMeta, setRoomMeta);
 	}
 
 	// WALL MOVING ----BINDER TYPE SEGMENT-------- FUNCTION FOR H,V and Calculate Vectorial Translation
@@ -327,11 +331,15 @@ export const handleMouseMoveBindMode = (
 			}
 		}
 		// WALL COMPUTING, BLOCK FAMILY OF BINDERWALL IF NULL (START OR END) !!!!!
-		refreshWalls(wallMeta, wallEquations, true);
-		wallMeta.forEach((wall) => {
-			wall.addToScene();
-		});
-		setRoomPolygonData(polygonize(wallMeta));
+		// refreshWalls(wallMeta, wallEquations, true);
+		// wallMeta.forEach((wall: WallMetaData) => {
+		// 	wall.addToScene();
+		// });
+
+		// $("#boxRoom").empty();
+		// $("#boxSurface").empty();
+		setWallMeta([...wallMeta]);
+		// setRoomPolygonData(polygonize(wallMeta));
 
 		// OBJDATA(s) FOLLOW 90° EDGE SELECTED
 		for (var rp = 0; rp < objectEquationData.length; rp++) {
@@ -389,9 +397,9 @@ export const handleMouseMoveBindMode = (
 			});
 		}
 
-		$("#boxRoom").empty();
-		$("#boxSurface").empty();
-		renderRoom(roomPolygonData, roomMeta, setRoomMeta);
+		// $("#boxRoom").empty();
+		// $("#boxSurface").empty();
+		// renderRooms(roomPolygonData, roomMeta, setRoomMeta);
 		setCursor("pointer");
 	}
 

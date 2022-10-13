@@ -3,8 +3,12 @@ import {
 	CursorType,
 	Mode,
 	ObjectEquationData,
+	ObjectMetaData,
+	RoomMetaData,
+	RoomPolygonData,
 	SvgPathMetaData,
 	ViewboxData,
+	WallMetaData,
 } from "../../models";
 import { calculateSnap } from "../../utils";
 import { CanvasState } from "../CanvasState";
@@ -20,6 +24,13 @@ export const handleMouseMove = (
 	canvasState: CanvasState,
 	continuousWallMode: boolean,
 	viewbox: ViewboxData,
+	wallMetaData: WallMetaData[],
+	setWallMetaData: (w: WallMetaData[]) => void,
+	roomMetaData: RoomMetaData[],
+	setRoomMetaData: (r: RoomMetaData[]) => void,
+	roomPolygonData: RoomPolygonData,
+	setRoomPolygonData: (r: RoomPolygonData) => void,
+	objectMetaData: ObjectMetaData[],
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void,
 	resetObjectEquationData: () => ObjectEquationData[],
 	setHelperLineSvgData: (l: SvgPathMetaData | null) => void,
@@ -44,13 +55,13 @@ export const handleMouseMove = (
 
 	switch (canvasState.mode) {
 		case Mode.Object:
-			handleMouseMoveOverObject(snap, canvasState, viewbox);
+			handleMouseMoveOverObject(snap, canvasState, viewbox, wallMetaData);
 			break;
 		case Mode.Room:
-			handleMouseMoveRoomMode(snap, canvasState);
+			handleMouseMoveRoomMode(snap, canvasState, roomMetaData, roomPolygonData);
 			break;
 		case Mode.Opening:
-			handleMouseMoveOpeningMode(snap, canvasState, viewbox);
+			handleMouseMoveOpeningMode(snap, canvasState, viewbox, wallMetaData);
 			break;
 		case Mode.Select:
 			handleMouseMoveSelectMode(
@@ -59,7 +70,9 @@ export const handleMouseMove = (
 				canvasState,
 				viewbox,
 				setCursor,
-				handleCameraChange
+				handleCameraChange,
+				wallMetaData,
+				objectMetaData
 			);
 			break;
 		case Mode.Line:
@@ -69,7 +82,8 @@ export const handleMouseMove = (
 				setHelperLineSvgData,
 				continuousWallMode,
 				setCursor,
-				canvasState
+				canvasState,
+				wallMetaData
 			);
 			break;
 		case Mode.Bind:
@@ -78,7 +92,14 @@ export const handleMouseMove = (
 				resetObjectEquationData,
 				setHelperLineSvgData,
 				setCursor,
-				canvasState
+				canvasState,
+				wallMetaData,
+				objectMetaData,
+				roomMetaData,
+				setRoomMetaData,
+				roomPolygonData,
+				setRoomPolygonData,
+				setWallMetaData
 			);
 			break;
 		default:

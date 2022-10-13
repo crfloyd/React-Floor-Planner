@@ -5,7 +5,9 @@ import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveRoomMode = (
 	snap: Point2D,
-	{ binder, setBinder, roomMeta, roomPolygonData: polygonData }: CanvasState
+	{ binder, setBinder }: CanvasState,
+	roomMetaData: RoomMetaData[],
+	roomPolygonData: RoomPolygonData
 ) => {
 	if (binder) {
 		if (typeof binder["remove"] === "function") {
@@ -14,7 +16,7 @@ export const handleMouseMoveRoomMode = (
 		binder = setBinder(null);
 	}
 
-	const roomTarget = editor.rayCastingRoom(snap, roomMeta);
+	const roomTarget = editor.rayCastingRoom(snap, roomMetaData);
 	if (!roomTarget) return binder;
 
 	var pathSurface = roomTarget.coords;
@@ -27,7 +29,7 @@ export const handleMouseMoveRoomMode = (
 
 	if (roomTarget.inside.length > 0) {
 		for (var ins = 0; ins < roomTarget.inside.length; ins++) {
-			const targetPolygon = polygonData.polygons[roomTarget.inside[ins]];
+			const targetPolygon = roomPolygonData.polygons[roomTarget.inside[ins]];
 			const numCoords = targetPolygon.coords.length - 1;
 			pathCreate =
 				pathCreate +
@@ -60,5 +62,5 @@ export const handleMouseMoveRoomMode = (
 
 	binder.type = "room";
 	binder.area = roomTarget.area;
-	binder.id = roomMeta.indexOf(roomTarget);
+	binder.id = roomMetaData.indexOf(roomTarget);
 };

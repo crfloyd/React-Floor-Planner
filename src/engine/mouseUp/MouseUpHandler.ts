@@ -9,8 +9,11 @@ import {
 	SvgPathMetaData,
 	CursorType,
 	ViewboxData,
+	RoomPolygonData,
+	RoomMetaData,
+	WallMetaData,
 } from "../../models";
-import { architect, updateMeasurementText } from "../../svgTools";
+import { updateMeasurementText } from "../../svgTools";
 import { calculateSnap } from "../../utils";
 import { Wall } from "../../wall";
 import { CanvasState } from "../CanvasState";
@@ -29,6 +32,13 @@ interface Props {
 	showWallTools: (separation: boolean) => void;
 	setCursor: (crsr: CursorType) => void;
 	viewbox: ViewboxData;
+	setRoomPolygonData: (r: RoomPolygonData) => void;
+	roomMetaData: RoomMetaData[];
+	setRoomMetaData: (r: RoomMetaData[]) => void;
+	objectMetaData: ObjectMetaData[];
+	setObjectMetaData: (o: ObjectMetaData[]) => void;
+	wallMetaData: WallMetaData[];
+	setWallMetaData: (w: WallMetaData[]) => void;
 }
 
 export const handleMouseUp = ({
@@ -45,6 +55,13 @@ export const handleMouseUp = ({
 	showWallTools,
 	setCursor,
 	viewbox,
+	setRoomPolygonData,
+	roomMetaData,
+	setRoomMetaData,
+	objectMetaData,
+	setObjectMetaData,
+	wallMetaData,
+	setWallMetaData,
 }: Props) => {
 	if (showMeasurements) {
 		$("#boxScale").show(200);
@@ -56,11 +73,6 @@ export const handleMouseUp = ({
 		setAction,
 		mode,
 		setMode,
-		objectMeta,
-		setObjectMeta,
-		wallMeta,
-		setWallMeta,
-		roomMeta,
 		setDrag,
 		wallEquations,
 		point,
@@ -92,7 +104,7 @@ export const handleMouseUp = ({
 			break;
 		}
 		case Mode.Object: {
-			const objData = [...objectMeta, binder];
+			const objData = [...objectMetaData, binder];
 			binder.graph.remove();
 			const lastObject = objData[objData.length - 1];
 			let targetBox =
@@ -103,7 +115,7 @@ export const handleMouseUp = ({
 					: "boxcarpentry";
 			$("#" + targetBox).append(lastObject.graph);
 			setBinder(null);
-			setObjectMeta(objData);
+			setObjectMetaData(objData);
 			$("#boxinfo").html("Object added");
 			mode = resetMode();
 			save();
@@ -115,7 +127,7 @@ export const handleMouseUp = ({
 			}
 			const area = binder.area / 3600;
 			binder.attr({ fill: "none", stroke: "#ddf00a", "stroke-width": 7 });
-			const room = roomMeta[binder.id];
+			const room = roomMetaData[binder.id];
 			updateRoomDisplayData({
 				size: area.toFixed(2),
 				roomIndex: binder.id,
@@ -141,12 +153,11 @@ export const handleMouseUp = ({
 				"normal",
 				oldWall.wall.thick
 			);
-			wallMeta.push(newWall);
-			setWallMeta(wallMeta);
+			const updatedWalls = [...wallMetaData, newWall];
+			setWallMetaData(updatedWalls);
 			oldWall.wall.end = { x: oldWall.x, y: oldWall.y };
 			binder.remove();
 			binder = setBinder(null);
-			architect(canvasState);
 			save();
 			break;
 		}
@@ -157,10 +168,11 @@ export const handleMouseUp = ({
 				break;
 			}
 
-			objectMeta.push(binder);
+			const updatedObjects = [...objectMetaData, binder];
+			// objectMeta.push(binder);
 			binder.graph.remove();
-			func.appendObjects(objectMeta);
-			setObjectMeta(objectMeta);
+			func.appendObjects(updatedObjects);
+			setObjectMetaData(updatedObjects);
 			binder = setBinder(null);
 			$("#boxinfo").html("Element added");
 			mode = resetMode();
@@ -177,9 +189,10 @@ export const handleMouseUp = ({
 				var sizeWall = constants.WALL_SIZE;
 				if (mode == Mode.Partition) sizeWall = constants.PARTITION_SIZE;
 				var wall = new Wall(point, wallDrawPoint, "normal", sizeWall);
-				wallMeta.push(wall);
-				setWallMeta(wallMeta);
-				architect(canvasState);
+				// wallMeta.push(wall);
+				// setWallMeta(wallMeta);
+				const updatedWalls = [...wallMetaData, wall];
+				setWallMetaData(updatedWalls);
 
 				if (continuousWallMode && !wallEndConstruc) {
 					setCursor("validation");
@@ -260,7 +273,9 @@ export const handleMouseUp = ({
 				if (!objTarget.params.move) {
 					// TO REMOVE MEASURE ON PLAN
 					objTarget.graph.remove();
-					objectMeta.splice(objectMeta.indexOf(objTarget), 1);
+					const updatedObjects = [...objectMetaData];
+					updatedObjects.splice(objectMetaData.indexOf(objTarget), 1);
+					setObjectMetaData(updatedObjects);
 					$("#boxinfo").html("Measure deleted!");
 				}
 				if (moveObj < 1 && objTarget.params.move) {
@@ -295,7 +310,7 @@ export const handleMouseUp = ({
 	}
 
 	if (mode != Mode.EditRoom) {
-		editor.showScaleBox(roomMeta, wallMeta);
-		updateMeasurementText(wallMeta);
+		editor.showScaleBox(roomMetaData, wallMetaData);
+		updateMeasurementText(wallMetaData);
 	}
 };

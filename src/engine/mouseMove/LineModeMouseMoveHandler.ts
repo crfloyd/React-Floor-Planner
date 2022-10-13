@@ -1,7 +1,13 @@
 import { constants } from "../../../constants";
 import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
-import { CursorType, Mode, Point2D, SvgPathMetaData } from "../../models";
+import {
+	CursorType,
+	Mode,
+	Point2D,
+	SvgPathMetaData,
+	WallMetaData,
+} from "../../models";
 import { angleBetweenPoints, createWallGuideLine } from "../../svgTools";
 import { CanvasState } from "../CanvasState";
 
@@ -10,7 +16,8 @@ export const handleMouseMoveLineMode = (
 	setHelperLineSvgData: (l: SvgPathMetaData | null) => void,
 	continuousWallMode: boolean,
 	setCursor: (crsr: CursorType) => void,
-	canvasState: CanvasState
+	canvasState: CanvasState,
+	wallMetaData: WallMetaData[]
 ) => {
 	if (canvasState.action) {
 		onActionTrue(
@@ -18,10 +25,17 @@ export const handleMouseMoveLineMode = (
 			continuousWallMode,
 			setHelperLineSvgData,
 			setCursor,
-			canvasState
+			canvasState,
+			wallMetaData
 		);
 	} else {
-		onActionFalse(canvasState, setCursor, snap, setHelperLineSvgData);
+		onActionFalse(
+			canvasState,
+			setCursor,
+			snap,
+			setHelperLineSvgData,
+			wallMetaData
+		);
 	}
 };
 
@@ -38,18 +52,18 @@ export const onActionTrue = (
 		lengthTemp,
 		setLengthTemp,
 		mode,
-		wallMeta,
 		wallEndConstruc,
 		setWallEndConstruc,
 		setWallDrawPoint,
-	}: CanvasState
+	}: CanvasState,
+	wallMetaData: WallMetaData[]
 ) => {
 	let wallDrawPoint = setWallDrawPoint(snap);
 	if (!$("#line_construc").length) {
-		const wallNode = editor.nearWallNode(snap, wallMeta, 20);
+		const wallNode = editor.nearWallNode(snap, wallMetaData, 20);
 		if (wallNode) {
 			point = setPoint({ x: wallNode.x, y: wallNode.y });
-			if (wallNode.bestWall == wallMeta.length - 1) {
+			if (wallNode.bestWall == wallMetaData.length - 1) {
 				setCursor("validation");
 			} else {
 				setCursor("grab");
@@ -97,7 +111,7 @@ export const onActionTrue = (
 
 			const helpConstrucEnd = createWallGuideLine(
 				snap,
-				wallMeta,
+				wallMetaData,
 				10,
 				setHelperLineSvgData
 			);
@@ -110,7 +124,7 @@ export const onActionTrue = (
 				});
 			}
 
-			const nearestWall = editor.nearWall(snap, wallMeta, 12) as Point2D;
+			const nearestWall = editor.nearWall(snap, wallMetaData, 12) as Point2D;
 			if (nearestWall) {
 				wallEndConstruc = setWallEndConstruc(true);
 				// TO SNAP SEGMENT TO FINALIZE X2Y2
@@ -126,7 +140,7 @@ export const onActionTrue = (
 			}
 
 			// nearNode helped to attach the end of the construc line
-			const wallNode = editor.nearWallNode(snap, wallMeta, 20);
+			const wallNode = editor.nearWallNode(snap, wallMetaData, 20);
 			if (wallNode) {
 				if (binder == null) {
 					binder = setBinder(
@@ -150,7 +164,10 @@ export const onActionTrue = (
 				// y = wallNode.y;
 				wallEndConstruc = setWallEndConstruc(true);
 				setHelperLineSvgData(null);
-				if (wallNode.bestWall == wallMeta.length - 1 && continuousWallMode) {
+				if (
+					wallNode.bestWall == wallMetaData.length - 1 &&
+					continuousWallMode
+				) {
 					setCursor("validation");
 				} else {
 					setCursor("grab");
@@ -268,16 +285,17 @@ export const onActionTrue = (
 };
 
 export const onActionFalse = (
-	{ binder, setBinder, setPoint, wallMeta }: CanvasState,
+	{ binder, setBinder, setPoint }: CanvasState,
 	setCursor: (crsr: CursorType) => void,
 	snap: Point2D,
-	setHelperLineSvgData: (l: SvgPathMetaData | null) => void
+	setHelperLineSvgData: (l: SvgPathMetaData | null) => void,
+	wallMetaData: WallMetaData[]
 ) => {
 	setCursor("grab");
 	let point: Point2D = { x: snap.x, y: snap.y };
 	const helpConstruc = createWallGuideLine(
 		snap,
-		wallMeta,
+		wallMetaData,
 		25,
 		setHelperLineSvgData
 	);
@@ -288,7 +306,7 @@ export const onActionFalse = (
 			setCursor("crosshair");
 		}
 	}
-	const wallNode = editor.nearWallNode(snap, wallMeta, 20);
+	const wallNode = editor.nearWallNode(snap, wallMetaData, 20);
 	if (wallNode) {
 		point = setPoint({ x: wallNode.x, y: wallNode.y });
 		setCursor("grab");
