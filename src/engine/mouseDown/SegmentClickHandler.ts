@@ -7,7 +7,13 @@ import {
 	WallMetaData,
 } from "../../models";
 import { pointInPolygon } from "../../svgTools";
-import { findById, isObjectsEquals, perpendicularEquation } from "../../utils";
+import {
+	findById,
+	isObjectsEquals,
+	perpendicularEquation,
+	pointArraysAreEqual,
+	pointsAreEqual,
+} from "../../utils";
 import { Wall } from "../../wall";
 
 export const handleSegmentClicked = (
@@ -33,7 +39,6 @@ export const handleSegmentClicked = (
 		if (angle12 < 20 || angle12 > 160) {
 			let found = false;
 			wallMeta.forEach((comparisonWall) => {
-				console.log("bruh");
 				if (
 					comparisonWall.id !== parent?.id &&
 					pointInPolygon(wall.start, comparisonWall.coords) &&
@@ -116,7 +121,7 @@ export const handleSegmentClicked = (
 			if (
 				wallEquations.equation2 &&
 				pointInPolygon(wall.start, wallMeta[k].coords) &&
-				!isObjectsEquals(wallMeta[k].coords, wall.coords)
+				!pointArraysAreEqual(wallMeta[k].coords, wall.coords)
 			) {
 				var angleFollow = qSVG.angleBetweenEquations(
 					wallMeta[k].equations.base.A,
@@ -176,7 +181,7 @@ export const handleSegmentClicked = (
 			}
 			if (found) {
 				const child = findById(wall.child ?? "", wallMeta);
-				if (child && isObjectsEquals(child.start, wall.end)) {
+				if (child && pointsAreEqual(child.start, wall.end)) {
 					var newWall = new Wall(wall.end, child.start, "new", wall.thick);
 					newWall.parent = wall.id;
 					newWall.child = wall.child;
@@ -191,7 +196,7 @@ export const handleSegmentClicked = (
 							wall.end.y
 						);
 					}
-				} else if (child && isObjectsEquals(child.end, wall.end)) {
+				} else if (child && pointsAreEqual(child.end, wall.end)) {
 					var newWall = new Wall(wall.end, child.end, "normal", wall.thick);
 					newWall.parent = wall.id;
 					newWall.child = child.id;
@@ -216,7 +221,7 @@ export const handleSegmentClicked = (
 			if (
 				wallEquations.equation2 &&
 				pointInPolygon(wall.end, wallMeta[k].coords) &&
-				!isObjectsEquals(wallMeta[k].coords, wall.coords)
+				!pointArraysAreEqual(wallMeta[k].coords, wall.coords)
 			) {
 				var angleFollow = qSVG.angleBetweenEquations(
 					wallMeta[k].equations.base.A,

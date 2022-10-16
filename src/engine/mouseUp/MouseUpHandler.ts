@@ -9,60 +9,37 @@ import {
 	SvgPathMetaData,
 	CursorType,
 	ViewboxData,
-	RoomPolygonData,
 	RoomMetaData,
 	WallMetaData,
+	Point2D,
+	SnapData,
 } from "../../models";
 import { updateMeasurementText } from "../../svgTools";
-import { calculateSnap } from "../../utils";
 import { Wall } from "../../wall";
 import { CanvasState } from "../CanvasState";
 
-interface Props {
-	event: React.TouchEvent | React.MouseEvent;
-	canvasState: CanvasState;
-	resetMode: () => string;
-	showMeasurements: boolean;
-	save: () => void;
-	updateRoomDisplayData: (data: RoomDisplayData) => void;
-	setHelperLineSvgData: (data: SvgPathMetaData | null) => void;
-	continuousWallMode: boolean;
-	showObjectTools: () => void;
-	showOpeningTools: (min: number, max: number, value: number) => void;
-	showWallTools: (separation: boolean) => void;
-	setCursor: (crsr: CursorType) => void;
-	viewbox: ViewboxData;
-	setRoomPolygonData: (r: RoomPolygonData) => void;
-	roomMetaData: RoomMetaData[];
-	setRoomMetaData: (r: RoomMetaData[]) => void;
-	objectMetaData: ObjectMetaData[];
-	setObjectMetaData: (o: ObjectMetaData[]) => void;
-	wallMetaData: WallMetaData[];
-	setWallMetaData: (w: WallMetaData[]) => void;
-}
-
-export const handleMouseUp = ({
-	canvasState,
-	event,
-	resetMode,
-	save,
-	showMeasurements,
-	updateRoomDisplayData,
-	setHelperLineSvgData,
-	continuousWallMode,
-	showObjectTools,
-	showOpeningTools,
-	showWallTools,
-	setCursor,
-	viewbox,
-	setRoomPolygonData,
-	roomMetaData,
-	setRoomMetaData,
-	objectMetaData,
-	setObjectMetaData,
-	wallMetaData,
-	setWallMetaData,
-}: Props) => {
+export const handleMouseUp = (
+	snap: SnapData,
+	canvasState: CanvasState,
+	resetMode: () => string,
+	showMeasurements: boolean,
+	save: () => void,
+	updateRoomDisplayData: (data: RoomDisplayData) => void,
+	continuousWallMode: boolean,
+	showObjectTools: () => void,
+	showOpeningTools: (min: number, max: number, value: number) => void,
+	showWallTools: (separation: boolean) => void,
+	setCursor: (crsr: CursorType) => void,
+	roomMetaData: RoomMetaData[],
+	objectMetaData: ObjectMetaData[],
+	setObjectMetaData: (o: ObjectMetaData[]) => void,
+	wallMetaData: WallMetaData[],
+	setWallMetaData: (w: WallMetaData[]) => void,
+	clearWallHelperData: () => void,
+	wallEndConstructionData: { start: Point2D; end: Point2D } | null,
+	wallConstructionShouldEnd: boolean,
+	startWallDrawing: (startPoint: Point2D) => void
+) => {
 	if (showMeasurements) {
 		$("#boxScale").show(200);
 	}
@@ -77,11 +54,6 @@ export const handleMouseUp = ({
 		wallEquations,
 		point,
 		setPoint,
-		wallDrawPoint,
-		wallEndConstruc,
-		setWallEndConstruc,
-		lengthTemp,
-		setLengthTemp,
 		followerData,
 	} = canvasState;
 	setDrag(false);
@@ -169,7 +141,6 @@ export const handleMouseUp = ({
 			}
 
 			const updatedObjects = [...objectMetaData, binder];
-			// objectMeta.push(binder);
 			binder.graph.remove();
 			func.appendObjects(updatedObjects);
 			setObjectMetaData(updatedObjects);
@@ -181,46 +152,48 @@ export const handleMouseUp = ({
 		}
 		case Mode.Line:
 		case Mode.Partition: {
-			$("#linetemp").remove(); // DEL LINE HELP CONSTRUC 0 45 90
-			setHelperLineSvgData(null);
-			var sizeWall = qSVG.measure(wallDrawPoint, point);
+			// $("#linetemp").remove(); // DEL LINE HELP CONSTRUC 0 45 90
+			clearWallHelperData();
+			var sizeWall = qSVG.measure(wallEndConstructionData?.end, point);
 			sizeWall = sizeWall / constants.METER_SIZE;
-			if ($("#line_construc").length && sizeWall > 0.3) {
-				var sizeWall = constants.WALL_SIZE;
-				if (mode == Mode.Partition) sizeWall = constants.PARTITION_SIZE;
-				var wall = new Wall(point, wallDrawPoint, "normal", sizeWall);
-				// wallMeta.push(wall);
-				// setWallMeta(wallMeta);
+			if (
+				wallEndConstructionData &&
+				$("#line_construc").length &&
+				sizeWall > 0.3
+			) {
+				var sizeWall =
+					mode === Mode.Partition
+						? constants.PARTITION_SIZE
+						: constants.WALL_SIZE;
+				var wall = new Wall(
+					wallEndConstructionData.start,
+					wallEndConstructionData.end,
+					"normal",
+					sizeWall
+				);
 				const updatedWalls = [...wallMetaData, wall];
 				setWallMetaData(updatedWalls);
 
-				if (continuousWallMode && !wallEndConstruc) {
+				if (continuousWallMode && !wallConstructionShouldEnd) {
 					setCursor("validation");
 					setAction(true);
+					startWallDrawing(wallEndConstructionData.end);
 				} else setAction(false);
 				$("#boxinfo").html(
 					"Wall added <span style='font-size:0.6em'>approx. " +
-						(qSVG.measure(point, wallDrawPoint) / 60).toFixed(2) +
+						(qSVG.measure(point, wallEndConstructionData.end) / 60).toFixed(2) +
 						" m</span>"
 				);
-				$("#line_construc").remove(); // DEL LINE CONSTRUC HELP TO VIEW NEW SEG PATH
-				lengthTemp.remove();
-				setLengthTemp(null);
-				// construc = 0;
-				if (wallEndConstruc) setAction(false);
-				setWallEndConstruc(false);
-				setPoint(wallDrawPoint);
+				if (wallConstructionShouldEnd) setAction(false);
 				save();
 			} else {
 				setAction(false);
-				// construc = 0;
 				$("#boxinfo").html("Select mode");
 				mode = resetMode();
 				if (binder) {
 					binder.remove();
 					binder = setBinder(null);
 				}
-				const snap = calculateSnap(event, viewbox);
 				setPoint({ x: snap.x, y: snap.y });
 			}
 			break;
@@ -282,7 +255,6 @@ export const handleMouseUp = ({
 					if (!objTarget.params.resize) {
 						$("#objBoundingBoxScale").hide();
 					} else {
-						console.log("showing obj tools");
 						showObjectTools();
 						$("#objBoundingBoxScale").show();
 					}

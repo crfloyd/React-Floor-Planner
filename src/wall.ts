@@ -1,16 +1,14 @@
 import {
 	ObjectMetaData,
 	Point2D,
-	WallEquation,
 	WallEquationGroup,
 	WallMetaData,
 	WallSideEquations,
 	WallJunction,
 } from "./models";
 import { v4 as uuid } from "uuid";
-import { editor } from "../editor";
 import { qSVG } from "../qSVG";
-import { findById, intersectionOfEquations, isObjectsEquals } from "./utils";
+import { findById, intersectionOfEquations, pointsAreEqual } from "./utils";
 import { constants } from "../constants";
 import {
 	calculateDPath,
@@ -74,19 +72,19 @@ export class Wall implements WallMetaData {
 		if (this.parent != null) {
 			const parent = findById(this.parent, allWalls);
 			if (parent) {
-				if (isObjectsEquals(parent.start, this.start)) {
+				if (pointsAreEqual(parent.start, this.start)) {
 					previousWall = parent;
 					previousWallStart = previousWall.end;
 					previousWallEnd = previousWall.start;
-				} else if (isObjectsEquals(parent.end, this.start)) {
+				} else if (pointsAreEqual(parent.end, this.start)) {
 					previousWall = parent;
 					previousWallStart = previousWall.start;
 					previousWallEnd = previousWall.end;
 				}
 			}
 		} else {
-			var nearestNodesToStart = getWallNodes(this.start, allWalls, this);
-			for (var k in nearestNodesToStart) {
+			const nearestNodesToStart = getWallNodes(this.start, allWalls, this);
+			for (let k in nearestNodesToStart) {
 				const nearest = nearestNodesToStart[k];
 				const eqInter = createEquation(
 					nearest.wall.start.x,
@@ -137,7 +135,7 @@ export class Wall implements WallMetaData {
 			const child = findById(this.child, allWalls);
 			if (child) {
 				thickness = child.thick;
-				if (isObjectsEquals(child.end, this.end)) {
+				if (pointsAreEqual(child.end, this.end)) {
 					nextWallStart = child.end;
 					nextWallEnd = child.start;
 				} else {
@@ -146,15 +144,16 @@ export class Wall implements WallMetaData {
 				}
 			}
 		} else {
-			var nearestNodesToEnd = getWallNodes(this.end, allWalls, this);
+			const nearestNodesToEnd = getWallNodes(this.end, allWalls, this);
+
 			nearestNodesToEnd.forEach((nearest) => {
-				var eqInter = createEquation(
+				const eqInter = createEquation(
 					nearest.wall.start.x,
 					nearest.wall.start.y,
 					nearest.wall.end.x,
 					nearest.wall.end.y
 				);
-				var angleInter = moveAction
+				const angleInter = moveAction
 					? qSVG.angleBetweenEquations(eqInter.A, wallEquations.equation2?.A)
 					: 90;
 
@@ -216,6 +215,20 @@ export class Wall implements WallMetaData {
 			down: eqWallDw,
 			base: eqWallBase,
 		};
+		// console.log(
+		// 	"id:",
+		// 	this.id,
+		// 	"2 - prevStart:",
+		// 	previousWallStart,
+		// 	"start:",
+		// 	this.start,
+		// 	"end:",
+		// 	this.end,
+		// 	"parent",
+		// 	this.parent,
+		// 	"child",
+		// 	this.child
+		// );
 
 		let dWay = calculateDPath(
 			this,
@@ -286,7 +299,7 @@ export class Wall implements WallMetaData {
 		const objectsOnWall: ObjectMetaData[] = [];
 		allObjects.forEach((obj) => {
 			if (obj.family == "inWall") {
-				var eq = createEquation(
+				const eq = createEquation(
 					this.start.x,
 					this.start.y,
 					this.end.x,
@@ -303,7 +316,7 @@ export class Wall implements WallMetaData {
 
 	getJunctions(allWalls: WallMetaData[]): WallJunction[] {
 		const junctions: WallJunction[] = [];
-		var thisWallEquation = createEquation(
+		const thisWallEquation = createEquation(
 			this.start.x,
 			this.start.y,
 			this.end.x,
@@ -314,13 +327,13 @@ export class Wall implements WallMetaData {
 			.forEach((otherWall, idx) => {
 				// if (otherWall == this) return;
 
-				var otherWallEquation = createEquation(
+				const otherWallEquation = createEquation(
 					otherWall.start.x,
 					otherWall.start.y,
 					otherWall.end.x,
 					otherWall.end.y
 				);
-				var intersec = intersectionOfEquations(
+				const intersec = intersectionOfEquations(
 					thisWallEquation,
 					otherWallEquation
 				);

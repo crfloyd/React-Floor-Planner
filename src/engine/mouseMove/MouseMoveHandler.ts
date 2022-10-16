@@ -1,4 +1,3 @@
-import React from "react";
 import {
 	CursorType,
 	Mode,
@@ -6,38 +5,31 @@ import {
 	ObjectMetaData,
 	RoomMetaData,
 	RoomPolygonData,
-	SvgPathMetaData,
+	SnapData,
 	ViewboxData,
 	WallMetaData,
 } from "../../models";
-import { calculateSnap } from "../../utils";
 import { CanvasState } from "../CanvasState";
 import { handleMouseMoveBindMode } from "./BindModeMouseMoveHandler";
-import { handleMouseMoveLineMode } from "./LineModeMouseMoveHandler";
-import { handleMouseMoveOverObject } from "./ObjectMouseMoveHandler";
+import { handleMouseMoveOverObject } from "./ObjectModeMouseMoveHandler";
 import { handleMouseMoveOpeningMode } from "./OpeningMouseMoveHandler";
 import { handleMouseMoveRoomMode } from "./RoomModeMoveHandler";
 import { handleMouseMoveSelectMode } from "./SelectModeMouseMoveHandler";
 
 export const handleMouseMove = (
-	event: React.TouchEvent | React.MouseEvent,
+	snap: SnapData,
+	target: EventTarget,
 	canvasState: CanvasState,
-	continuousWallMode: boolean,
 	viewbox: ViewboxData,
 	wallMetaData: WallMetaData[],
 	setWallMetaData: (w: WallMetaData[]) => void,
 	roomMetaData: RoomMetaData[],
-	setRoomMetaData: (r: RoomMetaData[]) => void,
 	roomPolygonData: RoomPolygonData,
-	setRoomPolygonData: (r: RoomPolygonData) => void,
 	objectMetaData: ObjectMetaData[],
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void,
 	resetObjectEquationData: () => ObjectEquationData[],
-	setHelperLineSvgData: (l: SvgPathMetaData | null) => void,
 	setCursor: (crsr: CursorType) => void
 ) => {
-	event.preventDefault();
-
 	if (
 		![
 			Mode.Object,
@@ -50,9 +42,6 @@ export const handleMouseMove = (
 		].includes(canvasState.mode)
 	)
 		return;
-
-	const snap = calculateSnap(event, viewbox);
-
 	switch (canvasState.mode) {
 		case Mode.Object:
 			handleMouseMoveOverObject(snap, canvasState, viewbox, wallMetaData);
@@ -65,7 +54,7 @@ export const handleMouseMove = (
 			break;
 		case Mode.Select:
 			handleMouseMoveSelectMode(
-				event,
+				target,
 				snap,
 				canvasState,
 				viewbox,
@@ -77,28 +66,15 @@ export const handleMouseMove = (
 			break;
 		case Mode.Line:
 		case Mode.Partition:
-			handleMouseMoveLineMode(
-				snap,
-				setHelperLineSvgData,
-				continuousWallMode,
-				setCursor,
-				canvasState,
-				wallMetaData
-			);
 			break;
 		case Mode.Bind:
 			handleMouseMoveBindMode(
 				snap,
 				resetObjectEquationData,
-				setHelperLineSvgData,
 				setCursor,
 				canvasState,
 				wallMetaData,
 				objectMetaData,
-				roomMetaData,
-				setRoomMetaData,
-				roomPolygonData,
-				setRoomPolygonData,
 				setWallMetaData
 			);
 			break;

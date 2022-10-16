@@ -1,6 +1,12 @@
 import { constants } from "../constants";
 import { getCanvasOffset } from "../func";
-import { Point2D, ViewboxData, WallEquation, WallMetaData } from "./models";
+import {
+	Point2D,
+	SnapData,
+	ViewboxData,
+	WallEquation,
+	WallMetaData,
+} from "./models";
 
 export const intersectionOfSideEquations = (
 	equation1: WallEquation,
@@ -10,6 +16,19 @@ export const intersectionOfSideEquations = (
 		{ A: equation1.A, B: equation1.B as number },
 		{ A: equation2.A, B: equation2.B as number }
 	);
+};
+
+export const pointArraysAreEqual = (p1: Point2D[], p2: Point2D[]): boolean => {
+	if (p1.length != p2.length) return false;
+	p1.forEach((point1, idx) => {
+		const point2 = p2[idx];
+		if (!pointsAreEqual(point1, point2)) return false;
+	});
+	return true;
+};
+
+export const pointsAreEqual = (p1: Point2D, p2: Point2D) => {
+	return p1.x === p2.x && p1.y === p2.y;
 };
 
 export const intersectionOfEquations = (
@@ -118,7 +137,7 @@ export const calculateSnap = (
 	event: React.TouchEvent | React.MouseEvent,
 	viewbox: ViewboxData,
 	state: string = "off"
-) => {
+): SnapData => {
 	let eY = 0;
 	let eX = 0;
 	if (event.nativeEvent instanceof TouchEvent && event.nativeEvent.touches) {

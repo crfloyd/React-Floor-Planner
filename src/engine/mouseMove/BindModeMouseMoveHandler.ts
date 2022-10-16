@@ -2,21 +2,16 @@ import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
 import {
 	CursorType,
-	NodeWallObjectData,
 	ObjectEquationData,
 	ObjectMetaData,
 	Point2D,
-	RoomMetaData,
-	RoomPolygonData,
 	SvgPathMetaData,
-	WallEquationGroup,
 	WallMetaData,
 } from "../../models";
 import {
 	createWallGuideLine,
 	getAngle,
 	pointInPolygon,
-	polygonize,
 	refreshWalls,
 	setInWallMeasurementText,
 	updateMeasurementText,
@@ -27,21 +22,17 @@ import {
 	intersectionOfEquations,
 	isObjectsEquals,
 	perpendicularEquation,
+	pointsAreEqual,
 } from "../../utils";
 import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveBindMode = (
 	snap: Point2D,
 	resetObjectEquationData: () => ObjectEquationData[],
-	setHelperLineSvgData: (l: SvgPathMetaData | null) => void,
 	setCursor: (crsr: CursorType) => void,
 	canvasState: CanvasState,
 	wallMeta: WallMetaData[],
 	objectMeta: ObjectMetaData[],
-	roomMeta: RoomMetaData[],
-	setRoomMeta: (r: RoomMetaData[]) => void,
-	roomPolygonData: RoomPolygonData,
-	setRoomPolygonData: (r: RoomPolygonData) => void,
 	setWallMeta: (w: WallMetaData[]) => void
 ) => {
 	const {
@@ -57,7 +48,7 @@ export const handleMouseMoveBindMode = (
 		var coords = snap;
 		var magnetic: string | null = null;
 		for (var k in currentNodeWalls) {
-			if (isObjectsEquals(currentNodeWalls[k].end, binder.data)) {
+			if (pointsAreEqual(currentNodeWalls[k].end, binder.data)) {
 				if (Math.abs(currentNodeWalls[k].start.x - snap.x) < 20) {
 					coords.x = currentNodeWalls[k].start.x;
 					magnetic = "H";
@@ -67,7 +58,7 @@ export const handleMouseMoveBindMode = (
 					magnetic = "V";
 				}
 			}
-			if (isObjectsEquals(currentNodeWalls[k].start, binder.data)) {
+			if (pointsAreEqual(currentNodeWalls[k].start, binder.data)) {
 				if (Math.abs(currentNodeWalls[k].end.x - snap.x) < 20) {
 					coords.x = currentNodeWalls[k].end.x;
 					magnetic = "H";
@@ -98,7 +89,6 @@ export const handleMouseMoveBindMode = (
 				snap,
 				wallMeta,
 				10,
-				setHelperLineSvgData,
 				currentNodeWalls
 			);
 			if (helpConstruc) {
@@ -121,11 +111,11 @@ export const handleMouseMoveBindMode = (
 			});
 		}
 		for (var k in currentNodeWalls) {
-			if (isObjectsEquals(currentNodeWalls[k].start, binder.data)) {
+			if (pointsAreEqual(currentNodeWalls[k].start, binder.data)) {
 				currentNodeWalls[k].start.x = coords.x;
 				currentNodeWalls[k].start.y = coords.y;
 			}
-			if (isObjectsEquals(currentNodeWalls[k].end, binder.data)) {
+			if (pointsAreEqual(currentNodeWalls[k].end, binder.data)) {
 				currentNodeWalls[k].end.x = coords.x;
 				currentNodeWalls[k].end.y = coords.y;
 			}
@@ -222,9 +212,9 @@ export const handleMouseMoveBindMode = (
 		if (binder.wall.parent != null) {
 			const parent = findById(binder.wall.parent, wallMeta);
 			if (parent && intersection1) {
-				if (isObjectsEquals(parent.end, binder.wall.start))
+				if (pointsAreEqual(parent.end, binder.wall.start))
 					parent.end = intersection1;
-				else if (isObjectsEquals(parent.start, binder.wall.start))
+				else if (pointsAreEqual(parent.start, binder.wall.start))
 					parent.start = intersection1;
 				else parent.end = intersection1;
 			}
@@ -233,9 +223,9 @@ export const handleMouseMoveBindMode = (
 		if (binder.wall.child != null) {
 			const child = findById(binder.wall.child, wallMeta);
 			if (child && intersection2) {
-				if (isObjectsEquals(child.start, binder.wall.end))
+				if (pointsAreEqual(child.start, binder.wall.end))
 					child.start = intersection2;
-				else if (isObjectsEquals(child.end, binder.wall.end))
+				else if (pointsAreEqual(child.end, binder.wall.end))
 					child.end = intersection2;
 				else child.start = intersection2;
 			}

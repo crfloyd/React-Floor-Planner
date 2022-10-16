@@ -1,6 +1,6 @@
 import { qSVG } from "../../../qSVG";
 import { NodeWallObjectData, ObjectMetaData, WallMetaData } from "../../models";
-import { findById, isObjectsEquals } from "../../utils";
+import { findById, pointsAreEqual } from "../../utils";
 
 interface Props {
 	x: number;
@@ -17,8 +17,8 @@ export const handleNodeClicked = ({ x, y, wallMeta, objectMeta }: Props) => {
 	for (var ee = wallMeta.length - 1; ee > -1; ee--) {
 		// Search for youngest wall coords in node
 		if (
-			isObjectsEquals(wallMeta[ee].start, nodeControl) ||
-			isObjectsEquals(wallMeta[ee].end, nodeControl)
+			pointsAreEqual(wallMeta[ee].start, nodeControl) ||
+			pointsAreEqual(wallMeta[ee].end, nodeControl)
 		) {
 			nodeWallsMeta.push(wallMeta[ee]);
 			break;
@@ -28,8 +28,8 @@ export const handleNodeClicked = ({ x, y, wallMeta, objectMeta }: Props) => {
 		const child = findById(nodeWallsMeta[0].child, wallMeta);
 		if (
 			child &&
-			(isObjectsEquals(child.start, nodeControl) ||
-				isObjectsEquals(child.end, nodeControl))
+			(pointsAreEqual(child.start, nodeControl) ||
+				pointsAreEqual(child.end, nodeControl))
 		)
 			nodeWallsMeta.push(child);
 	}
@@ -37,8 +37,8 @@ export const handleNodeClicked = ({ x, y, wallMeta, objectMeta }: Props) => {
 		const parent = findById(nodeWallsMeta[0].parent, wallMeta);
 		if (
 			parent &&
-			(isObjectsEquals(parent.start, nodeControl) ||
-				isObjectsEquals(parent.end, nodeControl))
+			(pointsAreEqual(parent.start, nodeControl) ||
+				pointsAreEqual(parent.end, nodeControl))
 		)
 			nodeWallsMeta.push(parent);
 	}
@@ -46,11 +46,11 @@ export const handleNodeClicked = ({ x, y, wallMeta, objectMeta }: Props) => {
 	const wallObjects: NodeWallObjectData[] = [];
 	for (var k in nodeWallsMeta) {
 		if (
-			isObjectsEquals(nodeWallsMeta[k].start, nodeControl) ||
-			isObjectsEquals(nodeWallsMeta[k].end, nodeControl)
+			pointsAreEqual(nodeWallsMeta[k].start, nodeControl) ||
+			pointsAreEqual(nodeWallsMeta[k].end, nodeControl)
 		) {
 			var nodeTarget = nodeWallsMeta[k].start;
-			if (isObjectsEquals(nodeWallsMeta[k].start, nodeControl)) {
+			if (pointsAreEqual(nodeWallsMeta[k].start, nodeControl)) {
 				nodeTarget = nodeWallsMeta[k].end;
 			}
 			const objWall = nodeWallsMeta[k].getObjects(objectMeta);

@@ -1,16 +1,13 @@
 import { constants } from "../constants";
-import { getCanvasOffset } from "../func";
 import { qSVG } from "../qSVG";
 import {
 	Point2D,
 	SVGCreationData,
 	SVGData,
-	ViewboxData,
 	ObjectMetaData,
 	WallMetaData,
 	WallEquationGroup,
 	WallEquation,
-	PointDistance,
 	SvgPathMetaData,
 	WallJunction,
 	WallVertex,
@@ -18,16 +15,14 @@ import {
 	RoomPolygonData,
 	RoomMetaData,
 } from "./models";
-import { v4 as uuid } from "uuid";
 import {
 	findById,
 	intersectionOfEquations,
 	intersectionOfSideEquations,
 	isObjectsEquals,
 	perpendicularEquation,
+	pointsAreEqual,
 } from "./utils";
-import { CanvasState } from "./engine/CanvasState";
-import { editor } from "../editor";
 
 export const createSvgElement = (id: string, shape: string, attrs: any) => {
 	var svg: SVGElement = document.createElementNS(
@@ -1186,40 +1181,45 @@ export const getWallNodes = (
 ) => {
 	var nodes = [];
 	for (var k in wallMeta) {
-		if (except && isObjectsEquals(wallMeta[k], except)) continue;
+		const wall = wallMeta[k];
+		if (except && wall.id === except.id) continue;
 
-		if (isObjectsEquals(wallMeta[k].start, coords)) {
-			nodes.push({ wall: wallMeta[k], type: "start" });
+		if (wall.start.x === coords.x && wall.start.y === coords.y) {
+			nodes.push({ wall: wall, type: "start" });
 		}
-		if (isObjectsEquals(wallMeta[k].end, coords)) {
-			nodes.push({ wall: wallMeta[k], type: "end" });
+		if (wall.end.x === coords.x && wall.end.y === coords.y) {
+			nodes.push({ wall: wall, type: "end" });
 		}
 	}
 	return nodes;
 };
 
 const clearParentsAndChildren = (wallMeta: WallMetaData[]) => {
-	for (var vertice = 0; vertice < wallMeta.length; vertice++) {
-		const wall = wallMeta[vertice];
-		if (wall.parent != null) {
-			const parent = findById(wall.parent, wallMeta);
+	for (var i = 0; i < wallMeta.length; i++) {
+		const wall = wallMeta[i];
+		const parentId = wall.parent;
+		if (parentId != null) {
+			const parent = findById(parentId, wallMeta);
 			if (
 				!parent ||
-				(!isObjectsEquals(parent.start, wall.start) &&
-					!isObjectsEquals(parent.end, wall.start))
+				(!pointsAreEqual(parent.start, wall.start) &&
+					!pointsAreEqual(parent.end, wall.start))
 			) {
 				wall.parent = null;
 			}
 		}
 
-		const child = findById(wall.child ?? "", wallMeta);
-		if (
-			!child ||
-			// (child.start !== wall.end && child.end !== wall.end)
-			(!isObjectsEquals(child.start, wall.end) &&
-				!isObjectsEquals(child.end, wall.end))
-		) {
-			wall.child = null;
+		const childId = wall.child;
+		if (childId) {
+			const child = findById(childId ?? "", wallMeta);
+			if (
+				!child ||
+				// (child.start !== wall.end && child.end !== wall.end)
+				(!pointsAreEqual(child.start, wall.end) &&
+					!pointsAreEqual(child.end, wall.end))
+			) {
+				wall.child = null;
+			}
 		}
 	}
 };
@@ -1283,6 +1283,7 @@ export const calculateDPath = (
 		comparePointEnd.y - comparePointStart.y,
 		comparePointEnd.x - comparePointStart.x
 	);
+	// console.log("2 - prevStart:", comparePointStart);
 	const halfThick = thickness / 2;
 	const compareThickX = halfThick * Math.sin(comparisonAngle);
 	const compareThickY = halfThick * Math.cos(comparisonAngle);
@@ -1380,9 +1381,6 @@ export const refreshWalls = (
 	wallEquations: WallEquationGroup,
 	moveAction = false
 ) => {
-	// $("#boxwall").empty();
-	// $("#boxArea").empty();
-
 	clearParentsAndChildren(wallMetas);
 
 	wallMetas.forEach((wall) =>
@@ -1872,7 +1870,6 @@ export const createWallGuideLine = (
 	snap: Point2D,
 	wallMeta: WallMetaData[],
 	range = Infinity,
-	setHelperLineSvgData: (data: SvgPathMetaData | null) => void,
 	except: WallMetaData[] = []
 ) => {
 	// ORANGE LINES 90° NEAR SEGMENT
@@ -1966,21 +1963,21 @@ export const createWallGuideLine = (
 	} // END LOOP FOR
 
 	if (distance >= range) {
-		setHelperLineSvgData(null);
-		return false;
+		return null;
 	}
-	setHelperLineSvgData({
+	const helperData: SvgPathMetaData = {
 		p1: way == 2 ? p1 : p2,
 		p2: way == 2 ? p2 : p1,
 		p3: p3,
 		stroke: "#d7ac57",
-	});
+	};
 
 	return {
 		x: p3.x,
 		y: p3.y,
 		wall: wallMeta[node],
 		distance: distance,
+		svgData: helperData,
 	};
 };
 

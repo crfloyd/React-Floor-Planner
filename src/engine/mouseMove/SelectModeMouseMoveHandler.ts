@@ -12,13 +12,14 @@ import { CanvasState } from "../CanvasState";
 import {
 	CursorType,
 	ObjectMetaData,
+	SnapData,
 	ViewboxData,
 	WallMetaData,
 } from "../../models";
 
 export const handleMouseMoveSelectMode = (
-	event: React.TouchEvent | React.MouseEvent,
-	snap: { x: number; y: number; xMouse: number; yMouse: number },
+	target: EventTarget,
+	snap: SnapData,
 	{ binder, setBinder, point, drag }: CanvasState,
 	viewbox: ViewboxData,
 	setCursor: (crsr: CursorType) => void,
@@ -32,8 +33,8 @@ export const handleMouseMoveSelectMode = (
 		const distY = (snap.yMouse - point.y) * viewbox.zoomFactor;
 		handleCameraChange("zoomdrag", distX, distY);
 	} else {
-		var matches = objectMeta.filter((o) => {
-			var realBboxCoords = o.realBbox;
+		const matches = objectMeta.filter((o) => {
+			const realBboxCoords = o.realBbox;
 			return pointInPolygon(snap, realBboxCoords);
 		});
 		let objTarget = matches.length > 0 ? matches[0] : null;
@@ -74,12 +75,12 @@ export const handleMouseMoveSelectMode = (
 			} else {
 				// DOOR, WINDOW, OPENING.. -- OBJ WITHOUT BINDBOX (params.bindBox = False) -- !!!!
 				if (binder == null) {
-					var wall = editor.rayCastingWall(objTarget, wallMeta);
+					let wall = editor.rayCastingWall(objTarget, wallMeta);
 					if (wall.length > 1) wall = wall[0];
 					// wall.inWallRib(objectMeta);
 					setInWallMeasurementText(wall, objectMeta);
-					var thickObj = wall.thick;
-					var sizeObj = objTarget.size;
+					const thickObj = wall.thick;
+					const sizeObj = objTarget.size;
 
 					binder = setBinder(
 						new Object2D(
@@ -101,7 +102,7 @@ export const handleMouseMoveSelectMode = (
 					binder.oldXY = { x: objTarget.x, y: objTarget.y }; // FOR OBJECT MENU
 					$("#boxbind").append(binder.graph);
 				} else {
-					if (event.target == binder.graph.get(0).firstChild) {
+					if (target == binder.graph.get(0).firstChild) {
 						setCursor("move");
 						binder.graph
 							.get(0)
@@ -169,12 +170,12 @@ export const handleMouseMoveSelectMode = (
 			if (wallUnderCursor.length > 1)
 				wallUnderCursor = wallUnderCursor[wallUnderCursor.length - 1];
 			if (wallUnderCursor && binder == null) {
-				var objWall = wallUnderCursor.getObjects(objectMeta);
+				const objWall = wallUnderCursor.getObjects(objectMeta);
 				if (objWall.length > 0) editor.inWallRib2(wallUnderCursor, objectMeta);
 				binder = setBinder({ wall: wallUnderCursor, type: "segment" });
 				// binder.wall.inWallRib(objectMeta);
 				setInWallMeasurementText(binder.wall, objectMeta);
-				var line = qSVG.create("none", "line", {
+				const line = qSVG.create("none", "line", {
 					x1: binder.wall.start.x,
 					y1: binder.wall.start.y,
 					x2: binder.wall.end.x,
@@ -182,13 +183,13 @@ export const handleMouseMoveSelectMode = (
 					"stroke-width": 5,
 					stroke: "#5cba79",
 				});
-				var ball1 = qSVG.create("none", "circle", {
+				const ball1 = qSVG.create("none", "circle", {
 					class: "circle_css",
 					cx: binder.wall.start.x,
 					cy: binder.wall.start.y,
 					r: constants.CIRCLE_BINDER_RADIUS / 1.8,
 				});
-				var ball2 = qSVG.create("none", "circle", {
+				const ball2 = qSVG.create("none", "circle", {
 					class: "circle_css",
 					cx: binder.wall.end.x,
 					cy: binder.wall.end.y,

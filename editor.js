@@ -8,15 +8,6 @@ import {
 } from "./src/svgTools";
 
 export const editor = {
-	colorWall: "#666",
-
-	resetWallCreation: function (binder, lengthTemp) {
-		binder?.remove();
-		$("#linetemp").remove();
-		$("#line_construc").remove();
-		lengthTemp?.remove();
-	},
-
 	nearWallNode: function (snap, wallMeta, range = Infinity, except = []) {
 		var best;
 		var bestWall;

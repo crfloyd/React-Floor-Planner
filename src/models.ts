@@ -246,6 +246,13 @@ export interface LayerSettings {
 	showDevices: boolean;
 }
 
+export interface SnapData {
+	x: number;
+	y: number;
+	xMouse: number;
+	yMouse: number;
+}
+
 export type CursorType =
 	| "crosshair"
 	| "move"

@@ -9,7 +9,6 @@ interface Props {
 	canvasState: CanvasState;
 	viewbox: ViewboxData;
 	objectMetaData: ObjectMetaData[];
-	setObjectMetaData: (o: ObjectMetaData[]) => void;
 	wallMetaData: WallMetaData[];
 	setWallMetaData: (w: WallMetaData[]) => void;
 }
@@ -32,7 +31,6 @@ export const handleSelectModeClick = ({
 	},
 	viewbox,
 	objectMetaData,
-	setObjectMetaData,
 	wallMetaData,
 	setWallMetaData,
 }: Props) => {

@@ -226,6 +226,7 @@ function App() {
 
 	const makeWallVisible = (wall: Wall) => {
 		wall.makeVisible();
+		setWallMetaData([...wallMetaData]);
 		save(wallMetaData, objectMetaData, roomMetaData);
 	};
 
@@ -383,7 +384,6 @@ function App() {
 
 	// Door/Window Tools
 	const onFlipOpeningClicked = () => {
-		console.log("on flip clicked");
 		var target = canvasState.binder.obj;
 		var hingeStatus = target.hinge; // normal - reverse
 		target.hinge = hingeStatus == "normal" ? "reverse" : "normal";
@@ -420,16 +420,16 @@ function App() {
 	};
 
 	const splitWall = (wallToSplit: WallMetaData) => {
-		var eqWall = wallToSplit.getEquation();
-		var wallToSplitLength = qSVG.gap(wallToSplit.start, wallToSplit.end);
-		var newWalls: { distance: number; coords: Point2D }[] = [];
+		const eqWall = wallToSplit.getEquation();
+		const wallToSplitLength = qSVG.gap(wallToSplit.start, wallToSplit.end);
+		const newWalls: { distance: number; coords: Point2D }[] = [];
 
 		wallMetaData.forEach((wall) => {
 			var eq = wall.getEquation();
 			var inter = intersectionOfEquations(eqWall, eq);
 			if (
 				inter &&
-				canvasState.binder.wall.pointInsideWall(inter, true) &&
+				wallToSplit.pointInsideWall(inter, true) &&
 				wall.pointInsideWall(inter, true)
 			) {
 				var distance = qSVG.gap(wallToSplit.start, inter);
@@ -447,7 +447,6 @@ function App() {
 		var initThick = wallToSplit.thick;
 
 		// Clear the wall to split from its parents and children
-
 		// wallMetaData.forEach((wall) => {
 		// 	if (wall.child === wallToSplit.id) {
 		// 		wall.child = null;
@@ -458,28 +457,28 @@ function App() {
 
 		// Remove the wall to split from the list of walls
 		// let newWallMeta = [...wallMetaData.filter((w) => w.id != wallToSplit.id)];
-		let newWallMeta = wallMetaData.filter((w) => w.id !== wallToSplit.id);
+		let otherWalls = wallMetaData.filter((w) => w.id !== wallToSplit.id);
 		// .map((w) => ({
 		// 	...w,
 		// 	child: w.child === wallToSplit.id ? null : w.child,
 		// 	parent: w.parent === wallToSplit.id ? null : w.parent,
 		// }));
-		newWallMeta.forEach((w) => {
+		otherWalls.forEach((w) => {
 			w.child = w.child === wallToSplit.id ? null : w.child;
 			w.parent = w.parent === wallToSplit.id ? null : w.parent;
 		});
 
 		newWalls.forEach((newWall) => {
 			const wall = new Wall(initCoords, newWall.coords, "normal", initThick);
-			wall.child = newWallMeta[newWallMeta.length - 1].id;
+			otherWalls.push(wall);
+			wall.child = otherWalls[otherWalls.length - 1].id;
 			initCoords = newWall.coords;
-			newWallMeta = [...newWallMeta, wall];
 		});
 
 		// LAST WALL ->
 		const wall = new Wall(initCoords, wallToSplit.end, "normal", initThick);
-		newWallMeta = [...newWallMeta, wall];
-		setWallMetaData(newWallMeta);
+		otherWalls.push(wall);
+		setWallMetaData(otherWalls);
 		save(wallMetaData, objectMetaData, roomMetaData);
 		return true;
 	};
@@ -497,7 +496,6 @@ function App() {
 			canvasState.action
 		) {
 			canvasState.setAction(false);
-			editor.resetWallCreation(canvasState.binder, canvasState.lengthTemp);
 			canvasState.setBinder(null);
 			canvasState.setLengthTemp(null);
 		}
@@ -531,7 +529,6 @@ function App() {
 		setShowConfigureObjectPanel(true);
 		const objTarget = canvasState.binder.obj;
 		const limit = objTarget.params.resizeLimit;
-		console.log(objTarget.class);
 		setSelectedObject({
 			minWidth: +limit.width.min,
 			maxWidth: +limit.width.max,
@@ -656,7 +653,6 @@ function App() {
 							aria-describedby="basic-addon2"
 							value={selectedRoomData.surface}
 							onChange={(e) => {
-								console.log(e.target.value);
 								setSelectedRoomData((prev) => ({
 									...prev,
 									surface: e.target.value,

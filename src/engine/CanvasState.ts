@@ -3,11 +3,9 @@ import {
 	Mode,
 	NodeWallObjectData,
 	ObjectEquationData,
-	ObjectMetaData,
 	Point2D,
 	RoomMetaData,
 	RoomPolygonData,
-	ViewboxData,
 	WallEquation,
 	WallEquationGroup,
 	WallMetaData,
@@ -42,44 +40,10 @@ export class CanvasState {
 		return this.modeOption;
 	};
 
-	// wallMeta: WallMetaData[] = [];
-	// setWallMeta = (w: WallMetaData[]) => {
-	// 	this.wallMeta = w;
-	// 	return this.wallMeta;
-	// };
-
-	// roomPolygonData: RoomPolygonData = { polygons: [], vertex: [] };
-	// setRoomPolygonData: (val: RoomPolygonData) => void;
-	// setRoomPolygonData = (val: RoomPolygonData) => {
-	// 	// console.log("Rooms set to: ", val);
-	// 	this.roomPolygonData = val;
-	// 	return this.roomPolygonData;
-	// };
-
-	// roomMeta: RoomMetaData[] = [];
-	// setRoomMeta: (r: RoomMetaData[]) => void;
-	// setRoomMeta = (r: RoomMetaData[]) => {
-	// 	// console.log("setting roomMeta: ", r);
-	// 	this.roomMeta = r;
-	// 	return this.roomMeta;
-	// };
-
-	// objectMeta: ObjectMetaData[] = [];
-	// setObjectMeta = (o: ObjectMetaData[]) => {
-	// 	this.objectMeta = o;
-	// 	return this.objectMeta;
-	// };
-
 	point: Point2D = { x: 0, y: 0 };
 	setPoint = (p: Point2D) => {
 		this.point = p;
 		return this.point;
-	};
-
-	wallDrawPoint: Point2D = { x: 0, y: 0 };
-	setWallDrawPoint = (p: Point2D) => {
-		this.wallDrawPoint = p;
-		return this.wallDrawPoint;
 	};
 
 	action = false;

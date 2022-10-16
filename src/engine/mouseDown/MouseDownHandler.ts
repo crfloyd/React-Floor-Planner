@@ -2,6 +2,7 @@ import {
 	CursorType,
 	Mode,
 	ObjectMetaData,
+	Point2D,
 	ViewboxData,
 	WallMetaData,
 } from "../../models";
@@ -18,7 +19,7 @@ interface Props {
 	wallMetaData: WallMetaData[];
 	setWallMetaData: (w: WallMetaData[]) => void;
 	objectMetaData: ObjectMetaData[];
-	setObjectMetaData: (o: ObjectMetaData[]) => void;
+	startWallDrawing: (startPoint: Point2D) => void;
 }
 
 export const handleMouseDown = ({
@@ -29,7 +30,7 @@ export const handleMouseDown = ({
 	wallMetaData,
 	setWallMetaData,
 	objectMetaData,
-	setObjectMetaData,
+	startWallDrawing,
 }: Props) => {
 	event?.preventDefault();
 
@@ -39,10 +40,14 @@ export const handleMouseDown = ({
 		case Mode.Partition: {
 			if (!action) {
 				const snap = calculateSnap(event, viewbox);
-				setPoint({ x: snap.x, y: snap.y });
-				const near = nearWall(snap, wallMetaData, 12);
-				if (near) {
-					setPoint({ x: near.x, y: near.y });
+				const nearestWall = nearWall(snap, wallMetaData, 12);
+				if (nearestWall) {
+					const nearestPoint = { x: nearestWall.x, y: nearestWall.y };
+					setPoint(nearestPoint);
+					startWallDrawing(nearestPoint);
+				} else {
+					setPoint(snap);
+					startWallDrawing(snap);
 				}
 			}
 			setAction(true);
@@ -59,7 +64,6 @@ export const handleMouseDown = ({
 				canvasState,
 				viewbox,
 				objectMetaData,
-				setObjectMetaData,
 				wallMetaData,
 				setWallMetaData,
 			});

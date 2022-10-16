@@ -1,6 +1,7 @@
 import React, { createRef, useEffect, useMemo, useRef, useState } from "react";
 import { constants } from "../../../constants";
 import { qSVG } from "../../../qSVG";
+import { calculateSnap } from "../../utils";
 import { CanvasState } from "../../engine/CanvasState";
 import { handleMouseDown } from "../../engine/mouseDown/MouseDownHandler";
 import { handleMouseMove } from "../../engine/mouseMove/MouseMoveHandler";
@@ -18,11 +19,20 @@ import {
 	ObjectMetaData,
 	WallMetaData,
 	Point2D,
+	SnapData,
 } from "../../models";
-import { polygonize, refreshWalls, renderRooms } from "../../svgTools";
+import {
+	angleBetweenPoints,
+	createWallGuideLine,
+	polygonize,
+	refreshWalls,
+	renderRooms,
+} from "../../svgTools";
 import { GradientData } from "./GradientData";
 import LinearGradient from "./LinearGradient";
 import Patterns from "./Patterns";
+import { editor } from "../../../editor";
+import { useDrawWalls } from "../../hooks/useDrawWalls";
 
 let shouldUpdateMouseMove = true;
 
@@ -58,6 +68,26 @@ interface RoomPathData {
 	centerPoint: Point2D;
 }
 
+interface WallHelperPathData {
+	x1: number;
+	x2: number;
+	y1: number;
+	y2: number;
+	constructOpacity: number;
+}
+
+interface WallHelperTextData {
+	x: number;
+	y: number;
+	content: string;
+	angle: number;
+}
+
+interface WallEndConstructionData {
+	start: Point2D;
+	end: Point2D;
+}
+
 const FloorPlannerCanvas: React.FC<Props> = ({
 	layerSettings,
 	canvasState,
@@ -84,14 +114,40 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	setWallMetaData,
 }) => {
 	const [cursorImg, setCursorImg] = useState("default");
-	const [helperLineSvgData, setHelperLineSvgData] =
-		useState<SvgPathMetaData | null>();
 	const [roomPathInfo, setRoomPathInfo] = useState<RoomPathData[]>([]);
 	const [renderWalls, setRenderWalls] = useState<WallMetaData[]>([]);
+	const [snapPosition, setSnapPosition] = useState<SnapData>({
+		x: 0,
+		y: 0,
+		xMouse: 0,
+		yMouse: 0,
+	});
 
 	const gradientData = useMemo<
 		{ id: string; color1: string; color2: string }[]
 	>(() => GradientData, []);
+
+	const canvasRef = createRef<SVGSVGElement>();
+
+	const {
+		startWallDrawing,
+		clearWallHelperState,
+		wallHelperTextData,
+		wallHelperNodeCircle,
+		wallHelperPathInfo,
+		wallEndConstructionData,
+		helperLineSvgData,
+		shouldWallConstructionEnd,
+	} = useDrawWalls(
+		snapPosition,
+		wallMetaData,
+		canvasState.mode,
+		continuousWallMode,
+		setCursor,
+		(newPoint: Point2D) => canvasState.setPoint(newPoint)
+	);
+
+	const { save } = useHistory();
 
 	useEffect(() => {
 		switch (cursor) {
@@ -105,7 +161,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 				setCursorImg(constants.TRASH_CURSOR);
 				break;
 			case "validation":
-				setCursorImg(constants.VALIDATION_CURSOR);
+				// setCursorImg(constants.VALIDATION_CURSOR);
+				setCursorImg(constants.GRAB_CURSOR);
 				break;
 			default:
 				setCursorImg(cursor);
@@ -114,20 +171,17 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	}, [cursor]);
 
 	useEffect(() => {
-		setHelperLineSvgData(null);
+		// setHelperLineSvgData(null);
+		if (canvasState.mode !== Mode.Line || canvasState.mode !== Mode.Partition) {
+			clearWallHelperState();
+		}
 	}, [canvasState.mode]);
-
-	const { save } = useHistory();
-
-	const canvasRef = createRef<SVGSVGElement>();
 
 	useEffect(() => {
 		// console.log("walls updated", wallMetaData.length);
+		// console.log("Rendering all walls");
 		refreshWalls(wallMetaData, canvasState.wallEquations);
 		setRenderWalls(wallMetaData);
-		// wallMetaData.forEach((wall) => {
-		// 	wall.addToScene();
-		// });
 
 		const updatedPolygons = polygonize(wallMetaData);
 		setRoomPolygonData(updatedPolygons);
@@ -229,35 +283,35 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					wallMetaData,
 					setWallMetaData,
 					objectMetaData,
-					setObjectMetaData,
+					startWallDrawing,
 				})
 			}
 			onMouseUp={(e) => {
-				handleMouseUp({
-					event: e,
+				handleMouseUp(
+					snapPosition,
 					canvasState,
-					resetMode: () => {
+					() => {
 						applyMode(Mode.Select, "");
 						return canvasState.mode;
 					},
-					showMeasurements: layerSettings.showMeasurements,
-					save: () => save(wallMetaData, objectMetaData, roomMetaData),
+					layerSettings.showMeasurements,
+					() => save(wallMetaData, objectMetaData, roomMetaData),
 					updateRoomDisplayData,
-					setHelperLineSvgData,
 					continuousWallMode,
 					showObjectTools,
 					showOpeningTools,
 					showWallTools,
 					setCursor,
-					viewbox,
-					setRoomPolygonData,
 					roomMetaData,
-					setRoomMetaData,
 					objectMetaData,
 					setObjectMetaData,
 					wallMetaData,
 					setWallMetaData,
-				});
+					clearWallHelperState,
+					wallEndConstructionData,
+					shouldWallConstructionEnd,
+					startWallDrawing
+				);
 			}}
 			onMouseMove={(e) => {
 				const throttleMs = 17; // ~60fps
@@ -271,23 +325,25 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					shouldUpdateMouseMove = true;
 				}, throttleMs);
 
+				e.preventDefault();
+
 				onMouseMove();
 
+				const snap = calculateSnap(e, viewbox);
+				setSnapPosition(snap);
+
 				handleMouseMove(
-					e,
+					snap,
+					e.target,
 					canvasState,
-					continuousWallMode,
 					viewbox,
 					wallMetaData,
 					setWallMetaData,
 					roomMetaData,
-					setRoomMetaData,
 					roomPolygonData,
-					setRoomPolygonData,
 					objectMetaData,
 					handleCameraChange,
 					() => canvasState.setObjectEquationData([]),
-					setHelperLineSvgData,
 					setCursor
 				);
 			}}
@@ -388,6 +444,39 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 						strokeOpacity="1"
 						fill="none"
 					></path>
+				)}
+				{wallHelperPathInfo && (
+					<>
+						<line
+							id="line_construc"
+							x1={wallHelperPathInfo.x1}
+							y1={wallHelperPathInfo.y1}
+							x2={wallHelperPathInfo.x2}
+							y2={wallHelperPathInfo.y2}
+							stroke="#9fb2e2"
+							strokeWidth={canvasState.mode == Mode.Partition ? 10 : 20}
+							strokeLinecap="butt"
+							strokeOpacity={wallHelperPathInfo.constructOpacity}
+						></line>
+						<line
+							id="linetemp"
+							x1={wallHelperPathInfo.x1}
+							y1={wallHelperPathInfo.y1}
+							x2={wallHelperPathInfo.x2}
+							y2={wallHelperPathInfo.y2}
+							stroke="#transparent"
+							strokeWidth={0.5}
+							strokeOpacity={0.9}
+						></line>
+					</>
+				)}
+				{wallHelperNodeCircle && (
+					<circle
+						id="circlebinder"
+						className="circle_css_2"
+						cx={wallHelperNodeCircle.x}
+						cy={wallHelperNodeCircle.y}
+					></circle>
 				)}
 			</g>
 			<g
