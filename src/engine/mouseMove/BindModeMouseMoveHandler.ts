@@ -5,6 +5,7 @@ import {
 	ObjectEquationData,
 	ObjectMetaData,
 	Point2D,
+	SnapData,
 	SvgPathMetaData,
 	WallMetaData,
 } from "../../models";
@@ -19,6 +20,7 @@ import {
 import {
 	computeLimit,
 	findById,
+	getNearestWall,
 	intersectionOfEquations,
 	isObjectsEquals,
 	perpendicularEquation,
@@ -27,7 +29,7 @@ import {
 import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveBindMode = (
-	snap: Point2D,
+	snap: SnapData,
 	resetObjectEquationData: () => ObjectEquationData[],
 	setCursor: (crsr: CursorType) => void,
 	canvasState: CanvasState,
@@ -70,10 +72,15 @@ export const handleMouseMoveBindMode = (
 			}
 		}
 
-		const nodeMove = editor.nearWallNode(snap, wallMeta, 15, currentNodeWalls);
-		if (nodeMove) {
-			coords.x = nodeMove.x;
-			coords.y = nodeMove.y;
+		const nearestWallData = getNearestWall(
+			snap,
+			wallMeta,
+			15,
+			currentNodeWalls
+		);
+		if (nearestWallData) {
+			coords.x = nearestWallData.bestPoint.x;
+			coords.y = nearestWallData.bestPoint.y;
 			$("#circlebinder").attr({
 				class: "circleGum",
 				cx: coords.x,

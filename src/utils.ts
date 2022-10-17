@@ -7,6 +7,7 @@ import {
 	WallEquation,
 	WallMetaData,
 } from "./models";
+import { pointInPolygon } from "./svgTools";
 
 export const intersectionOfSideEquations = (
 	equation1: WallEquation,
@@ -29,6 +30,56 @@ export const pointArraysAreEqual = (p1: Point2D[], p2: Point2D[]): boolean => {
 
 export const pointsAreEqual = (p1: Point2D, p2: Point2D) => {
 	return p1.x === p2.x && p1.y === p2.y;
+};
+
+export const distanceBetween = (p1: Point2D, p2: Point2D) => {
+	return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+};
+
+export const getNearestWall = (
+	snap: SnapData,
+	wallMeta: WallMetaData[],
+	range = Infinity,
+	except: WallMetaData[] = []
+) => {
+	let bestPoint: Point2D = { x: 0, y: 0 };
+	let bestWallId: string = "";
+	let bestDistance = Infinity;
+	for (let k = 0; k < wallMeta.length; k++) {
+		const wall = wallMeta[k];
+		if (except.indexOf(wall) == -1) {
+			let scanDistance = distanceBetween(wall.start, snap);
+			if (scanDistance < bestDistance) {
+				bestPoint = wall.start;
+				bestDistance = scanDistance;
+				bestWallId = wall.id;
+			}
+			scanDistance = distanceBetween(wall.end, snap);
+			if (scanDistance < bestDistance) {
+				bestPoint = wall.end;
+				bestDistance = scanDistance;
+				bestWallId = wall.id;
+			}
+		}
+	}
+	return bestDistance <= range ? { bestPoint, bestWallId } : null;
+};
+
+export const getWallsOnPoint = (point: Point2D, wallMeta: WallMetaData[]) => {
+	const wallsOnPoint: WallMetaData[] = [];
+	wallMeta.forEach((wall) => {
+		const polygon = [];
+		for (let i = 0; i < 4; i++) {
+			polygon.push({
+				x: wall.coords[i].x,
+				y: wall.coords[i].y,
+			});
+		}
+		if (pointInPolygon(point, polygon)) {
+			wallsOnPoint.push(wall);
+		}
+	});
+	return wallsOnPoint;
 };
 
 export const intersectionOfEquations = (

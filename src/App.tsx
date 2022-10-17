@@ -8,7 +8,12 @@ import {
 } from "../func";
 import { qSVG } from "../qSVG";
 import { editor } from "../editor";
-import { computeLimit, findById, intersectionOfEquations } from "./utils";
+import {
+	computeLimit,
+	findById,
+	getWallsOnPoint,
+	intersectionOfEquations,
+} from "./utils";
 
 import "./App.scss";
 import {
@@ -391,15 +396,16 @@ function App() {
 	};
 
 	const onOpeningWidthChanged = (val: number) => {
-		var objTarget = canvasState.binder.obj;
-		let wallBind = editor.rayCastingWall(objTarget, wallMetaData);
-		if (wallBind.length > 1) {
-			wallBind = wallBind[wallBind.length - 1];
-		}
-		var limits = computeLimit(wallBind.equations.base, val, objTarget);
+		const objTarget = canvasState.binder.obj as ObjectMetaData;
+		const wallBind = getWallsOnPoint(
+			{ x: objTarget.x, y: objTarget.y },
+			wallMetaData
+		);
+		const wallUnderOpening = wallBind[wallBind.length - 1];
+		var limits = computeLimit(wallUnderOpening.equations.base, val, objTarget);
 		if (
-			wallBind.pointInsideWall(limits[0]) &&
-			wallBind.pointInsideWall(limits[1])
+			wallUnderOpening.pointInsideWall(limits[0], false) &&
+			wallUnderOpening.pointInsideWall(limits[1], false)
 		) {
 			objTarget.size = val;
 			objTarget.limit = limits;
@@ -408,8 +414,8 @@ function App() {
 			canvasState.binder.limit = limits;
 			canvasState.binder.update();
 		}
-		// wallBind.inWallRib(objectMeta);
-		setInWallMeasurementText(wallBind, objectMetaData);
+		// wallUnderOpening.inWallRib(objectMeta);
+		setInWallMeasurementText(wallUnderOpening, objectMetaData);
 	};
 
 	const onWallModeClicked = () => {

@@ -8,40 +8,6 @@ import {
 } from "./src/svgTools";
 
 export const editor = {
-	nearWallNode: function (snap, wallMeta, range = Infinity, except = []) {
-		var best;
-		var bestWall;
-		var i = 0;
-		var bestDistance = Infinity;
-		for (var k = 0; k < wallMeta.length; k++) {
-			if (except.indexOf(wallMeta[k]) == -1) {
-				const scanStart = wallMeta[k].start;
-				const scanEnd = wallMeta[k].end;
-				let scanDistance = qSVG.measure(scanStart, snap);
-				if (scanDistance < bestDistance) {
-					best = scanStart;
-					bestDistance = scanDistance;
-					bestWall = k;
-				}
-				scanDistance = qSVG.measure(scanEnd, snap);
-				if (scanDistance < bestDistance) {
-					best = scanEnd;
-					bestDistance = scanDistance;
-					bestWall = k;
-				}
-			}
-		}
-		if (bestDistance <= range) {
-			return {
-				x: best.x,
-				y: best.y,
-				bestWall: bestWall,
-			};
-		} else {
-			return false;
-		}
-	},
-
 	stickOnWall: function (snap, wallMeta) {
 		if (wallMeta.length == 0) return false;
 		let wallDistance = Infinity;
@@ -136,25 +102,6 @@ export const editor = {
 	},
 
 	// Returns the objects on a wall
-
-	rayCastingWall: function (snap, wallMeta) {
-		var wallList = [];
-		wallMeta.forEach((wall) => {
-			var polygon = [];
-			for (var pp = 0; pp < 4; pp++) {
-				polygon.push({
-					x: wall.coords[pp].x,
-					y: wall.coords[pp].y,
-				}); // FOR Z
-			}
-			if (pointInPolygon(snap, polygon)) {
-				wallList.push(wall); // Return EDGES Index
-			}
-		});
-		if (wallList.length == 0) return false;
-		if (wallList.length == 1) return wallList[0];
-		return wallList;
-	},
 
 	inWallRib2: function (wall, objectMeta, option = false) {
 		if (!option) $("#boxRib").empty();

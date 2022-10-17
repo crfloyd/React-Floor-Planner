@@ -80,11 +80,7 @@ export const handleMouseUp = (
 			binder.graph.remove();
 			const lastObject = objData[objData.length - 1];
 			let targetBox =
-				lastObject.class == "energy"
-					? "boxEnergy"
-					: lastObject.class == "furniture"
-					? "boxFurniture"
-					: "boxcarpentry";
+				lastObject.class == "energy" ? "boxEnergy" : "boxcarpentry";
 			$("#" + targetBox).append(lastObject.graph);
 			setBinder(null);
 			setObjectMetaData(objData);

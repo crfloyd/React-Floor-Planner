@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { constants } from "../../constants";
-import { editor } from "../../editor";
+import { getNearestWall } from "../utils";
 import { qSVG } from "../../qSVG";
 import {
 	CursorType,
@@ -116,7 +116,7 @@ export const useDrawWalls = (
 		if (mode !== Mode.Line && mode !== Mode.Partition) return;
 
 		// Find the node nearest the current mouse position;
-		const nearestNode = editor.nearWallNode(snapPosition, wallMetaData, 20);
+		const nearestWallData = getNearestWall(snapPosition, wallMetaData, 20);
 
 		// Guid positional data for nearest wall guide line
 		const wallGuideLine = createWallGuideLine(snapPosition, wallMetaData, 10);
@@ -137,10 +137,10 @@ export const useDrawWalls = (
 				cursor = "crosshair";
 			}
 
-			if (nearestNode) {
-				startPoint = nearestNode;
+			if (nearestWallData) {
+				startPoint = nearestWallData.bestPoint;
 				cursor = "grab";
-				setWallHelperNodeCircle(nearestNode);
+				setWallHelperNodeCircle(nearestWallData.bestPoint);
 			} else {
 				setWallHelperNodeCircle(null);
 			}
@@ -157,11 +157,13 @@ export const useDrawWalls = (
 
 		// If this is the first update since starting the wall,
 		// update the start point to the nearest node if available
-		if (wallHelperPathInfo == null && nearestNode) {
-			startPoint = { x: nearestNode.x, y: nearestNode.y };
+		if (wallHelperPathInfo == null && nearestWallData) {
+			startPoint = nearestWallData.bestPoint;
 			updateSnap(startPoint);
 			cursor =
-				nearestNode.bestWall == wallMetaData.length - 1 ? "validation" : "grab";
+				nearestWallData.bestWallId == wallMetaData[wallMetaData.length - 1].id
+					? "validation"
+					: "grab";
 		}
 
 		let endPoint: Point2D = { ...snapPosition };
@@ -201,13 +203,14 @@ export const useDrawWalls = (
 		// If there is a nearby node, snap endpoint to it and flag
 		// it for highlighting
 		let addHelperCircle = false;
-		if (nearestNode) {
+		if (nearestWallData) {
 			addHelperCircle = true;
-			endPoint = { x: nearestNode.x, y: nearestNode.y };
+			endPoint = nearestWallData.bestPoint;
 			shouldDrawingEnd = true;
 			setHelperLineSvgData(null);
 			if (
-				nearestNode.bestWall == wallMetaData.length - 1 &&
+				nearestWallData.bestWallId ==
+					wallMetaData[wallMetaData.length - 1].id &&
 				continuousWallMode
 			) {
 				cursor = "validation";
@@ -231,7 +234,7 @@ export const useDrawWalls = (
 
 		// TODO: Why is this check here? Maybe check for wallHelperPathInfo null?
 		// if (binder == null) {
-		if (!nearestNode) {
+		if (!nearestWallData) {
 			var found = false;
 			let x = endPoint.x;
 			let y = endPoint.y;

@@ -434,7 +434,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 				id="boxEnergy"
 				visibility={layerSettings.showDevices ? "visible" : "hidden"}
 			></g>
-			<g id="boxFurniture"></g>
 			<g id="boxbind">
 				{helperLineSvgData && (
 					<path

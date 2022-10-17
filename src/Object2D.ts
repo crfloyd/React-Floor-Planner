@@ -67,6 +67,9 @@ export class Object2D implements ObjectMetaData {
 
 		const svgData = carpentryCalc(classe, type, size, thick, value);
 		const cc = svgData.construc;
+		this.family = svgData.family ?? this.family;
+		this.width = svgData.width ?? this.width;
+		this.height = svgData.height ?? this.height;
 		var blank;
 		for (var i = 0; i < cc.length; i++) {
 			const item = cc[i];

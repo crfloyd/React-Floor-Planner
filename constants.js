@@ -13,7 +13,6 @@ export const constants = {
 		TEXT: "text",
 		STAIR: "stair",
 		ENERGY: "energy",
-		FURNITURE: "furniture",
 	},
 
 	GRAB_CURSOR:

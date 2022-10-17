@@ -16,6 +16,7 @@ import {
 	ViewboxData,
 	WallMetaData,
 } from "../../models";
+import { getNearestWall, getWallsOnPoint } from "../../utils";
 
 export const handleMouseMoveSelectMode = (
 	target: EventTarget,
@@ -75,11 +76,11 @@ export const handleMouseMoveSelectMode = (
 			} else {
 				// DOOR, WINDOW, OPENING.. -- OBJ WITHOUT BINDBOX (params.bindBox = False) -- !!!!
 				if (binder == null) {
-					let wall = editor.rayCastingWall(objTarget, wallMeta);
-					if (wall.length > 1) wall = wall[0];
+					let wallsOnPoint = getWallsOnPoint(objTarget, wallMeta);
+					const closestWall = wallsOnPoint[0];
 					// wall.inWallRib(objectMeta);
-					setInWallMeasurementText(wall, objectMeta);
-					const thickObj = wall.thick;
+					setInWallMeasurementText(closestWall, objectMeta);
+					const thickObj = closestWall.thick;
 					const sizeObj = objTarget.size;
 
 					binder = setBinder(
@@ -130,19 +131,22 @@ export const handleMouseMoveSelectMode = (
 		}
 
 		// BIND CIRCLE IF nearNode and GROUP ALL SAME XY SEG POINTS
-		let wallNode = editor.nearWallNode(snap, wallMeta, 20);
-		if (wallNode) {
+		let nearestWallData = getNearestWall(snap, wallMeta, 20);
+		if (nearestWallData) {
 			if (binder == null || binder.type == "segment") {
 				binder = setBinder(
 					qSVG.create("boxbind", "circle", {
 						id: "circlebinder",
 						class: "circle_css_2",
-						cx: wallNode.x,
-						cy: wallNode.y,
+						cx: nearestWallData.bestPoint.x,
+						cy: nearestWallData.bestPoint.y,
 						r: constants.CIRCLE_BINDER_RADIUS,
 					})
 				);
-				binder.data = wallNode;
+				binder.data = {
+					x: nearestWallData.bestPoint.x,
+					y: nearestWallData.bestPoint.y,
+				};
 				binder.type = "node";
 				if ($("#linebinder").length) $("#linebinder").remove();
 			} else {
@@ -165,10 +169,9 @@ export const handleMouseMoveSelectMode = (
 		}
 
 		// BIND WALL WITH NEARPOINT function ---> WALL BINDER CREATION
-		let wallUnderCursor = editor.rayCastingWall(snap, wallMeta);
-		if (wallUnderCursor) {
-			if (wallUnderCursor.length > 1)
-				wallUnderCursor = wallUnderCursor[wallUnderCursor.length - 1];
+		let wallsUnderCursor = getWallsOnPoint(snap, wallMeta);
+		if (wallsUnderCursor.length > 0) {
+			const wallUnderCursor = wallsUnderCursor[wallsUnderCursor.length - 1];
 			if (wallUnderCursor && binder == null) {
 				const objWall = wallUnderCursor.getObjects(objectMeta);
 				if (objWall.length > 0) editor.inWallRib2(wallUnderCursor, objectMeta);
