@@ -1,4 +1,5 @@
 import {
+	BoundingBox,
 	ObjectMetaData,
 	Point2D,
 	PointDistance,
@@ -7,10 +8,9 @@ import {
 	ViewboxData,
 } from "./models";
 import { v4 as uuid } from "uuid";
-import { qSVG } from "../qSVG";
-import { constants } from "../constants";
-import { getCanvasOffset } from "../func";
-import { carpentryCalc, createSvgElement } from "./svgTools";
+import { qSVG } from "../../qSVG";
+import { constants } from "../../constants";
+import { carpentryCalc, createSvgElement } from "../utils/svgTools";
 
 // export enum ObjectType {
 // 	Unknown,
@@ -31,19 +31,19 @@ import { carpentryCalc, createSvgElement } from "./svgTools";
 
 export class Object2D implements ObjectMetaData {
 	id = uuid();
-	graph = qSVG.create("none", "g");
+	graph: SVGElement = createSvgElement("none", "g");
 	scale = { x: 1, y: 1 };
 	height: number;
 	width: number;
-	bbox: any;
+	bbox: BoundingBox;
 	realBbox;
 	x: number;
 	y: number;
 	params: SVGCreationData;
 	limit: Point2D[];
 	class: string;
-	up: PointDistance[] = [];
-	down: PointDistance[] = [];
+	// up: PointDistance[] = [];
+	// down: PointDistance[] = [];
 
 	constructor(
 		public readonly family: string,
@@ -70,7 +70,6 @@ export class Object2D implements ObjectMetaData {
 		this.family = svgData.family ?? this.family;
 		this.width = svgData.width ?? this.width;
 		this.height = svgData.height ?? this.height;
-		var blank;
 		for (var i = 0; i < cc.length; i++) {
 			const item = cc[i];
 			if (item.path) {
@@ -78,15 +77,16 @@ export class Object2D implements ObjectMetaData {
 				// 	"http://www.w3.org/2000/svg",
 				// 	"path"
 				// );
-				blank = createSvgElement("none", "path", {
+				const blank = createSvgElement("none", "path", {
 					d: item.path,
 					"stroke-width": 1,
 					fill: item.fill,
 					stroke: item.stroke,
 					"stroke-dasharray": item.strokeDashArray,
 				});
+				this.graph.appendChild(blank);
 			} else if (item.text) {
-				blank = qSVG.create("none", "text", {
+				const blank = createSvgElement("none", "text", {
 					x: item.x,
 					y: item.y,
 					"font-size": item.fontSize,
@@ -96,13 +96,13 @@ export class Object2D implements ObjectMetaData {
 					"text-anchor": "middle",
 					fill: item.fill,
 				});
-				blank.context.textContent = item.text;
+				blank.textContent = item.text;
+				this.graph.appendChild(blank);
 			}
-			this.graph.append(blank);
 		}
 
-		const bbox = this.graph.get(0).getBoundingClientRect();
-		const offset = getCanvasOffset() ?? { left: 0, top: 0 };
+		const bbox = this.graph.getBoundingClientRect();
+		const offset = $("#lin").offset() ?? { left: 0, top: 0 };
 
 		bbox.x =
 			bbox.x * viewbox.zoomFactor -
@@ -112,8 +112,14 @@ export class Object2D implements ObjectMetaData {
 			bbox.y * viewbox.zoomFactor -
 			offset.top * viewbox.zoomFactor +
 			viewbox.originY;
-		bbox.origin = { x: this.x, y: this.y };
-		this.bbox = bbox;
+
+		// bbox.x = this.x;
+		// bbox.y = this.y;
+		this.bbox = {
+			...bbox,
+			id: "",
+			origin: { x: this.x, y: this.y },
+		};
 		this.realBbox = [
 			{ x: -this.size / 2, y: -this.thick / 2 },
 			{ x: this.size / 2, y: -this.thick / 2 },
@@ -138,20 +144,33 @@ export class Object2D implements ObjectMetaData {
 			this.value
 		);
 		// setConstructs(cc);
-		for (var tt = 0; tt < cc.construc.length; tt++) {
-			if (cc.construc[tt].path) {
-				this.graph.find("path")[tt].setAttribute("d", cc.construc[tt].path);
-			} else {
-				// this.graph.find('text').context.textContent = cc[tt].text;
+		const paths = [];
+		const graphChildren = this.graph.childNodes.entries();
+		for (let [idx, node] of graphChildren) {
+			// if (node.nodeName === "path") {
+			// 	paths.push(node as SVGElement);
+			// }
+			if (node.nodeName !== "path") continue;
+			const svgPathElement = node as SVGPathElement;
+			const constructPath = cc.construc[idx]?.path;
+			if (constructPath) {
+				svgPathElement.setAttribute("d", constructPath);
 			}
 		}
+		// for (var tt = 0; tt < cc.construc.length; tt++) {
+		// 	if (cc.construc[tt].path) {
+		// 		this.graph.find("path")[tt].setAttribute("d", cc.construc[tt].path);
+		// 	} else {
+		// 		// this.graph.find('text').context.textContent = cc[tt].text;
+		// 	}
+		// }
 		var hingeStatus = this.hinge; // normal - reverse
 		var hingeUpdate;
 		if (hingeStatus == "normal") hingeUpdate = 1;
 		else hingeUpdate = -1;
-		this.graph.attr({
-			transform:
-				"translate(" +
+		this.graph.setAttribute(
+			"transform",
+			"translate(" +
 				this.x +
 				"," +
 				this.y +
@@ -159,20 +178,30 @@ export class Object2D implements ObjectMetaData {
 				this.angle +
 				",0,0) scale(" +
 				hingeUpdate +
-				", 1)",
-		});
-		var bbox = this.graph.get(0).getBoundingClientRect();
-		const offset = getCanvasOffset() ?? { left: 0, top: 0 };
-		bbox.x =
-			bbox.x * this.viewbox.zoomFactor -
-			offset.left * this.viewbox.zoomFactor +
-			this.viewbox.originX;
-		bbox.y =
-			bbox.y * this.viewbox.zoomFactor -
-			offset.top * this.viewbox.zoomFactor +
-			this.viewbox.originY;
-		bbox.origin = { x: this.x, y: this.y };
-		this.bbox = bbox;
+				", 1)"
+		);
+
+		const child = this.graph.firstChild as SVGElement;
+		if (child) {
+			var bbox = child.getBoundingClientRect();
+			const offset = $("#lin").offset() ?? { left: 0, top: 0 };
+			bbox.x =
+				bbox.x * this.viewbox.zoomFactor -
+				offset.left * this.viewbox.zoomFactor +
+				this.viewbox.originX;
+			bbox.y =
+				bbox.y * this.viewbox.zoomFactor -
+				offset.top * this.viewbox.zoomFactor +
+				this.viewbox.originY;
+
+			// bbox.x = this.x;
+			// bbox.y = this.y;
+			this.bbox = {
+				...bbox,
+				id: "",
+				origin: { x: this.x, y: this.y },
+			};
+		}
 
 		if (this.class == "text" && this.angle == 0) {
 			this.realBbox = [

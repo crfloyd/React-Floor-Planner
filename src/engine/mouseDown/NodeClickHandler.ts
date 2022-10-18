@@ -1,6 +1,10 @@
 import { qSVG } from "../../../qSVG";
-import { NodeWallObjectData, ObjectMetaData, WallMetaData } from "../../models";
-import { findById, pointsAreEqual } from "../../utils";
+import {
+	NodeWallObjectData,
+	ObjectMetaData,
+	WallMetaData,
+} from "../../models/models";
+import { findById, pointsAreEqual } from "../../utils/utils";
 
 interface Props {
 	x: number;

@@ -1,22 +1,23 @@
 import { constants } from "../../../constants";
-import * as func from "../../../func";
-import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
-import { Object2D } from "../../Object2D";
+import { Object2D } from "../../models/Object2D";
 import {
+	createSvgElement,
+	nearPointOnEquation,
 	pointInPolygon,
 	setInWallMeasurementText,
 	updateMeasurementText,
-} from "../../svgTools";
+} from "../../utils/svgTools";
 import { CanvasState } from "../CanvasState";
 import {
 	CursorType,
 	ObjectMetaData,
+	Point2D,
 	SnapData,
 	ViewboxData,
 	WallMetaData,
-} from "../../models";
-import { getNearestWall, getWallsOnPoint } from "../../utils";
+} from "../../models/models";
+import { getNearestWall, getWallsOnPoint } from "../../utils/utils";
 
 export const handleMouseMoveSelectMode = (
 	target: EventTarget,
@@ -41,7 +42,7 @@ export const handleMouseMoveSelectMode = (
 		let objTarget = matches.length > 0 ? matches[0] : null;
 		if (objTarget != null) {
 			if (binder && binder.type == "segment") {
-				binder.graph.remove();
+				$(binder.graph).remove();
 				binder = setBinder(null);
 				setCursor("default");
 			}
@@ -103,18 +104,14 @@ export const handleMouseMoveSelectMode = (
 					binder.oldXY = { x: objTarget.x, y: objTarget.y }; // FOR OBJECT MENU
 					$("#boxbind").append(binder.graph);
 				} else {
-					if (target == binder.graph.get(0).firstChild) {
+					if (target == binder.graph.firstChild) {
 						setCursor("move");
-						binder.graph
-							.get(0)
-							.firstChild.setAttribute("class", "circle_css_2");
+						binder.graph.firstChild.setAttribute("class", "circle_css_2");
 						binder.type = "obj";
 						binder.obj = objTarget;
 					} else {
 						setCursor("default");
-						binder.graph
-							.get(0)
-							.firstChild.setAttribute("class", "circle_css_1");
+						binder.graph.firstChild.setAttribute("class", "circle_css_1");
 						binder.type = false;
 					}
 				}
@@ -122,7 +119,7 @@ export const handleMouseMoveSelectMode = (
 		} else {
 			if (binder) {
 				if (binder.graph && typeof binder.graph != "undefined")
-					binder.graph.remove();
+					$(binder.graph).remove();
 				else if (binder.remove != undefined) binder.remove();
 				binder = setBinder(null);
 				setCursor("default");
@@ -135,7 +132,7 @@ export const handleMouseMoveSelectMode = (
 		if (nearestWallData) {
 			if (binder == null || binder.type == "segment") {
 				binder = setBinder(
-					qSVG.create("boxbind", "circle", {
+					createSvgElement("boxbind", "circle", {
 						id: "circlebinder",
 						class: "circle_css_2",
 						cx: nearestWallData.bestPoint.x,
@@ -162,7 +159,7 @@ export const handleMouseMoveSelectMode = (
 			if (binder && binder.type == "node") {
 				binder.remove();
 				binder = setBinder(null);
-				func.hideAllSize();
+				$("#boxbind").empty();
 				setCursor("default");
 				updateMeasurementText(wallMeta);
 			}
@@ -174,11 +171,11 @@ export const handleMouseMoveSelectMode = (
 			const wallUnderCursor = wallsUnderCursor[wallsUnderCursor.length - 1];
 			if (wallUnderCursor && binder == null) {
 				const objWall = wallUnderCursor.getObjects(objectMeta);
-				if (objWall.length > 0) editor.inWallRib2(wallUnderCursor, objectMeta);
+				if (objWall.length > 0) updateLenghtText(wallUnderCursor, objectMeta);
 				binder = setBinder({ wall: wallUnderCursor, type: "segment" });
 				// binder.wall.inWallRib(objectMeta);
 				setInWallMeasurementText(binder.wall, objectMeta);
-				const line = qSVG.create("none", "line", {
+				const line = createSvgElement("none", "line", {
 					x1: binder.wall.start.x,
 					y1: binder.wall.start.y,
 					x2: binder.wall.end.x,
@@ -186,33 +183,173 @@ export const handleMouseMoveSelectMode = (
 					"stroke-width": 5,
 					stroke: "#5cba79",
 				});
-				const ball1 = qSVG.create("none", "circle", {
+				const ball1 = createSvgElement("none", "circle", {
 					class: "circle_css",
 					cx: binder.wall.start.x,
 					cy: binder.wall.start.y,
 					r: constants.CIRCLE_BINDER_RADIUS / 1.8,
 				});
-				const ball2 = qSVG.create("none", "circle", {
+				const ball2 = createSvgElement("none", "circle", {
 					class: "circle_css",
 					cx: binder.wall.end.x,
 					cy: binder.wall.end.y,
 					r: constants.CIRCLE_BINDER_RADIUS / 1.8,
 				});
-				binder.graph = qSVG.create("none", "g");
-				binder.graph.append(line);
-				binder.graph.append(ball1);
-				binder.graph.append(ball2);
+				const graph = createSvgElement("none", "g");
+				graph.appendChild(line);
+				graph.appendChild(ball1);
+				graph.appendChild(ball2);
+				binder.graph = graph;
 				$("#boxbind").append(binder.graph);
 				setCursor("pointer");
 			}
 		} else {
 			if (binder && binder.type == "segment") {
-				binder.graph.remove();
+				$(binder.graph).remove();
 				binder = setBinder(null);
-				func.hideAllSize();
+				$("#boxbind").empty();
 				setCursor("default");
 				updateMeasurementText(wallMeta);
 			}
 		}
 	}
+};
+
+type WallDistanceData = {
+	coords: Point2D;
+	distance: number;
+};
+
+const updateLenghtText = (
+	wall: WallMetaData,
+	objectMeta: ObjectMetaData[],
+	option = false
+) => {
+	if (!option) $("#boxRib").empty();
+	const upDistances: WallDistanceData[] = [];
+	const downDistances: WallDistanceData[] = [];
+
+	const angleTextValue = wall.angle * (180 / Math.PI);
+	const objectsOnWall = wall.getObjects(objectMeta); // LIST OBJ ON EDGE
+	upDistances.push({
+		coords: wall.coords[0],
+		distance: 0,
+	});
+	downDistances.push({
+		coords: wall.coords[1],
+		distance: 0,
+	});
+
+	objectsOnWall.forEach((objTarget) => {
+		const upPoints = [
+			nearPointOnEquation(wall.equations.up, objTarget.limit[0]),
+			nearPointOnEquation(wall.equations.up, objTarget.limit[1]),
+		];
+		const downPoints = [
+			nearPointOnEquation(wall.equations.down, objTarget.limit[0]),
+			nearPointOnEquation(wall.equations.down, objTarget.limit[1]),
+		];
+
+		let distance =
+			qSVG.measure(wall.coords[0], upPoints[0]) / constants.METER_SIZE;
+		upDistances.push({
+			coords: upPoints[0],
+			distance: +distance.toFixed(2),
+		});
+		distance = qSVG.measure(wall.coords[0], upPoints[1]) / constants.METER_SIZE;
+		upDistances.push({
+			coords: upPoints[1],
+			distance: +distance.toFixed(2),
+		});
+		distance =
+			qSVG.measure(wall.coords[1], downPoints[0]) / constants.METER_SIZE;
+		downDistances.push({
+			coords: downPoints[0],
+			distance: +distance.toFixed(2),
+		});
+		distance =
+			qSVG.measure(wall.coords[1], downPoints[1]) / constants.METER_SIZE;
+		downDistances.push({
+			coords: downPoints[1],
+			distance: +distance.toFixed(2),
+		});
+	});
+	let distance =
+		qSVG.measure(wall.coords[0], wall.coords[3]) / constants.METER_SIZE;
+	upDistances.push({
+		coords: wall.coords[3],
+		distance: distance,
+	});
+	distance =
+		qSVG.measure(wall.coords[1], wall.coords[2]) / constants.METER_SIZE;
+	downDistances.push({
+		coords: wall.coords[2],
+		distance: distance,
+	});
+	upDistances.sort((a: WallDistanceData, b: WallDistanceData) => {
+		return +(a.distance - b.distance).toFixed(2);
+	});
+	downDistances.sort((a: WallDistanceData, b: WallDistanceData) => {
+		return +(a.distance - b.distance).toFixed(2);
+	});
+
+	const updateText = (
+		distanceData: WallDistanceData[],
+		direction: "up" | "down"
+	) => {
+		for (let i = 1; i < distanceData.length; i++) {
+			const current = distanceData[i];
+			const previous = distanceData[i - 1];
+			let found = true;
+			let shift = -5;
+			let valueText = Math.abs(previous.distance - current.distance);
+			let angleText = angleTextValue;
+			if (found) {
+				if (direction == "down") {
+					shift = -shift + 10;
+				}
+				if (angleText > 89 || angleText < -89) {
+					angleText -= 180;
+					if (direction == "down") {
+						shift = -5;
+					} else shift = -shift + 10;
+				}
+
+				const textElement = document.createElementNS(
+					"http://www.w3.org/2000/svg",
+					"text"
+				);
+				var startText = qSVG.middle(
+					previous.coords.x,
+					previous.coords.y,
+					current.coords.x,
+					current.coords.y
+				);
+				textElement.setAttributeNS(null, "x", startText.x.toString());
+				textElement.setAttributeNS(null, "y", (startText.y + shift).toString());
+				textElement.setAttributeNS(null, "text-anchor", "middle");
+				textElement.setAttributeNS(null, "font-family", "roboto");
+				textElement.setAttributeNS(null, "stroke", "#ffffff");
+				textElement.textContent = valueText.toFixed(2);
+				if (+textElement.textContent < 1) {
+					textElement.setAttributeNS(null, "font-size", "0.8em");
+					textElement.textContent = textElement.textContent.substring(
+						1,
+						textElement.textContent.length
+					);
+				} else textElement.setAttributeNS(null, "font-size", "1em");
+				textElement.setAttributeNS(null, "stroke-width", "0.4px");
+				textElement.setAttributeNS(null, "fill", "#666666");
+				textElement.setAttribute(
+					"transform",
+					"rotate(" + angleText + " " + startText.x + "," + startText.y + ")"
+				);
+
+				$("#boxRib").append(textElement);
+			}
+		}
+	};
+
+	updateText(upDistances, "up");
+	updateText(downDistances, "down");
 };

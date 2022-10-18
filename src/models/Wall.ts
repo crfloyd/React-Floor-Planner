@@ -7,15 +7,19 @@ import {
 	WallJunction,
 } from "./models";
 import { v4 as uuid } from "uuid";
-import { qSVG } from "../qSVG";
-import { findById, intersectionOfEquations, pointsAreEqual } from "./utils";
-import { constants } from "../constants";
+import { qSVG } from "../../qSVG";
+import {
+	findById,
+	intersectionOfEquations,
+	pointsAreEqual,
+} from "../utils/utils";
+import { constants } from "../../constants";
 import {
 	calculateDPath,
 	createEquation,
 	getWallNodes,
 	nearPointOnEquation,
-} from "./svgTools";
+} from "../utils/svgTools";
 
 export class Wall implements WallMetaData {
 	id: string;

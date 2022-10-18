@@ -1,12 +1,11 @@
-import { constants } from "../constants";
-import { getCanvasOffset } from "../func";
+import { constants } from "../../constants";
 import {
 	Point2D,
 	SnapData,
 	ViewboxData,
 	WallEquation,
 	WallMetaData,
-} from "./models";
+} from "../models/models";
 import { pointInPolygon } from "./svgTools";
 
 export const intersectionOfSideEquations = (
@@ -201,7 +200,7 @@ export const calculateSnap = (
 	} else {
 		throw new Error("Unknown input event");
 	}
-	const offset = getCanvasOffset();
+	const offset = $("#lin").offset();
 	if (!offset) {
 		throw new Error("Could not get canvas offset");
 	}

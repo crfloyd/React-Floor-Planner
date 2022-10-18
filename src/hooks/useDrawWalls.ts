@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { constants } from "../../constants";
-import { getNearestWall } from "../utils";
+import { getNearestWall } from "../utils/utils";
 import { qSVG } from "../../qSVG";
 import {
 	CursorType,
@@ -9,8 +9,12 @@ import {
 	SnapData,
 	SvgPathMetaData,
 	WallMetaData,
-} from "../models";
-import { createWallGuideLine, angleBetweenPoints, nearWall } from "../svgTools";
+} from "../models/models";
+import {
+	createWallGuideLine,
+	angleBetweenPoints,
+	nearWall,
+} from "../utils/svgTools";
 
 interface WallHelperPathData {
 	x1: number;

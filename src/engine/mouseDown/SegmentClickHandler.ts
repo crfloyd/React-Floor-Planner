@@ -5,16 +5,16 @@ import {
 	WallEquation,
 	WallEquationGroup,
 	WallMetaData,
-} from "../../models";
-import { pointInPolygon } from "../../svgTools";
+} from "../../models/models";
+import { pointInPolygon } from "../../utils/svgTools";
 import {
 	findById,
 	isObjectsEquals,
 	perpendicularEquation,
 	pointArraysAreEqual,
 	pointsAreEqual,
-} from "../../utils";
-import { Wall } from "../../wall";
+} from "../../utils/utils";
+import { Wall } from "../../models/Wall";
 
 export const handleSegmentClicked = (
 	binder: any,

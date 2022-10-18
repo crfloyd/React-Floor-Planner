@@ -1,10 +1,19 @@
 import { constants } from "../../../constants";
-import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
-import { BoundingBox, SnapData, ViewboxData, WallMetaData } from "../../models";
-import { Object2D } from "../../Object2D";
-import { createEquation, getAngle, nearPointOnEquation } from "../../svgTools";
-import { getWallsOnPoint } from "../../utils";
+import {
+	BoundingBox,
+	SnapData,
+	ViewboxData,
+	WallMetaData,
+} from "../../models/models";
+import { Object2D } from "../../models/Object2D";
+import {
+	createEquation,
+	getAngle,
+	nearPointOnEquation,
+	nearVertice,
+} from "../../utils/svgTools";
+import { getWallsOnPoint } from "../../utils/utils";
 import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveOverObject = (
@@ -174,38 +183,39 @@ const stickOnWall = (snap: SnapData, wallMeta: WallMetaData[]) => {
 			};
 		}
 	});
-	const nearestVertic = editor.nearVertice(snap, wallMeta);
+	const nearestVertic = nearVertice(snap, wallMeta);
 	if (nearestVertic && nearestVertic.distance < wallDistance) {
+		const nearestWall = nearestVertic.wall;
 		var eq1 = createEquation(
-			nearestVertic.number.coords[0].x,
-			nearestVertic.number.coords[0].y,
-			nearestVertic.number.coords[3].x,
-			nearestVertic.number.coords[3].y
+			nearestWall.coords[0].x,
+			nearestWall.coords[0].y,
+			nearestWall.coords[3].x,
+			nearestWall.coords[3].y
 		);
 		const nearestPoint1 = nearPointOnEquation(eq1, nearestVertic);
 		var eq2 = createEquation(
-			nearestVertic.number.coords[1].x,
-			nearestVertic.number.coords[1].y,
-			nearestVertic.number.coords[2].x,
-			nearestVertic.number.coords[2].y
+			nearestWall.coords[1].x,
+			nearestWall.coords[1].y,
+			nearestWall.coords[2].x,
+			nearestWall.coords[2].y
 		);
 		const nearestPoint2 = nearPointOnEquation(eq2, nearestVertic);
 		if (
 			nearestPoint1.distance < wallDistance &&
 			qSVG.btwn(
 				nearestPoint1.x,
-				nearestVertic.number.coords[0].x,
-				nearestVertic.number.coords[3].x
+				nearestWall.coords[0].x,
+				nearestWall.coords[3].x
 			) &&
 			qSVG.btwn(
 				nearestPoint1.y,
-				nearestVertic.number.coords[0].y,
-				nearestVertic.number.coords[3].y
+				nearestWall.coords[0].y,
+				nearestWall.coords[3].y
 			)
 		) {
 			wallDistance = nearestPoint1.distance;
 			wallSelected = {
-				wall: nearestVertic.number,
+				wall: nearestWall,
 				x: nearestPoint1.x,
 				y: nearestPoint1.y,
 				distance: nearestPoint1.distance,
@@ -215,18 +225,18 @@ const stickOnWall = (snap: SnapData, wallMeta: WallMetaData[]) => {
 			nearestPoint2.distance < wallDistance &&
 			qSVG.btwn(
 				nearestPoint2.x,
-				nearestVertic.number.coords[1].x,
-				nearestVertic.number.coords[2].x
+				nearestWall.coords[1].x,
+				nearestWall.coords[2].x
 			) &&
 			qSVG.btwn(
 				nearestPoint2.y,
-				nearestVertic.number.coords[1].y,
-				nearestVertic.number.coords[2].y
+				nearestWall.coords[1].y,
+				nearestWall.coords[2].y
 			)
 		) {
 			wallDistance = nearestPoint2.distance;
 			wallSelected = {
-				wall: nearestVertic.number,
+				wall: nearestWall,
 				x: nearestPoint2.x,
 				y: nearestPoint2.y,
 				distance: nearestPoint2.distance,

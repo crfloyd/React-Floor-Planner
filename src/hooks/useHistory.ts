@@ -5,10 +5,10 @@ import {
 	RoomMetaData,
 	ViewboxData,
 	WallMetaData,
-} from "../models";
-import { Wall } from "../wall";
+} from "../models/models";
+import { Wall } from "../models/Wall";
 import { v4 as uuid } from "uuid";
-import { Object2D } from "../Object2D";
+import { Object2D } from "../models/Object2D";
 import { CanvasState } from "../engine/CanvasState";
 
 export const useHistory = () => {

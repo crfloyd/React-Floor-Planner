@@ -1,9 +1,9 @@
 import { constants } from "../../../constants";
 import { qSVG } from "../../../qSVG";
-import { Point2D, ViewboxData, WallMetaData } from "../../models";
-import { Object2D } from "../../Object2D";
-import { getAngle, nearWall } from "../../svgTools";
-import { computeLimit } from "../../utils";
+import { Point2D, ViewboxData, WallMetaData } from "../../models/models";
+import { Object2D } from "../../models/Object2D";
+import { getAngle, nearWall } from "../../utils/svgTools";
+import { computeLimit } from "../../utils/utils";
 import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveOpeningMode = (

@@ -9,7 +9,7 @@ import {
 	WallEquation,
 	WallEquationGroup,
 	WallMetaData,
-} from "../models";
+} from "../models/models";
 
 const useRoomState = () => {
 	const [roomPolygonData, setRoomPolygonData] = useState<RoomPolygonData>({

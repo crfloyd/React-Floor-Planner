@@ -1,5 +1,5 @@
-import { constants } from "../constants";
-import { qSVG } from "../qSVG";
+import { constants } from "../../constants";
+import { qSVG } from "../../qSVG";
 import {
 	Point2D,
 	SVGCreationData,
@@ -14,7 +14,7 @@ import {
 	Polygon,
 	RoomPolygonData,
 	RoomMetaData,
-} from "./models";
+} from "../models/models";
 import {
 	findById,
 	intersectionOfEquations,
@@ -24,18 +24,18 @@ import {
 	pointsAreEqual,
 } from "./utils";
 
-export const createSvgElement = (id: string, shape: string, attrs: any) => {
-	var svg: SVGElement = document.createElementNS(
-		"http://www.w3.org/2000/svg",
-		shape
-	);
-	for (var k in attrs) {
-		const v = attrs[k];
-		if (v) {
-			svg.setAttribute(k, v);
+export const createSvgElement = (id: string, shape: string, attrs?: any) => {
+	const svg = document.createElementNS("http://www.w3.org/2000/svg", shape);
+	if (attrs) {
+		for (var k in attrs) {
+			const v = attrs[k];
+			if (v) {
+				svg.setAttribute(k, v);
+			}
+			// s.attr(k, attrs[k]);
 		}
-		// s.attr(k, attrs[k]);
 	}
+
 	if (id != "none") {
 		$("#" + id).append(svg);
 	}
@@ -902,18 +902,18 @@ export const setInWallMeasurementText = (
 	const objectsOnWall = wall.getObjects(objectMetas);
 	for (let ob in objectsOnWall) {
 		const objTarget = objectsOnWall[ob];
-		objTarget.up = [
+		const upPoints = [
 			nearPointOnEquation(wall.equations.up, objTarget.limit[0]),
 			nearPointOnEquation(wall.equations.up, objTarget.limit[1]),
 		];
-		objTarget.down = [
+		const downPoints = [
 			nearPointOnEquation(wall.equations.down, objTarget.limit[0]),
 			nearPointOnEquation(wall.equations.down, objTarget.limit[1]),
 		];
-		addMeasureData(wall.coords[0], objTarget.up[0], "up");
-		addMeasureData(wall.coords[0], objTarget.up[1], "up");
-		addMeasureData(wall.coords[1], objTarget.down[0], "down");
-		addMeasureData(wall.coords[1], objTarget.down[1], "down");
+		addMeasureData(wall.coords[0], upPoints[0], "up");
+		addMeasureData(wall.coords[0], upPoints[1], "up");
+		addMeasureData(wall.coords[1], downPoints[0], "down");
+		addMeasureData(wall.coords[1], downPoints[1], "down");
 	}
 
 	addMeasureData(wall.coords[0], wall.coords[3], "up");
@@ -1908,56 +1908,63 @@ export const nearWall = (
 			};
 		}
 	});
-	const vv = nearVertice(snap, wallMeta);
-	if (vv && vv.distance < wallDistance) {
-		wallDistance = vv.distance;
+	const vertexData = nearVertice(snap, wallMeta);
+	if (vertexData && vertexData.distance < wallDistance) {
+		wallDistance = vertexData.distance;
 		wallSelected = {
-			wall: vv.number,
-			x: vv.x,
-			y: vv.y,
-			distance: vv.distance,
+			wall: vertexData.wall,
+			x: vertexData.x,
+			y: vertexData.y,
+			distance: vertexData.distance,
 		};
 	}
 	return wallDistance <= range ? wallSelected : null;
+};
+
+type VertexData = {
+	x: number;
+	y: number;
+	distance: number;
+	wall: WallMetaData;
 };
 
 export const nearVertice = (
 	snap: Point2D,
 	wallMeta: WallMetaData[],
 	range = 10000
-) => {
+): VertexData | null => {
 	let bestDistance = Infinity;
-	let bestVertice = null;
-	for (let i = 0; i < wallMeta.length; i++) {
+	let bestVertice: VertexData | null = null;
+	wallMeta.forEach((wall) => {
+		const start = wall.start;
+		const end = wall.end;
 		const distance1 = qSVG.gap(snap, {
-			x: wallMeta[i].start.x,
-			y: wallMeta[i].start.y,
+			x: start.x,
+			y: start.y,
 		});
 		const distance2 = qSVG.gap(snap, {
-			x: wallMeta[i].end.x,
-			y: wallMeta[i].end.y,
+			x: end.x,
+			y: end.y,
 		});
 		if (distance1 < distance2 && distance1 < bestDistance) {
 			bestDistance = distance1;
 			bestVertice = {
-				number: wallMeta[i],
-				x: wallMeta[i].start.x,
-				y: wallMeta[i].start.y,
+				wall,
+				x: start.x,
+				y: start.y,
 				distance: Math.sqrt(bestDistance),
 			};
-		}
-		if (distance2 < distance1 && distance2 < bestDistance) {
+		} else if (distance2 < distance1 && distance2 < bestDistance) {
 			bestDistance = distance2;
 			bestVertice = {
-				number: wallMeta[i],
-				x: wallMeta[i].end.x,
-				y: wallMeta[i].end.y,
+				wall,
+				x: end.x,
+				y: end.y,
 				distance: Math.sqrt(bestDistance),
 			};
 		}
-	}
-	if (bestDistance < range * range) return bestVertice;
-	else return null;
+	});
+	return bestDistance < range * range ? bestVertice : null;
 };
 
 export const applyPolygonDataToRooms = (

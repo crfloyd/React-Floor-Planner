@@ -5,13 +5,8 @@
 
 // 'use strict';
 
-import { intersectionOfEquations, isObjectsEquals } from "./src/utils";
-import {
-	createEquation,
-	getAngle,
-	pointInPolygon,
-	vertexList,
-} from "./src/svgTools";
+import { intersectionOfEquations, isObjectsEquals } from "./src/utils/utils";
+import { createEquation, pointInPolygon } from "./src/utils/svgTools";
 
 export const qSVG = {
 	create: function (id, shape, attrs) {
@@ -145,27 +140,6 @@ export const qSVG = {
 			",0"
 		);
 	},
-
-	// perpendicularEquation: function (equation, x1, y1) {
-	// 	if (typeof equation.A != "string") {
-	// 		return {
-	// 			A: -1 / equation.A,
-	// 			B: y1 - (-1 / equation.A) * x1,
-	// 		};
-	// 	}
-	// 	if (equation.A == "h") {
-	// 		return {
-	// 			A: "v",
-	// 			B: x1,
-	// 		};
-	// 	}
-	// 	if (equation.A == "v") {
-	// 		return {
-	// 			A: "h",
-	// 			B: y1,
-	// 		};
-	// 	}
-	// },
 
 	angleBetweenEquations: function (m1, m2) {
 		if (m1 == "h") m1 = 0;
@@ -444,97 +418,6 @@ export const qSVG = {
 		}
 		return roughRoom.toFixed(digit);
 	},
-
-	// vertexList: function (junction) {
-	// 	var verticies = [];
-	// 	// var vertextest = [];
-	// 	for (var jj = 0; jj < junction.length; jj++) {
-	// 		var found = true;
-	// 		for (var vv = 0; vv < verticies.length; vv++) {
-	// 			if (
-	// 				Math.round(junction[jj].values[0]) == Math.round(verticies[vv].x) &&
-	// 				Math.round(junction[jj].values[1]) == Math.round(verticies[vv].y)
-	// 			) {
-	// 				found = false;
-	// 				verticies[vv].segment.push(junction[jj].segment);
-	// 				break;
-	// 			} else {
-	// 				found = true;
-	// 			}
-	// 		}
-	// 		if (found) {
-	// 			verticies.push({
-	// 				x: Math.round(junction[jj].values[0]),
-	// 				y: Math.round(junction[jj].values[1]),
-	// 				segment: [junction[jj].segment],
-	// 				bypass: 0,
-	// 				type: junction[jj].type,
-	// 			});
-	// 		}
-	// 	}
-
-	// 	var toClean = [];
-	// 	for (var ss = 0; ss < verticies.length; ss++) {
-	// 		const vert = verticies[ss];
-	// 		const vertChildren = [];
-	// 		const vertRemoved = [];
-	// 		vert.child = vertChildren;
-	// 		vert.removed = vertRemoved;
-	// 		for (var sg = 0; sg < vert.segment.length; sg++) {
-	// 			const vertSegment = vert.segment[sg];
-	// 			for (var sc = 0; sc < verticies.length; sc++) {
-	// 				if (sc === ss) continue;
-	// 				const vertCompare = verticies[sc];
-	// 				for (var scg = 0; scg < vertCompare.segment.length; scg++) {
-	// 					if (vertCompare.segment[scg] == vertSegment) {
-	// 						vertChildren.push({
-	// 							id: sc,
-	// 							angle: Math.floor(getAngle(vert, vertCompare, "deg").deg),
-	// 						});
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 		toClean = [];
-	// 		for (var fr = 0; fr < vertChildren.length - 1; fr++) {
-	// 			for (var ft = fr + 1; ft < vertChildren.length; ft++) {
-	// 				if (fr != ft && typeof vertChildren[fr] != "undefined") {
-	// 					found = true;
-
-	// 					if (
-	// 						qSVG.btwn(
-	// 							vertChildren[ft].angle,
-	// 							vertChildren[fr].angle + 3,
-	// 							vertChildren[fr].angle - 3,
-	// 							true
-	// 						) &&
-	// 						found
-	// 					) {
-	// 						var dOne = qSVG.gap(vert, verticies[vertChildren[ft].id]);
-	// 						var dTwo = qSVG.gap(vert, verticies[vertChildren[fr].id]);
-	// 						if (dOne > dTwo) {
-	// 							toClean.push(ft);
-	// 						} else {
-	// 							toClean.push(fr);
-	// 						}
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 		toClean.sort(function (a, b) {
-	// 			return b - a;
-	// 		});
-	// 		toClean.push(-1);
-	// 		for (var cc = 0; cc < toClean.length - 1; cc++) {
-	// 			if (toClean[cc] > toClean[cc + 1]) {
-	// 				vert.removed.push(vertChildren[toClean[cc]].id);
-	// 				vertChildren.splice(toClean[cc], 1);
-	// 			}
-	// 		}
-	// 	}
-	// 	// vertexTest = vertex;
-	// 	return verticies;
-	// },
 
 	//*******************************************************
 	//* @arr1, arr2 = Array to compare                      *

@@ -1,19 +1,12 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-import {
-	onWindowLoad,
-	flush_button,
-	modalToggle,
-	appendObjects,
-} from "../func";
 import { qSVG } from "../qSVG";
-import { editor } from "../editor";
 import {
 	computeLimit,
 	findById,
 	getWallsOnPoint,
 	intersectionOfEquations,
-} from "./utils";
+} from "./utils/utils";
 
 import "./App.scss";
 import {
@@ -26,15 +19,14 @@ import {
 	LayerSettings,
 	CursorType,
 	RoomPolygonData,
-} from "./models";
+} from "./models/models";
 import { constants } from "../constants";
 import {
-	polygonize,
 	renderRooms,
 	setInWallMeasurementText,
 	updateMeasurementText,
-} from "./svgTools";
-import { Wall } from "./wall";
+} from "./utils/svgTools";
+import { Wall } from "./models/Wall";
 import { useHistory } from "./hooks/useHistory";
 import WallTools from "./components/WallTools";
 import ObjectTools from "./components/ObjectTools";
@@ -78,13 +70,10 @@ function App() {
 
 	const [showMainPanel, setShowMainPanel] = useState(true);
 	const [showBoxScale, setShowBoxScale] = useState(true);
-	const [showWallTools, setShowWallTools] = useState(false);
 	const [wallToolsSeparation, setWallToolsSeparation] = useState(false);
-	const [showWallToolsSeparateSlider, setShowWallToolsSeparateSlider] =
-		useState(true);
 	const [showConfigureDoorWindowPanel, setShowConfigureDoorWindowPanel] =
 		useState(false);
-	const [showObjectTools, setShowConfigureObjectPanel] = useState(false);
+	const [showObjectTools, setShowObjectTools] = useState(false);
 	const [showRoomTools, setShowRoomTools] = useState(false);
 	const [selectedRoomData, setSelectedRoomData] = useState<RoomDisplayData>({
 		size: "",
@@ -115,6 +104,8 @@ function App() {
 	const [wallMetaData, setWallMetaData] = useState<WallMetaData[]>([]);
 	const [objectMetaData, setObjectMetaData] = useState<ObjectMetaData[]>([]);
 
+	const [selectedWall, setSelectedWall] = useState<WallMetaData | null>(null);
+
 	const { save, init, undo, redo, historyIndex } = useHistory();
 
 	const { viewbox, scaleValue, handleCameraChange } =
@@ -131,8 +122,15 @@ function App() {
 	});
 
 	useEffect(() => {
-		onWindowLoad(viewbox);
+		if (!localStorage.getItem("history")) {
+			$("#recover").html("<p>Select a plan type.");
+		}
+		$("#myModal").modal();
 	}, []);
+
+	const modalToggle = () => {
+		$("#myModal").modal("toggle");
+	};
 
 	const onRoomColorClicked = (val: string) => {
 		setSelectedRoomData({ ...selectedRoomData, background: val });
@@ -213,12 +211,36 @@ function App() {
 	const applyMode = (mode: string, option = "") => {
 		save(wallMetaData, objectMetaData, roomMetaData);
 		setShowSubMenu(false);
-		flush_button();
+
+		// Reset buttons
+		$("#rect_mode").removeClass("btn-success");
+		$("#rect_mode").addClass("btn-default");
+		$("#select_mode").removeClass("btn-success");
+		$("#select_mode").addClass("btn-default");
+		$("#line_mode").removeClass("btn-success");
+		$("#line_mode").addClass("btn-default");
+		$("#partition_mode").removeClass("btn-success");
+		$("#partition_mode").addClass("btn-default");
+		$("#door_mode").removeClass("btn-success");
+		$("#door_mode").addClass("btn-default");
+		$("#node_mode").removeClass("btn-success");
+		$("#node_mode").addClass("btn-default");
+		$("#text_mode").removeClass("btn-success");
+		$("#text_mode").addClass("btn-default");
+		$("#room_mode").removeClass("btn-success");
+		$("#room_mode").addClass("btn-default");
+		$("#distance_mode").removeClass("btn-success");
+		$("#distance_mode").addClass("btn-default");
+		$("#object_mode").removeClass("btn-success");
+		$("#object_mode").addClass("btn-default");
+		$("#stair_mode").removeClass("btn-success");
+		$("#stair_mode").addClass("btn-default");
+
 		canvasState.setMode(mode);
 		canvasState.setModeOption(option);
 	};
 
-	const createInvisibleWall = (wall: Wall) => {
+	const createInvisibleWall = (wall: WallMetaData) => {
 		var wallObjects = wall.getObjects(objectMetaData);
 		if (wallObjects.length != 0) return false;
 		wall.type = "separate";
@@ -229,7 +251,7 @@ function App() {
 		return true;
 	};
 
-	const makeWallVisible = (wall: Wall) => {
+	const makeWallVisible = (wall: WallMetaData) => {
 		wall.makeVisible();
 		setWallMetaData([...wallMetaData]);
 		save(wallMetaData, objectMetaData, roomMetaData);
@@ -247,34 +269,25 @@ function App() {
 	) => {
 		setObjectMetaData(objectData);
 		if (objectData.length > 0) {
-			appendObjects(objectData);
+			$("#boxcarpentry").append(objectData[objectData.length - 1].graph);
 		}
 
 		setWallMetaData(wallData);
 		setRoomMetaData(roomData);
-		editor.showScaleBox(roomData, wallData);
 		updateMeasurementText(wallMetaData);
 	};
 
 	// Wall Tools
 	const onWallWidthChanged = (value: number) => {
-		const wall = canvasState.binder.wall as Wall;
-		const wallMeta = findById(wall.id, wallMetaData);
+		if (!selectedWall) {
+			throw new Error("No selectedWall was set!");
+		}
+		const wallMeta = findById(selectedWall.id, wallMetaData);
 		if (!wallMeta) return;
 		wallMeta.thick = value;
 		wallMeta.type = "normal";
-		// const updatedWallData = wallMetaData.map(
-		// 	(w) =>
-		// 		new Wall(w.start, w.end, w.type, w.thick, {
-		// 			...w,
-		// 			thick: w.id === wallMeta.id ? value : w.thick,
-		// 			type: w.id === wallMeta.id ? "normal" : w.type,
-		// 		})
-		// );
 		setWallMetaData([...wallMetaData]);
-		// wall.thick = value;
-		// wall.type = "normal";
-		var objWall = wall.getObjects(objectMetaData);
+		var objWall = selectedWall.getObjects(objectMetaData);
 		const objMetaCopy = [...objectMetaData];
 		objMetaCopy.forEach((o) => {
 			if (objWall.includes(o)) {
@@ -283,37 +296,46 @@ function App() {
 			}
 		});
 		setObjectMetaData(objMetaCopy);
-		// for (var w = 0; w < objWall.length; w++) {
-		// 	objWall[w].thick = value;
-		// 	objWall[w].update();
-		// }
 		updateMeasurementText(wallMetaData);
 	};
 
 	const onWallSplitClicked = () => {
-		splitWall(canvasState.binder.wall);
+		if (!selectedWall) {
+			throw new Error("No selectedWall was set!");
+		}
+		splitWall(selectedWall);
 		canvasState.setMode(Mode.Select);
-		setShowMainPanel(true);
 	};
 
-	const onWallSeparationClicked = () => {
-		if (createInvisibleWall(canvasState.binder.wall)) {
-			canvasState.setMode(Mode.Select);
-			setShowMainPanel(true);
-		} else {
+	const onConvertWallToSeparationClicked = () => {
+		if (!selectedWall) {
+			throw new Error("No selectedWall was set!");
+		}
+		if (!createInvisibleWall(selectedWall)) {
 			setBoxInfoText("Walls containing doors or windows cannot be separated!");
 		}
 	};
 
-	const onTransformToWallClicked = () => {
-		makeWallVisible(canvasState.binder.wall);
+	const onConvertSeparationToWallClicked = () => {
+		if (!selectedWall) {
+			throw new Error("No selectedWall was set!");
+		}
+		makeWallVisible(selectedWall);
 		canvasState.setMode(Mode.Select);
-		setShowMainPanel(true);
 	};
 
 	const onWallTrashClicked = () => {
-		const wall = canvasState.binder.wall;
-		const wallMetaCopy = [...wallMetaData];
+		if (!selectedWall) {
+			throw new Error("No selectedWall was set!");
+		}
+		const wall = selectedWall;
+		const wallMetaCopy = [...wallMetaData.filter((w) => w.id !== wall.id)];
+		wallMetaCopy.forEach((wall) => {
+			if (wall.child === wall.id) wall.child = null;
+			if (wall.parent === wall.id) {
+				wall.parent = null;
+			}
+		});
 		for (var k in wallMetaCopy) {
 			if (wallMetaCopy[k].child === wall.id) wallMetaCopy[k].child = null;
 			if (wallMetaCopy[k].parent === wall.id) {
@@ -323,12 +345,11 @@ function App() {
 			// 	wallMetaCopy[k].graph.remove();
 			// }
 		}
-		wallMetaCopy.splice(wallMetaCopy.indexOf(wall), 1);
 		setWallMetaData(wallMetaCopy);
 
-		setShowWallTools(false);
+		setSelectedWall(null);
 		// wall.graph.remove();
-		canvasState.binder.graph.remove();
+		$(canvasState.binder.graph).remove();
 		updateMeasurementText(wallMetaData);
 		canvasState.setMode(Mode.Select);
 		setShowMainPanel(true);
@@ -346,9 +367,9 @@ function App() {
 	const onConfigureObjectBackClicked = () => {
 		applyMode(Mode.Select);
 		setBoxInfoText("Mode selection");
-		setShowConfigureObjectPanel(false);
+		setShowObjectTools(false);
 		setShowMainPanel(true);
-		canvasState.binder.graph.remove();
+		$(canvasState.binder.graph).remove();
 		canvasState.setBinder(null);
 	};
 
@@ -375,14 +396,14 @@ function App() {
 
 	const onObjectTrashClicked = () => {
 		setBoxInfoText("Object removed");
-		setShowConfigureObjectPanel(false);
+		setShowObjectTools(false);
 		setShowMainPanel(true);
 		applyMode(Mode.Select);
 
 		var obj = canvasState.binder.obj;
 		obj.graph.remove();
 		setObjectMetaData([...objectMetaData.filter((o) => o != obj)]);
-		canvasState.binder.graph.remove();
+		$(canvasState.binder.graph).remove();
 		canvasState.setBinder(null);
 		updateMeasurementText(wallMetaData);
 	};
@@ -453,27 +474,13 @@ function App() {
 		var initThick = wallToSplit.thick;
 
 		// Clear the wall to split from its parents and children
-		// wallMetaData.forEach((wall) => {
-		// 	if (wall.child === wallToSplit.id) {
-		// 		wall.child = null;
-		// 	} else if (wall.parent === wallToSplit.id) {
-		// 		wall.parent = null;
-		// 	}
-		// });
-
-		// Remove the wall to split from the list of walls
-		// let newWallMeta = [...wallMetaData.filter((w) => w.id != wallToSplit.id)];
 		let otherWalls = wallMetaData.filter((w) => w.id !== wallToSplit.id);
-		// .map((w) => ({
-		// 	...w,
-		// 	child: w.child === wallToSplit.id ? null : w.child,
-		// 	parent: w.parent === wallToSplit.id ? null : w.parent,
-		// }));
 		otherWalls.forEach((w) => {
 			w.child = w.child === wallToSplit.id ? null : w.child;
 			w.parent = w.parent === wallToSplit.id ? null : w.parent;
 		});
 
+		// Add each new wall created from the split
 		newWalls.forEach((newWall) => {
 			const wall = new Wall(initCoords, newWall.coords, "normal", initThick);
 			otherWalls.push(wall);
@@ -481,7 +488,7 @@ function App() {
 			initCoords = newWall.coords;
 		});
 
-		// LAST WALL ->
+		// Add the last wall
 		const wall = new Wall(initCoords, wallToSplit.end, "normal", initThick);
 		otherWalls.push(wall);
 		setWallMetaData(otherWalls);
@@ -532,7 +539,7 @@ function App() {
 
 	const updateObjectTools = () => {
 		setShowMainPanel(false);
-		setShowConfigureObjectPanel(true);
+		setShowObjectTools(true);
 		const objTarget = canvasState.binder.obj;
 		const limit = objTarget.params.resizeLimit;
 		setSelectedObject({
@@ -549,11 +556,12 @@ function App() {
 		setBoxInfoText("Modify the object");
 	};
 
-	const updateWallTools = (separation: boolean) => {
-		setWallToolsSeparation(separation);
-		setBoxInfoText(`Modify the ${wallToolsSeparation ? "separation" : "wall"}`);
+	const handleWallCliked = (wall: WallMetaData) => {
+		const isSeparation = wall.type == "separation";
+		setWallToolsSeparation(isSeparation);
+		setBoxInfoText(`Modify the ${isSeparation ? "separation" : "wall"}`);
 		setShowMainPanel(false);
-		setShowWallTools(true);
+		setSelectedWall(wall);
 	};
 
 	return (
@@ -569,7 +577,7 @@ function App() {
 				showBoxScale={showBoxScale}
 				showObjectTools={updateObjectTools}
 				showOpeningTools={showOpeningTools}
-				showWallTools={updateWallTools}
+				wallClicked={handleWallCliked}
 				updateRoomDisplayData={updateRoomDisplayData}
 				onMouseMove={() => setShowSubMenu(false)}
 				cursor={cursor}
@@ -590,20 +598,19 @@ function App() {
 
 			<div id="areaValue"></div>
 
-			{showWallTools && (
+			{selectedWall && (
 				<WallTools
-					binder={canvasState.binder}
+					wall={selectedWall}
 					onWallWidthChanged={onWallWidthChanged}
-					onSeparationClicked={onWallSeparationClicked}
+					onSeparationClicked={onConvertWallToSeparationClicked}
 					onSplitClicked={onWallSplitClicked}
 					onWallTrashClicked={onWallTrashClicked}
-					onTransformToWallClicked={onTransformToWallClicked}
-					showSeparationSlider={showWallToolsSeparateSlider}
+					onTransformToWallClicked={onConvertSeparationToWallClicked}
 					onGoBackClicked={() => {
 						applyMode(Mode.Select);
 						setBoxInfoText("Select Mode");
-						setShowWallTools(false);
 						setShowMainPanel(true);
+						setSelectedWall(null);
 					}}
 				/>
 			)}
@@ -630,10 +637,11 @@ function App() {
 						onBackClicked={() => {
 							applyMode(Mode.Select);
 							setBoxInfoText("Mode selection");
-							setShowConfigureObjectPanel(false);
+							setShowObjectTools(false);
 							setShowMainPanel(true);
+							setShowConfigureDoorWindowPanel(false);
 
-							canvasState.binder.graph.remove();
+							$(canvasState.binder.graph).remove();
 							updateMeasurementText(wallMetaData);
 						}}
 					/>

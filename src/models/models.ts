@@ -99,6 +99,7 @@ export interface WallMetaData {
 	parent?: string | null;
 	child?: string | null;
 	dPath?: string | null;
+	backUp?: any;
 
 	update: (
 		allWalls: WallMetaData[],
@@ -115,6 +116,7 @@ export interface WallMetaData {
 	getJunctions(allWalls: WallMetaData[]): WallJunction[];
 	getObjects(objectMeta: ObjectMetaData[]): ObjectMetaData[];
 	addToScene(): void;
+	makeVisible(): void;
 }
 
 export interface NodeWallObjectData {
@@ -157,8 +159,8 @@ export interface ObjectMetaData {
 	height: number;
 	bbox: BoundingBox;
 	realBbox: Point2D[];
-	up: PointDistance[];
-	down: PointDistance[];
+	// up: PointDistance[];
+	// down: PointDistance[];
 	params: SVGCreationData;
 
 	update: () => void;

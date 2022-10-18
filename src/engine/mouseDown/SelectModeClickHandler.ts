@@ -1,5 +1,10 @@
-import { Mode, ObjectMetaData, ViewboxData, WallMetaData } from "../../models";
-import { calculateSnap } from "../../utils";
+import {
+	Mode,
+	ObjectMetaData,
+	ViewboxData,
+	WallMetaData,
+} from "../../models/models";
+import { calculateSnap } from "../../utils/utils";
 import { CanvasState } from "../CanvasState";
 import { handleNodeClicked } from "./NodeClickHandler";
 import { handleSegmentClicked } from "./SegmentClickHandler";

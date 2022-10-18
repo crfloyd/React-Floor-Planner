@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ViewboxData } from "../models";
+import { ViewboxData } from "../models/models";
 
 export const useCameraTools = (canvasDimensions: {
 	width: number;
@@ -25,14 +25,13 @@ export const useCameraTools = (canvasDimensions: {
 
 	const handleCameraChange = (lens: string, xmove: number, xview = 0) => {
 		if (lens == "zoomout" && viewbox.zoomLevel > 1 && viewbox.zoomLevel < 17) {
-			console.log("zooming out. canvas:", canvasDimensions);
 			let newWidth = viewbox.width + xmove;
 			setViewBox((prev) => {
 				const ratio_viewbox = prev.height / newWidth;
 
 				return {
 					zoomLevel: prev.zoomLevel - 1,
-					zoomFactor: prev.width / canvasDimensions.width,
+					zoomFactor: prev.width / viewbox.width,
 					width: newWidth,
 					height: newWidth * ratio_viewbox,
 					originX: prev.originX - xmove / 2,
@@ -41,6 +40,7 @@ export const useCameraTools = (canvasDimensions: {
 			});
 			const ratioWidthZoom = canvasDimensions.width / newWidth;
 			setScaleValue(ratioWidthZoom);
+			return;
 		} else if (
 			lens == "zoomin" &&
 			viewbox.zoomLevel < 14 &&
@@ -51,7 +51,7 @@ export const useCameraTools = (canvasDimensions: {
 				const ratio_viewbox = prev.height / newWidth;
 				return {
 					zoomLevel: prev.zoomLevel + 1,
-					zoomFactor: prev.width / canvasDimensions.width,
+					zoomFactor: prev.width / viewbox.width,
 					width: newWidth,
 					height: newWidth * ratio_viewbox,
 					originX: prev.originX + xmove / 2,
@@ -60,6 +60,7 @@ export const useCameraTools = (canvasDimensions: {
 			});
 			const ratioWidthZoom = canvasDimensions.width / newWidth;
 			setScaleValue(ratioWidthZoom);
+			return;
 		}
 
 		const newZoomFactor = viewbox.width / canvasDimensions.width;
@@ -101,7 +102,6 @@ export const useCameraTools = (canvasDimensions: {
 				...prev,
 				originX: prev.originX - xmove,
 				originY: prev.originY - xview,
-				zoomFactor: newZoomFactor,
 			}));
 		} else {
 			setViewBox((prev) => ({

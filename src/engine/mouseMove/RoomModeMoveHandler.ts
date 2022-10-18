@@ -1,6 +1,6 @@
-import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
-import { Point2D, RoomMetaData, RoomPolygonData } from "../../models";
+import { Point2D, RoomMetaData, RoomPolygonData } from "../../models/models";
+import { createSvgElement, pointInPolygon } from "../../utils/svgTools";
 import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveRoomMode = (
@@ -16,8 +16,8 @@ export const handleMouseMoveRoomMode = (
 		binder = setBinder(null);
 	}
 
-	const roomTarget = editor.rayCastingRoom(snap, roomMetaData);
-	if (!roomTarget) return binder;
+	const roomTarget = getRoomOnPoint(snap, roomMetaData);
+	if (!roomTarget) return;
 
 	var pathSurface = roomTarget.coords;
 	var pathCreate = "M" + pathSurface[0].x + "," + pathSurface[0].y;
@@ -49,7 +49,7 @@ export const handleMouseMoveRoomMode = (
 	}
 
 	binder = setBinder(
-		qSVG.create("boxbind", "path", {
+		createSvgElement("boxbind", "path", {
 			id: "roomSelected",
 			d: pathCreate,
 			fill: "#c9c14c",
@@ -63,4 +63,20 @@ export const handleMouseMoveRoomMode = (
 	binder.type = "room";
 	binder.area = roomTarget.area;
 	binder.id = roomMetaData.indexOf(roomTarget);
+};
+
+const getRoomOnPoint = (
+	point: Point2D,
+	roomMeta: RoomMetaData[]
+): RoomMetaData | null => {
+	let targetRoom: RoomMetaData | null = null;
+	roomMeta.forEach((room) => {
+		if (
+			pointInPolygon(point, room.coords) &&
+			(targetRoom == null || targetRoom.area >= room.area)
+		) {
+			targetRoom = room;
+		}
+	});
+	return targetRoom;
 };

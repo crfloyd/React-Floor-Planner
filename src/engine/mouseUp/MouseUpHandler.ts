@@ -1,6 +1,4 @@
 import { constants } from "../../../constants";
-import { editor } from "../../../editor";
-import * as func from "../../../func";
 import { qSVG } from "../../../qSVG";
 import {
 	ObjectMetaData,
@@ -13,9 +11,9 @@ import {
 	WallMetaData,
 	Point2D,
 	SnapData,
-} from "../../models";
-import { updateMeasurementText } from "../../svgTools";
-import { Wall } from "../../wall";
+} from "../../models/models";
+import { updateMeasurementText } from "../../utils/svgTools";
+import { Wall } from "../../models/Wall";
 import { CanvasState } from "../CanvasState";
 
 export const handleMouseUp = (
@@ -28,7 +26,7 @@ export const handleMouseUp = (
 	continuousWallMode: boolean,
 	showObjectTools: () => void,
 	showOpeningTools: (min: number, max: number, value: number) => void,
-	showWallTools: (separation: boolean) => void,
+	wallClicked: (wall: WallMetaData) => void,
 	setCursor: (crsr: CursorType) => void,
 	roomMetaData: RoomMetaData[],
 	objectMetaData: ObjectMetaData[],
@@ -77,7 +75,7 @@ export const handleMouseUp = (
 		}
 		case Mode.Object: {
 			const objData = [...objectMetaData, binder];
-			binder.graph.remove();
+			$(binder.graph).remove();
 			const lastObject = objData[objData.length - 1];
 			let targetBox =
 				lastObject.class == "energy" ? "boxEnergy" : "boxcarpentry";
@@ -137,8 +135,10 @@ export const handleMouseUp = (
 			}
 
 			const updatedObjects = [...objectMetaData, binder];
-			binder.graph.remove();
-			func.appendObjects(updatedObjects);
+			$(binder.graph).remove();
+			$("#boxcarpentry").append(
+				updatedObjects[updatedObjects.length - 1].graph
+			);
 			setObjectMetaData(updatedObjects);
 			binder = setBinder(null);
 			$("#boxinfo").html("Element added");
@@ -207,8 +207,7 @@ export const handleMouseUp = (
 				}
 
 				if (found) {
-					let isSeparation = binder.wall.type == "separate";
-					showWallTools(isSeparation);
+					wallClicked(binder.wall);
 					mode = Mode.EditWall;
 				}
 				wallEquations.equation1 = null;
@@ -230,7 +229,7 @@ export const handleMouseUp = (
 				} else {
 					mode = Mode.Select;
 					setAction(false);
-					binder.graph.remove();
+					$(binder.graph).remove();
 					binder = setBinder(null);
 				}
 			}
@@ -259,7 +258,7 @@ export const handleMouseUp = (
 				} else {
 					mode = Mode.Select;
 					setAction(false);
-					binder.graph.remove();
+					$(binder.graph).remove();
 					binder = setBinder(null);
 				}
 			}
@@ -278,7 +277,7 @@ export const handleMouseUp = (
 	}
 
 	if (mode != Mode.EditRoom) {
-		editor.showScaleBox(roomMetaData, wallMetaData);
+		// editor.showScaleBox(roomMetaData, wallMetaData);
 		updateMeasurementText(wallMetaData);
 	}
 };

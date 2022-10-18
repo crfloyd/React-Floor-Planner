@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
+import { WallMetaData } from "../models/models";
 
 interface Props {
-	binder: any;
+	wall?: WallMetaData | null;
 	onWallWidthChanged: (value: number) => void;
-	showSeparationSlider: boolean;
 	onSplitClicked: () => void;
 	onSeparationClicked: () => void;
 	onTransformToWallClicked: () => void;
@@ -12,33 +12,25 @@ interface Props {
 }
 
 const WallTools = ({
-	binder,
+	wall,
 	onWallWidthChanged,
-	showSeparationSlider,
 	onSplitClicked,
 	onSeparationClicked,
 	onTransformToWallClicked,
 	onWallTrashClicked,
 	onGoBackClicked,
 }: Props) => {
-	const [wallToolsSeparation, setWallToolsSeparation] = useState(false);
 	const [wallWidth, setWallWidth] = useState(7);
 
-	useEffect(() => {
-		if (binder?.wall?.type === "separate") {
-			setWallToolsSeparation(true);
-		} else {
-			setWallToolsSeparation(false);
-		}
-	}, [binder]);
+	const isSeparationWall = wall?.type === "separate";
 
 	return (
 		<div id="wallTools" className="leftBox">
 			<h2 id="titleWallTools">{`Modify the ${
-				wallToolsSeparation ? "separation" : "wall"
+				isSeparationWall ? "separation" : "wall"
 			}`}</h2>
 			<hr />
-			{!wallToolsSeparation && (
+			{!isSeparationWall && (
 				<section id="rangeThick">
 					<p>
 						Width [<span id="wallWidthScale">7-50</span>]
@@ -60,7 +52,7 @@ const WallTools = ({
 				</section>
 			)}
 			<ul className="list-unstyled">
-				{!wallToolsSeparation && (
+				{!isSeparationWall && (
 					<section id="cutWall">
 						<p>
 							Cut the wall :<br />
@@ -79,7 +71,8 @@ const WallTools = ({
 					</section>
 				)}
 				<br />
-				{showSeparationSlider && (
+
+				{!isSeparationWall && (
 					<section id="separate">
 						<p>
 							Separation wall :<br />
@@ -98,7 +91,8 @@ const WallTools = ({
 						</li>
 					</section>
 				)}
-				{wallToolsSeparation && (
+
+				{isSeparationWall && (
 					<section id="recombine">
 						<p>
 							Transform to wall :<br />

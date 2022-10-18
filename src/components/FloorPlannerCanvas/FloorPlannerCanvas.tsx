@@ -1,7 +1,7 @@
 import React, { createRef, useEffect, useMemo, useRef, useState } from "react";
 import { constants } from "../../../constants";
 import { qSVG } from "../../../qSVG";
-import { calculateSnap } from "../../utils";
+import { calculateSnap } from "../../utils/utils";
 import { CanvasState } from "../../engine/CanvasState";
 import { handleMouseDown } from "../../engine/mouseDown/MouseDownHandler";
 import { handleMouseMove } from "../../engine/mouseMove/MouseMoveHandler";
@@ -20,19 +20,19 @@ import {
 	WallMetaData,
 	Point2D,
 	SnapData,
-} from "../../models";
+} from "../../models/models";
 import {
 	angleBetweenPoints,
 	createWallGuideLine,
 	polygonize,
 	refreshWalls,
 	renderRooms,
-} from "../../svgTools";
+} from "../../utils/svgTools";
 import { GradientData } from "./GradientData";
 import LinearGradient from "./LinearGradient";
 import Patterns from "./Patterns";
-import { editor } from "../../../editor";
 import { useDrawWalls } from "../../hooks/useDrawWalls";
+import { useDrawScaleBox } from "../../hooks/useDrawScaleBox";
 
 let shouldUpdateMouseMove = true;
 
@@ -46,7 +46,7 @@ interface Props {
 	onMouseMove: () => void;
 	showObjectTools: () => void;
 	showOpeningTools: (min: number, max: number, value: number) => void;
-	showWallTools: (separation: boolean) => void;
+	wallClicked: (wall: WallMetaData) => void;
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void;
 	cursor: CursorType;
 	setCursor: (crsr: CursorType) => void;
@@ -97,7 +97,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	updateRoomDisplayData,
 	showObjectTools,
 	showOpeningTools,
-	showWallTools,
+	wallClicked,
 	handleCameraChange,
 	onMouseMove,
 	cursor,
@@ -146,6 +146,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		setCursor,
 		(newPoint: Point2D) => canvasState.setPoint(newPoint)
 	);
+
+	const { scaleBoxDisplayData } = useDrawScaleBox(wallMetaData);
 
 	const { save } = useHistory();
 
@@ -242,6 +244,11 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		onCanvasDimensionsChanged(width, height);
 	}, [canvasRef.current?.width, canvasRef.current?.height]);
 
+	// useEffect(() => {
+	// 	const snap = calculateSnap(e, viewbox);
+	// 	setSnapPosition(snap);
+	// }, []);
+
 	const getCanvasDimensions = (): { width: number; height: number } => {
 		let width = 0;
 		let height = 0;
@@ -300,7 +307,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					continuousWallMode,
 					showObjectTools,
 					showOpeningTools,
-					showWallTools,
+					wallClicked,
 					setCursor,
 					roomMetaData,
 					objectMetaData,
@@ -533,7 +540,33 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 				id="boxRib"
 				visibility={layerSettings.showMeasurements ? "visible" : "hidden"}
 			></g>
-			<g id="boxScale" visibility={showBoxScale ? "visible" : "hidden"}></g>
+			<g id="boxScale" visibility={showBoxScale ? "visible" : "hidden"}>
+				{showBoxScale && scaleBoxDisplayData && (
+					<path
+						d={scaleBoxDisplayData.path}
+						stroke="#555"
+						fill="none"
+						strokeWidth={0.3}
+						strokeLinecap="butt"
+						strokeLinejoin="miter"
+						strokeMiterlimit={4}
+						fillRule="nonzero"
+					></path>
+				)}
+				{showBoxScale &&
+					scaleBoxDisplayData?.textItems.map((displayData) => (
+						<text
+							key={`${displayData.position.x}-${displayData.position.y}-scale-text`}
+							x={displayData.position.x}
+							y={displayData.position.y}
+							transform={displayData.rotation}
+							fill="#555"
+							textAnchor="middle"
+						>
+							{displayData.content}
+						</text>
+					))}
+			</g>
 			<g id="boxText"></g>
 			<g id="boxDebug"></g>
 		</svg>

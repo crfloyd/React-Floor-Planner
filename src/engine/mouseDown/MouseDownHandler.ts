@@ -5,9 +5,9 @@ import {
 	Point2D,
 	ViewboxData,
 	WallMetaData,
-} from "../../models";
-import { nearWall } from "../../svgTools";
-import { calculateSnap } from "../../utils";
+} from "../../models/models";
+import { nearWall } from "../../utils/svgTools";
+import { calculateSnap } from "../../utils/utils";
 import { CanvasState } from "../CanvasState";
 import { handleSelectModeClick } from "./SelectModeClickHandler";
 

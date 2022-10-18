@@ -1,4 +1,3 @@
-import { editor } from "../../../editor";
 import { qSVG } from "../../../qSVG";
 import {
 	CursorType,
@@ -8,15 +7,16 @@ import {
 	SnapData,
 	SvgPathMetaData,
 	WallMetaData,
-} from "../../models";
+} from "../../models/models";
 import {
 	createWallGuideLine,
 	getAngle,
+	nearWall,
 	pointInPolygon,
 	refreshWalls,
 	setInWallMeasurementText,
 	updateMeasurementText,
-} from "../../svgTools";
+} from "../../utils/svgTools";
 import {
 	computeLimit,
 	findById,
@@ -25,7 +25,7 @@ import {
 	isObjectsEquals,
 	perpendicularEquation,
 	pointsAreEqual,
-} from "../../utils";
+} from "../../utils/utils";
 import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveBindMode = (
@@ -241,14 +241,19 @@ export const handleMouseMoveBindMode = (
 		binder.wall.start = intersection1;
 		binder.wall.end = intersection2;
 
-		binder.graph[0].children[0].setAttribute("x1", intersection1?.x);
-		binder.graph[0].children[0].setAttribute("x2", intersection2?.x);
-		binder.graph[0].children[0].setAttribute("y1", intersection1?.y);
-		binder.graph[0].children[0].setAttribute("y2", intersection2?.y);
-		binder.graph[0].children[1].setAttribute("cx", intersection1?.x);
-		binder.graph[0].children[1].setAttribute("cy", intersection1?.y);
-		binder.graph[0].children[2].setAttribute("cx", intersection2?.x);
-		binder.graph[0].children[2].setAttribute("cy", intersection2?.y);
+		const graph = binder.graph as SVGElement;
+		const graphChildren = [...graph.childNodes].map((n) => {
+			return n as SVGElement;
+		});
+
+		graphChildren[0].setAttribute("x1", intersection1?.x?.toString() ?? "");
+		graphChildren[0].setAttribute("x2", intersection2?.x?.toString() ?? "");
+		graphChildren[0].setAttribute("y1", intersection1?.y?.toString() ?? "");
+		graphChildren[0].setAttribute("y2", intersection2?.y?.toString() ?? "");
+		graphChildren[1].setAttribute("cx", intersection1?.x?.toString() ?? "");
+		graphChildren[1].setAttribute("cy", intersection1?.y?.toString() ?? "");
+		graphChildren[2].setAttribute("cx", intersection2?.x?.toString() ?? "");
+		graphChildren[2].setAttribute("cy", intersection2?.y?.toString() ?? "");
 
 		// THE EQ FOLLOWED BY eq (PARENT EQ1 --- CHILD EQ3)
 		if (wallEquations.equation1.follow != undefined) {
@@ -417,75 +422,73 @@ export const handleMouseMoveBindMode = (
 	// OBJ MOVING
 	// **********************************************************************
 	if (binder.type == "obj" && action) {
-		const wallSelect = editor.nearWall(snap, wallMeta) as {
+		const wallSelect = nearWall(snap, wallMeta) as {
 			wall: WallMetaData;
 			x: number;
 			y: number;
 			distance: number;
 		};
-		if (wallSelect) {
-			if (wallSelect.wall.type != "separate") {
-				// wallSelect.wall.inWallRib(objectMeta);
-				setInWallMeasurementText(wallSelect.wall, objectMeta);
-				var objTarget = binder.obj;
-				var wall = wallSelect.wall;
-				let angleWall = getAngle(wall.start, wall.end, "both").deg;
-				var v1 = qSVG.vectorXY(
-					{ x: wall.start.x, y: wall.start.y },
-					{ x: wall.end.x, y: wall.end.y }
-				);
-				var v2 = qSVG.vectorXY({ x: wall.end.x, y: wall.end.y }, snap);
-				var newAngle = qSVG.vectorDeter(v1, v2);
-				binder.angleSign = 0;
-				objTarget.angleSign = 0;
-				if (Math.sign(newAngle) == 1) {
-					angleWall += 180;
-					binder.angleSign = 1;
-					objTarget.angleSign = 1;
-				}
-				var limits = computeLimit(wall.equations.base, binder.size, wallSelect);
-				if (
-					wall.pointInsideWall(limits[0], false) &&
-					wall.pointInsideWall(limits[1], false)
-				) {
-					binder.x = wallSelect.x;
-					binder.y = wallSelect.y;
-					binder.angle = angleWall;
-					binder.thick = wall.thick;
-					objTarget.x = wallSelect.x;
-					objTarget.y = wallSelect.y;
-					objTarget.angle = angleWall;
-					objTarget.thick = wall.thick;
-					objTarget.limit = limits;
-					binder.update();
-					objTarget.update();
-				}
+		if (wallSelect?.wall.type !== "separate") {
+			// wallSelect.wall.inWallRib(objectMeta);
+			setInWallMeasurementText(wallSelect.wall, objectMeta);
+			var objTarget = binder.obj;
+			var wall = wallSelect.wall;
+			let angleWall = getAngle(wall.start, wall.end, "both").deg;
+			var v1 = qSVG.vectorXY(
+				{ x: wall.start.x, y: wall.start.y },
+				{ x: wall.end.x, y: wall.end.y }
+			);
+			var v2 = qSVG.vectorXY({ x: wall.end.x, y: wall.end.y }, snap);
+			var newAngle = qSVG.vectorDeter(v1, v2);
+			binder.angleSign = 0;
+			objTarget.angleSign = 0;
+			if (Math.sign(newAngle) == 1) {
+				angleWall += 180;
+				binder.angleSign = 1;
+				objTarget.angleSign = 1;
+			}
+			var limits = computeLimit(wall.equations.base, binder.size, wallSelect);
+			if (
+				wall.pointInsideWall(limits[0], false) &&
+				wall.pointInsideWall(limits[1], false)
+			) {
+				binder.x = wallSelect.x;
+				binder.y = wallSelect.y;
+				binder.angle = angleWall;
+				binder.thick = wall.thick;
+				objTarget.x = wallSelect.x;
+				objTarget.y = wallSelect.y;
+				objTarget.angle = angleWall;
+				objTarget.thick = wall.thick;
+				objTarget.limit = limits;
+				binder.update();
+				objTarget.update();
+			}
 
-				if (
-					(wallSelect.x == wall.start.x && wallSelect.y == wall.start.y) ||
-					(wallSelect.x == wall.end.x && wallSelect.y == wall.end.y)
-				) {
-					if (wall.pointInsideWall(limits[0], false)) {
-						binder.x = limits[0].x;
-						binder.y = limits[0].y;
-						objTarget.x = limits[0].x;
-						objTarget.y = limits[0].y;
-						objTarget.limit = limits;
-					}
-					if (wall.pointInsideWall(limits[1], false)) {
-						binder.x = limits[1].x;
-						binder.y = limits[1].y;
-						objTarget.x = limits[1].x;
-						objTarget.y = limits[1].y;
-						objTarget.limit = limits;
-					}
-					binder.angle = angleWall;
-					binder.thick = wall.thick;
-					objTarget.angle = angleWall;
-					objTarget.thick = wall.thick;
-					binder.update();
-					objTarget.update();
+			if (
+				(wallSelect.x == wall.start.x && wallSelect.y == wall.start.y) ||
+				(wallSelect.x == wall.end.x && wallSelect.y == wall.end.y)
+			) {
+				if (wall.pointInsideWall(limits[0], false)) {
+					binder.x = limits[0].x;
+					binder.y = limits[0].y;
+					objTarget.x = limits[0].x;
+					objTarget.y = limits[0].y;
+					objTarget.limit = limits;
 				}
+				if (wall.pointInsideWall(limits[1], false)) {
+					binder.x = limits[1].x;
+					binder.y = limits[1].y;
+					objTarget.x = limits[1].x;
+					objTarget.y = limits[1].y;
+					objTarget.limit = limits;
+				}
+				binder.angle = angleWall;
+				binder.thick = wall.thick;
+				objTarget.angle = angleWall;
+				objTarget.thick = wall.thick;
+				binder.update();
+				objTarget.update();
 			}
 		}
 	} // END OBJ MOVE

@@ -8,7 +8,7 @@ import {
 	SnapData,
 	ViewboxData,
 	WallMetaData,
-} from "../../models";
+} from "../../models/models";
 import { CanvasState } from "../CanvasState";
 import { handleMouseMoveBindMode } from "./BindModeMouseMoveHandler";
 import { handleMouseMoveOverObject } from "./ObjectModeMouseMoveHandler";
