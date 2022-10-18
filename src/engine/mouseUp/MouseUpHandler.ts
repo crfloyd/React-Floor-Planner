@@ -1,5 +1,4 @@
 import { constants } from "../../../constants";
-import { qSVG } from "../../../qSVG";
 import {
 	ObjectMetaData,
 	Mode,
@@ -14,6 +13,7 @@ import { updateMeasurementText } from "../../utils/svgTools";
 import { Wall } from "../../models/Wall";
 import { CanvasState } from "../CanvasState";
 import { handleMouseUpBindMode } from "./BindModeMouseUpHandler";
+import { distanceBetween } from "../../utils/utils";
 
 export const handleMouseUp = (
 	snap: SnapData,
@@ -153,7 +153,8 @@ export const handleMouseUp = (
 		case Mode.Partition: {
 			// $("#linetemp").remove(); // DEL LINE HELP CONSTRUC 0 45 90
 			clearWallHelperData();
-			var sizeWall = qSVG.measure(wallEndConstructionData?.end, point);
+			if (!wallEndConstructionData) return;
+			var sizeWall = distanceBetween(wallEndConstructionData.end, point);
 			sizeWall = sizeWall / constants.METER_SIZE;
 			if (
 				wallEndConstructionData &&
@@ -180,7 +181,9 @@ export const handleMouseUp = (
 				} else setAction(false);
 				$("#boxinfo").html(
 					"Wall added <span style='font-size:0.6em'>approx. " +
-						(qSVG.measure(point, wallEndConstructionData.end) / 60).toFixed(2) +
+						(distanceBetween(point, wallEndConstructionData.end) / 60).toFixed(
+							2
+						) +
 						" m</span>"
 				);
 				if (wallConstructionShouldEnd) setAction(false);

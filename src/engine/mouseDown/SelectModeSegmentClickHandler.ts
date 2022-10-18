@@ -1,4 +1,3 @@
-import { qSVG } from "../../../qSVG";
 import {
 	ObjectMetaData,
 	Point2D,
@@ -6,7 +5,7 @@ import {
 	WallEquationGroup,
 	WallMetaData,
 } from "../../models/models";
-import { pointInPolygon } from "../../utils/svgTools";
+import { angleBetweenEquations, pointInPolygon } from "../../utils/svgTools";
 import {
 	findById,
 	isObjectsEquals,
@@ -35,8 +34,8 @@ export const handleSelectModeSegmentClicked = (
 	if (wall.parent != null) {
 		const parent = findById(wall.parent, wallMeta);
 		wallEquations.equation1 = parent?.getEquation() ?? null;
-		var angle12 = qSVG.angleBetweenEquations(
-			wallEquations.equation1?.A,
+		var angle12 = angleBetweenEquations(
+			wallEquations.equation1?.A ?? 0,
 			wallEquations.equation2?.A
 		);
 		if (angle12 < 20 || angle12 > 160) {
@@ -126,7 +125,7 @@ export const handleSelectModeSegmentClicked = (
 				pointInPolygon(wall.start, wallMeta[k].coords) &&
 				!pointArraysAreEqual(wallMeta[k].coords, wall.coords)
 			) {
-				var angleFollow = qSVG.angleBetweenEquations(
+				var angleFollow = angleBetweenEquations(
 					wallMeta[k].equations.base.A,
 					wallEquations.equation2.A
 				);
@@ -149,8 +148,8 @@ export const handleSelectModeSegmentClicked = (
 	if (wall.child != null) {
 		const child = findById(wall.child, wallMeta);
 		wallEquations.equation3 = child?.getEquation() ?? null;
-		var angle23 = qSVG.angleBetweenEquations(
-			wallEquations?.equation3?.A,
+		var angle23 = angleBetweenEquations(
+			wallEquations?.equation3?.A ?? 0,
 			wallEquations?.equation2?.A
 		);
 		if (angle23 < 20 || angle23 > 160) {
@@ -226,7 +225,7 @@ export const handleSelectModeSegmentClicked = (
 				pointInPolygon(wall.end, wallMeta[k].coords) &&
 				!pointArraysAreEqual(wallMeta[k].coords, wall.coords)
 			) {
-				var angleFollow = qSVG.angleBetweenEquations(
+				var angleFollow = angleBetweenEquations(
 					wallMeta[k].equations.base.A,
 					wallEquations.equation2.A
 				);

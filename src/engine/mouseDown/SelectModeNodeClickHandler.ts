@@ -1,10 +1,9 @@
-import { qSVG } from "../../../qSVG";
 import {
 	NodeWallObjectData,
 	ObjectMetaData,
 	WallMetaData,
 } from "../../models/models";
-import { findById, pointsAreEqual } from "../../utils/utils";
+import { distanceBetween, findById, pointsAreEqual } from "../../utils/utils";
 
 interface Props {
 	x: number;
@@ -66,7 +65,7 @@ export const handleSelectModeNodeClicked = ({
 			const wall = nodeWallsMeta[k];
 			for (var i = 0; i < objWall.length; i++) {
 				var objTarget = objWall[i];
-				var distance = qSVG.measure(objTarget, nodeTarget);
+				var distance = distanceBetween(objTarget, nodeTarget);
 				wallObjects.push({
 					wall: wall,
 					from: nodeTarget,

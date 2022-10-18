@@ -1,6 +1,5 @@
 import React, { createRef, useEffect, useMemo, useState } from "react";
 import { constants } from "../../../constants";
-import { qSVG } from "../../../qSVG";
 import { calculateSnap } from "../../utils/utils";
 import { CanvasState } from "../../engine/CanvasState";
 import { handleMouseDown } from "../../engine/mouseDown/MouseDownHandler";
@@ -20,7 +19,12 @@ import {
 	Point2D,
 	SnapData,
 } from "../../models/models";
-import { polygonize, refreshWalls, renderRooms } from "../../utils/svgTools";
+import {
+	getPolygonVisualCenter,
+	polygonize,
+	refreshWalls,
+	renderRooms,
+} from "../../utils/svgTools";
 import { GradientData } from "./GradientData";
 import LinearGradient from "./LinearGradient";
 import Patterns from "./Patterns";
@@ -214,7 +218,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			const data: RoomPathData = {
 				room: room,
 				path: "M" + pathSurface[0].x + "," + pathSurface[0].y,
-				centerPoint: qSVG.polygonVisualCenter(room, roomMetaData),
+				centerPoint: getPolygonVisualCenter(room, roomMetaData),
 			};
 			pathData.push(data);
 			for (var p = 1; p < pathSurface.length; p++) {

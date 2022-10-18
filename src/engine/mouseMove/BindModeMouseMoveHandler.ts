@@ -1,4 +1,3 @@
-import { qSVG } from "../../../qSVG";
 import {
 	CursorType,
 	ObjectEquationData,
@@ -19,12 +18,15 @@ import {
 } from "../../utils/svgTools";
 import {
 	computeLimit,
+	distanceBetween,
 	findById,
 	getNearestWall,
 	intersectionOfEquations,
 	isObjectsEquals,
 	perpendicularEquation,
 	pointsAreEqual,
+	vectorDeter,
+	vectorXY,
 } from "../../utils/utils";
 import { CanvasState } from "../CanvasState";
 
@@ -265,8 +267,8 @@ export const handleMouseMoveBindMode = (
 				!pointInPolygon(intersection1, backup.coords)
 			) {
 				// IF OUT OF WALL FOLLOWED
-				var distanceFromStart = qSVG.gap(backup.start, intersection1);
-				var distanceFromEnd = qSVG.gap(backup.end, intersection1);
+				var distanceFromStart = distanceBetween(backup.start, intersection1);
+				var distanceFromEnd = distanceBetween(backup.end, intersection1);
 				if (distanceFromStart > distanceFromEnd) {
 					// NEAR FROM End
 					follow.end = intersection1;
@@ -287,8 +289,8 @@ export const handleMouseMoveBindMode = (
 				!pointInPolygon(intersection2, backup.coords)
 			) {
 				// IF OUT OF WALL FOLLOWED
-				var distanceFromStart = qSVG.gap(backup.start, intersection2);
-				var distanceFromEnd = qSVG.gap(backup.end, intersection2);
+				var distanceFromStart = distanceBetween(backup.start, intersection2);
+				var distanceFromEnd = distanceBetween(backup.end, intersection2);
 				if (distanceFromStart > distanceFromEnd) {
 					follow.end = intersection2;
 				} else {
@@ -311,7 +313,7 @@ export const handleMouseMoveBindMode = (
 				followerData.intersection &&
 				binder.wall.pointInsideWall(followerData.intersection, true)
 			) {
-				var size = qSVG.measure(equation.wall.start, equation.wall.end);
+				var size = distanceBetween(equation.wall.start, equation.wall.end);
 				if (equation.type == "start") {
 					equation.wall.start = followerData.intersection;
 					if (size < 5) {
@@ -434,12 +436,12 @@ export const handleMouseMoveBindMode = (
 			var objTarget = binder.obj;
 			var wall = nearestWallData.wall;
 			let angleWall = getAngle(wall.start, wall.end, "both").deg;
-			var v1 = qSVG.vectorXY(
+			var v1 = vectorXY(
 				{ x: wall.start.x, y: wall.start.y },
 				{ x: wall.end.x, y: wall.end.y }
 			);
-			var v2 = qSVG.vectorXY({ x: wall.end.x, y: wall.end.y }, snap);
-			var newAngle = qSVG.vectorDeter(v1, v2);
+			var v2 = vectorXY({ x: wall.end.x, y: wall.end.y }, snap);
+			var newAngle = vectorDeter(v1, v2);
 			binder.angleSign = 0;
 			objTarget.angleSign = 0;
 			if (Math.sign(newAngle) == 1) {

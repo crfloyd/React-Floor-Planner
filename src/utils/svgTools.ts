@@ -1,5 +1,4 @@
 import { constants } from "../../constants";
-import { qSVG } from "../../qSVG";
 import {
 	Point2D,
 	SVGCreationData,
@@ -16,12 +15,20 @@ import {
 	RoomMetaData,
 } from "../models/models";
 import {
+	arraysAreEqual,
+	distanceBetween,
 	findById,
+	getArrayDifferences,
+	getMidPoint,
+	getNumObjectArrayDifferences,
 	intersectionOfEquations,
 	intersectionOfSideEquations,
 	isObjectsEquals,
+	pDistance,
 	perpendicularEquation,
 	pointsAreEqual,
+	valueIsBetween,
+	vectorVertex,
 } from "./utils";
 
 export const createSvgElement = (id: string, shape: string, attrs?: any) => {
@@ -60,6 +67,30 @@ export const carpentryCalc = (
 			height: { min: 0, max: 0 },
 		},
 		rotate: false,
+	};
+
+	const circlePath = (cx: number, cy: number, r: number) => {
+		return (
+			"M " +
+			cx +
+			" " +
+			cy +
+			" m -" +
+			r +
+			", 0 a " +
+			r +
+			"," +
+			r +
+			" 0 1,0 " +
+			r * 2 +
+			",0 a " +
+			r +
+			"," +
+			r +
+			" 0 1,0 -" +
+			r * 2 +
+			",0"
+		);
 	};
 
 	const objClass = constants.OBJECT_CLASSES;
@@ -499,13 +530,13 @@ export const carpentryCalc = (
 		result.rotate = false;
 		if (type == "switch") {
 			construc.push({
-				path: qSVG.circlePath(0, 0, 16),
+				path: circlePath(0, 0, 16),
 				fill: "#fff",
 				stroke: "#333",
 				strokeDashArray: "",
 			});
 			construc.push({
-				path: qSVG.circlePath(-2, 4, 5),
+				path: circlePath(-2, 4, 5),
 				fill: "none",
 				stroke: "#333",
 				strokeDashArray: "",
@@ -522,13 +553,13 @@ export const carpentryCalc = (
 		}
 		if (type == "doubleSwitch") {
 			construc.push({
-				path: qSVG.circlePath(0, 0, 16),
+				path: circlePath(0, 0, 16),
 				fill: "#fff",
 				stroke: "#333",
 				strokeDashArray: "",
 			});
 			construc.push({
-				path: qSVG.circlePath(0, 0, 4),
+				path: circlePath(0, 0, 4),
 				fill: "none",
 				stroke: "#333",
 				strokeDashArray: "",
@@ -551,13 +582,13 @@ export const carpentryCalc = (
 		}
 		if (type == "dimmer") {
 			construc.push({
-				path: qSVG.circlePath(0, 0, 16),
+				path: circlePath(0, 0, 16),
 				fill: "#fff",
 				stroke: "#333",
 				strokeDashArray: "",
 			});
 			construc.push({
-				path: qSVG.circlePath(-2, 4, 5),
+				path: circlePath(-2, 4, 5),
 				fill: "none",
 				stroke: "#333",
 				strokeDashArray: "",
@@ -580,7 +611,7 @@ export const carpentryCalc = (
 		}
 		if (type == "plug") {
 			construc.push({
-				path: qSVG.circlePath(0, 0, 16),
+				path: circlePath(0, 0, 16),
 				fill: "#fff",
 				stroke: "#000",
 				strokeDashArray: "",
@@ -609,7 +640,7 @@ export const carpentryCalc = (
 		}
 		if (type == "roofLight") {
 			construc.push({
-				path: qSVG.circlePath(0, 0, 16),
+				path: circlePath(0, 0, 16),
 				fill: "#fff",
 				stroke: "#000",
 				strokeDashArray: "",
@@ -626,7 +657,7 @@ export const carpentryCalc = (
 		}
 		if (type == "wallLight") {
 			construc.push({
-				path: qSVG.circlePath(0, 0, 16),
+				path: circlePath(0, 0, 16),
 				fill: "#fff",
 				stroke: "#000",
 				strokeDashArray: "",
@@ -800,18 +831,20 @@ export const calculateDPath = (
 			};
 		}
 
-		const miterPoint = fromParent ? comparePointEnd : comparePointStart;
-		const miter = qSVG.gap(interUp, {
-			x: miterPoint.x,
-			y: miterPoint.y,
-		});
-		if (miter > 1000) {
-			const eqAUp = fromParent ? perpEquation : upEquation;
-			const eqADown = fromParent ? perpEquation : downEquation;
-			const eqBUp = fromParent ? upEquation : perpEquation;
-			const eqBDown = fromParent ? downEquation : perpEquation;
-			interUp = intersectionOfEquations(eqAUp, eqBUp);
-			interDw = intersectionOfEquations(eqADown, eqBDown);
+		if (interUp) {
+			const miterPoint = fromParent ? comparePointEnd : comparePointStart;
+			const miter = distanceBetween(interUp, {
+				x: miterPoint.x,
+				y: miterPoint.y,
+			});
+			if (miter > 55) {
+				const eqAUp = fromParent ? perpEquation : upEquation;
+				const eqADown = fromParent ? perpEquation : downEquation;
+				const eqBUp = fromParent ? upEquation : perpEquation;
+				const eqBDown = fromParent ? downEquation : perpEquation;
+				interUp = intersectionOfEquations(eqAUp, eqBUp);
+				interDw = intersectionOfEquations(eqADown, eqBDown);
+			}
 		}
 	} else {
 		const eqAUp = fromParent ? perpEquation : upEquation;
@@ -891,7 +924,7 @@ export const setInWallMeasurementText = (
 		objSide: "up" | "down"
 	) => {
 		const mesureArray = objSide === "up" ? upWalls : downWalls;
-		const distance = qSVG.measure(p1, p2) / constants.METER_SIZE;
+		const distance = distanceBetween(p1, p2) / constants.METER_SIZE;
 		mesureArray.push({
 			side: objSide,
 			coords: p2,
@@ -999,7 +1032,7 @@ const buildWallMeasurementData = (
 				comparisonWall.pointBetweenCoords(inter, 1, true)
 			) {
 				let distance =
-					qSVG.measure(wall.coords[0], inter) / constants.METER_SIZE;
+					distanceBetween(wall.coords[0], inter) / constants.METER_SIZE;
 				upDataArray.push({
 					wallIndex: +i,
 					crossEdge: +p,
@@ -1019,7 +1052,7 @@ const buildWallMeasurementData = (
 				comparisonWall.pointBetweenCoords(inter, 2, true)
 			) {
 				let distance =
-					qSVG.measure(wall.coords[0], inter) / constants.METER_SIZE;
+					distanceBetween(wall.coords[0], inter) / constants.METER_SIZE;
 				upDataArray.push({
 					wallIndex: +i,
 					crossEdge: +p,
@@ -1039,7 +1072,7 @@ const buildWallMeasurementData = (
 				comparisonWall.pointBetweenCoords(inter, 1, true)
 			) {
 				let distance =
-					qSVG.measure(wall.coords[1], inter) / constants.METER_SIZE;
+					distanceBetween(wall.coords[1], inter) / constants.METER_SIZE;
 				downDataArray.push({
 					wallIndex: +i,
 					crossEdge: +p,
@@ -1059,7 +1092,7 @@ const buildWallMeasurementData = (
 				comparisonWall.pointBetweenCoords(inter, 2, true)
 			) {
 				let distance =
-					qSVG.measure(wall.coords[1], inter) / constants.METER_SIZE;
+					distanceBetween(wall.coords[1], inter) / constants.METER_SIZE;
 				downDataArray.push({
 					wallIndex: +i,
 					crossEdge: +p,
@@ -1070,7 +1103,7 @@ const buildWallMeasurementData = (
 			}
 		}
 		let distance =
-			qSVG.measure(wall.coords[0], wall.coords[3]) / constants.METER_SIZE;
+			distanceBetween(wall.coords[0], wall.coords[3]) / constants.METER_SIZE;
 		upDataArray.push({
 			wallIndex: +i,
 			crossEdge: +i,
@@ -1079,7 +1112,7 @@ const buildWallMeasurementData = (
 			distance: +distance.toFixed(2),
 		});
 		let distance2 =
-			qSVG.measure(wall.coords[1], wall.coords[2]) / constants.METER_SIZE;
+			distanceBetween(wall.coords[1], wall.coords[2]) / constants.METER_SIZE;
 		downDataArray.push({
 			wallIndex: +i,
 			crossEdge: +i,
@@ -1216,12 +1249,7 @@ const addSizeTextToScene = (
 		"http://www.w3.org/2000/svg",
 		"text"
 	);
-	const startText = qSVG.middle(
-		previous.coords.x,
-		previous.coords.y,
-		current.coords.x,
-		current.coords.y
-	);
+	const startText = getMidPoint(previous.coords, current.coords);
 	sizeTextSvg.setAttributeNS(null, "x", startText.x.toString());
 	sizeTextSvg.setAttributeNS(null, "y", (startText.y + shiftValue).toString());
 	sizeTextSvg.setAttributeNS(null, "text-anchor", "middle");
@@ -1282,6 +1310,18 @@ export const angleBetweenPoints = (
 	return { rad, deg };
 };
 
+export const angleBetweenEquations = (
+	m1: number | "v" | "h",
+	m2: number | "v" | "h"
+) => {
+	if (m1 == "h") m1 = 0;
+	if (m2 == "h") m2 = 0;
+	if (m1 == "v") m1 = 10000;
+	if (m2 == "v") m2 = 10000;
+	var angleRad = Math.atan(Math.abs((m2 - m1) / (1 + m1 * m2)));
+	return (360 * angleRad) / (2 * Math.PI);
+};
+
 export const angleBetweenThreePoints = (
 	x1: number,
 	y1: number,
@@ -1324,6 +1364,33 @@ export const getAngle = (
 	}
 
 	return result;
+};
+
+const calculateArea = (coords: Point2D[]) => {
+	if (coords.length < 2) return false;
+	var realArea = 0;
+	var j = coords.length - 1;
+	for (var i = 0; i < coords.length; i++) {
+		realArea =
+			realArea + (coords[j].x + coords[i].x) * (coords[j].y - coords[i].y);
+		j = i;
+	}
+	realArea = realArea / 2;
+	return Math.abs(+realArea.toFixed(2));
+};
+
+const calculateRoomArea = (vertex: WallVertex[], coords: number[]) => {
+	var realArea = 0;
+	var j = coords.length - 2;
+	for (var i = 0; i < coords.length - 1; i++) {
+		realArea =
+			realArea +
+			(vertex[coords[j]].x + vertex[coords[i]].x) *
+				(vertex[coords[j]].y - vertex[coords[i]].y);
+		j = i;
+	}
+	realArea = realArea / 2;
+	return Math.abs(+realArea.toFixed(2));
 };
 
 // Point in polygon algorithm
@@ -1476,7 +1543,7 @@ export const nearPointOnEquation = (equation: WallEquation, point: Point2D) => {
 	} else {
 		const p1 = { x: point.x, y: equation.A * point.x + equation.B };
 		const p2 = { x: (point.y - equation.B) / equation.A, y: point.y };
-		return qSVG.pDistance(point, p1, p2);
+		return pDistance(point, p1, p2);
 	}
 };
 
@@ -1547,22 +1614,12 @@ export const vertexList = (junction: WallJunction[]) => {
 				if (fr != ft && typeof vertChildren[fr] != "undefined") {
 					found = true;
 
-					if (
-						qSVG.btwn(
-							vertChildren[ft].angle,
-							vertChildren[fr].angle + 3,
-							vertChildren[fr].angle - 3,
-							true
-						) &&
-						found
-					) {
-						var dOne = qSVG.gap(vert, verticies[vertChildren[ft].id]);
-						var dTwo = qSVG.gap(vert, verticies[vertChildren[fr].id]);
-						if (dOne > dTwo) {
-							toClean.push(ft);
-						} else {
-							toClean.push(fr);
-						}
+					const angleFt = vertChildren[ft].angle;
+					const angleFr = vertChildren[fr].angle;
+					if (valueIsBetween(angleFt, angleFr + 3, angleFr - 3) && found) {
+						var dist1 = distanceBetween(vert, verticies[vertChildren[ft].id]);
+						var dist2 = distanceBetween(vert, verticies[vertChildren[fr].id]);
+						toClean.push(dist1 > dist2 ? ft : fr);
 					}
 				}
 			}
@@ -1633,18 +1690,17 @@ export const polygonize = (walls: WallMetaData[]) => {
 
 		const bestVertex = vertex[bestVertexIndex];
 
-		// console.log("%c%s", "background: yellow; font-size: 14px;","RESEARCH WAY FOR STARTING VERTEX "+bestVertex);
-		const WAYS: string[] = qSVG.segmentTree(bestVertexIndex, vertex);
-		if (WAYS.length == 0) {
+		const waypoints: string[] = segmentTree(bestVertexIndex, vertex);
+		if (waypoints.length == 0) {
 			bestVertex.bypass = 1;
 		}
-		if (WAYS.length > 0) {
-			const tempSurface = WAYS[0].split("-").map((a) => parseInt(a));
-			var lengthRoom = qSVG.areaRoom(vertex, tempSurface);
+		if (waypoints.length > 0) {
+			const tempSurface = waypoints[0].split("-").map((a) => parseInt(a));
+			var lengthRoom = calculateRoomArea(vertex, tempSurface);
 			var bestArea = lengthRoom;
 			var found = true;
 			for (var sss = 0; sss < polygons.length; sss++) {
-				if (qSVG.arrayCompare(polygons[sss].way, tempSurface, "pop")) {
+				if (arraysAreEqual(polygons[sss].way, tempSurface)) {
 					found = false;
 					bestVertex.bypass = 1;
 					break;
@@ -1657,8 +1713,8 @@ export const polygonize = (walls: WallMetaData[]) => {
 			if (bestVertex.bypass == 0) {
 				// <-------- TO REVISE IMPORTANT !!!!!!!! bestArea Control ???
 				var realCoords = polygonIntoWalls(vertex, tempSurface, walls);
-				var realArea = qSVG.area(realCoords.inside);
-				var outsideArea = qSVG.area(realCoords.outside);
+				var realArea = calculateArea(realCoords.inside);
+				var outsideArea = calculateArea(realCoords.outside);
 				var coords = [];
 				for (var rr = 0; rr < tempSurface.length; rr++) {
 					coords.push({
@@ -1757,6 +1813,114 @@ export const polygonize = (walls: WallMetaData[]) => {
 		polygons[pp].inside = inside;
 	}
 	return { polygons: polygons, vertex: vertex };
+};
+
+const segmentTree = (VERTEX_NUMBER: number, vertex: WallVertex[]) => {
+	const treeList: string[] = [VERTEX_NUMBER.toString()];
+	const waypoints: string[] = [];
+	let vertexCount = vertex.length;
+	const origin = VERTEX_NUMBER;
+	tree(treeList, origin, vertexCount);
+	return waypoints;
+
+	function tree(treeList: string[], origin: number, vertexCount: number) {
+		if (treeList.length == 0) return;
+		var treeTemp = [];
+		vertexCount--;
+		for (var k = 0; k < treeList.length; k++) {
+			var found = true;
+			var wro = treeList[k];
+			var wroList = wro
+				.toString()
+				.split("-")
+				.map((s) => +s);
+			var wr = wroList[wroList.length - 1];
+			const vertexChild = vertex[wr].child;
+			if (!vertexChild) continue;
+
+			for (var v = 0; v < vertexChild.length; v++) {
+				if (
+					vertexChild[v].id == origin &&
+					vertexCount < vertex.length - 1 &&
+					wroList.length > 2
+				) {
+					waypoints.push(wro + "-" + origin);
+					found = false;
+					break;
+				}
+			}
+
+			if (found) {
+				var nextVertex = -1;
+				var nextDeterValue = Infinity;
+				var nextDeterVal = 0;
+				var nextFlag = 0;
+				if (vertexChild.length == 1) {
+					if (wr == origin && vertexCount == vertex.length - 1) {
+						treeTemp.push(wro + "-" + vertexChild[0].id);
+					}
+					if (wr != origin && vertexCount < vertex.length - 1) {
+						treeTemp.push(wro + "-" + vertexChild[0].id);
+					}
+				} else {
+					for (
+						var v = 0;
+						v < vertexChild.length && vertexChild.length > 0;
+						v++
+					) {
+						if (wr == origin && vertexCount == vertex.length - 1) {
+							// TO INIT FUNCTION -> // CLOCKWISE Research
+							var vDet = vectorVertex(
+								{ x: 0, y: -1 },
+								vertex[wr],
+								vertex[vertexChild[v].id]
+							);
+							if (vDet >= nextDeterVal) {
+								nextFlag = 1;
+								nextDeterVal = vDet;
+								nextVertex = vertexChild[v].id;
+							}
+							if (Math.sign(vDet) == -1 && nextFlag == 0) {
+								if (vDet < nextDeterValue && Math.sign(nextDeterValue) > -1) {
+									nextDeterValue = vDet;
+									nextVertex = vertexChild[v].id;
+								}
+								if (vDet > nextDeterValue && Math.sign(nextDeterValue) == -1) {
+									nextDeterValue = vDet;
+									nextVertex = vertexChild[v].id;
+								}
+							}
+						}
+						if (
+							wr != origin &&
+							wroList[wroList.length - 2] != vertexChild[v].id &&
+							vertexCount < vertex.length - 1
+						) {
+							// COUNTERCLOCKWISE Research
+							var vDet = vectorVertex(
+								vertex[wroList[wroList.length - 2]],
+								vertex[wr],
+								vertex[vertexChild[v].id]
+							);
+							if (vDet < nextDeterValue && nextFlag == 0) {
+								nextDeterValue = vDet;
+								nextVertex = vertexChild[v].id;
+							}
+							if (Math.sign(vDet) == -1) {
+								nextFlag = 1;
+								if (vDet <= nextDeterValue) {
+									nextDeterValue = vDet;
+									nextVertex = vertexChild[v].id;
+								}
+							}
+						}
+					}
+					if (nextVertex != -1) treeTemp.push(wro + "-" + nextVertex);
+				}
+			}
+		}
+		if (vertexCount > 0) tree(treeTemp, origin, vertexCount);
+	}
 };
 
 export const polygonIntoWalls = (
@@ -1922,7 +2086,7 @@ export const findNearestWallInRange = (
 		}
 	});
 	if (snapToVertice) {
-		const vertexData = nearVertice(fromPoint, wallMeta);
+		const vertexData = nearVertice(fromPoint, wallMeta, range);
 		if (vertexData && vertexData.distance < range) {
 			wallDistance = vertexData.distance;
 			wallPointSelected = {
@@ -1954,33 +2118,33 @@ export const nearVertice = (
 	wallMeta.forEach((wall) => {
 		const start = wall.start;
 		const end = wall.end;
-		const distance1 = qSVG.gap(snap, {
+		const distance1 = distanceBetween(snap, {
 			x: start.x,
 			y: start.y,
 		});
-		const distance2 = qSVG.gap(snap, {
+		const distance2 = distanceBetween(snap, {
 			x: end.x,
 			y: end.y,
 		});
-		if (distance1 < distance2 && distance1 < bestDistance) {
+		if (distance1 < distance2 && distance1 < range) {
 			bestDistance = distance1;
 			bestVertice = {
 				wall,
 				x: start.x,
 				y: start.y,
-				distance: Math.sqrt(bestDistance),
+				distance: bestDistance,
 			};
-		} else if (distance2 < distance1 && distance2 < bestDistance) {
+		} else if (distance2 < distance1 && distance2 < range) {
 			bestDistance = distance2;
 			bestVertice = {
 				wall,
 				x: end.x,
 				y: end.y,
-				distance: Math.sqrt(bestDistance),
+				distance: bestDistance,
 			};
 		}
 	});
-	return bestDistance < range * range ? bestVertice : null;
+	return bestDistance < range ? bestVertice : null;
 };
 
 export const applyPolygonDataToRooms = (
@@ -1995,28 +2159,25 @@ export const applyPolygonDataToRooms = (
 		let foundRoom = false;
 		roomMeta.forEach((room) => {
 			let countCoords = roomPoly.coords.length;
-			const diffCoords = qSVG.diffObjIntoArray(roomPoly.coords, room.coords);
+			const diffCoords = getNumObjectArrayDifferences(
+				roomPoly.coords,
+				room.coords
+			);
+			const differences = getArrayDifferences(roomPoly.way, room.way);
 			if (roomPoly.way.length == room.way.length) {
-				if (
-					qSVG.diffArray(roomPoly.way, room.way).length == 0 ||
-					diffCoords == 0
-				) {
+				if (differences.length == 0 || diffCoords == 0) {
+					countCoords = 0;
+				}
+			} else if (roomPoly.way.length == room.way.length + 1) {
+				if (differences.length == 1 || diffCoords == 2) {
+					countCoords = 0;
+				}
+			} else if (roomPoly.way.length == room.way.length - 1) {
+				if (differences.length == 1) {
 					countCoords = 0;
 				}
 			}
-			if (roomPoly.way.length == room.way.length + 1) {
-				if (
-					qSVG.diffArray(roomPoly.way, room.way).length == 1 ||
-					diffCoords == 2
-				) {
-					countCoords = 0;
-				}
-			}
-			if (roomPoly.way.length == room.way.length - 1) {
-				if (qSVG.diffArray(roomPoly.way, room.way).length == 1) {
-					countCoords = 0;
-				}
-			}
+
 			if (countCoords == 0) {
 				foundRoom = true;
 				roomMeta = [
@@ -2060,28 +2221,25 @@ export const applyPolygonDataToRooms = (
 		var found = true;
 		roomPolygonData.polygons.forEach((roomPoly) => {
 			var countRoom = room.coords.length;
-			var diffCoords = qSVG.diffObjIntoArray(roomPoly.coords, room.coords);
+			var numDifferentCoords = getNumObjectArrayDifferences(
+				roomPoly.coords,
+				room.coords
+			);
+			const numDifferences = getArrayDifferences(roomPoly.way, room.way).length;
 			if (roomPoly.way.length == room.way.length) {
-				if (
-					qSVG.diffArray(roomPoly.way, room.way).length == 0 ||
-					diffCoords == 0
-				) {
+				if (numDifferences == 0 || numDifferentCoords == 0) {
+					countRoom = 0;
+				}
+			} else if (roomPoly.way.length == room.way.length + 1) {
+				if (numDifferences == 1 || numDifferentCoords == 2) {
+					countRoom = 0;
+				}
+			} else if (roomPoly.way.length == room.way.length - 1) {
+				if (numDifferences == 1) {
 					countRoom = 0;
 				}
 			}
-			if (roomPoly.way.length == room.way.length + 1) {
-				if (
-					qSVG.diffArray(roomPoly.way, room.way).length == 1 ||
-					diffCoords == 2
-				) {
-					countRoom = 0;
-				}
-			}
-			if (roomPoly.way.length == room.way.length - 1) {
-				if (qSVG.diffArray(roomPoly.way, room.way).length == 1) {
-					countRoom = 0;
-				}
-			}
+
 			if (countRoom == 0) {
 				found = true;
 				return;
@@ -2119,28 +2277,25 @@ export const renderRooms = (
 		// for (let rr = 0; rr < roomMeta.length; rr++) {
 		roomMeta.forEach((room) => {
 			let countCoords = roomPoly.coords.length;
-			const diffCoords = qSVG.diffObjIntoArray(roomPoly.coords, room.coords);
+			const numDifferentCoords = getNumObjectArrayDifferences(
+				roomPoly.coords,
+				room.coords
+			);
+			const numDifferences = getArrayDifferences(roomPoly.way, room.way).length;
 			if (roomPoly.way.length == room.way.length) {
-				if (
-					qSVG.diffArray(roomPoly.way, room.way).length == 0 ||
-					diffCoords == 0
-				) {
+				if (numDifferences == 0 || numDifferentCoords == 0) {
+					countCoords = 0;
+				}
+			} else if (roomPoly.way.length == room.way.length + 1) {
+				if (numDifferences == 1 || numDifferentCoords == 2) {
+					countCoords = 0;
+				}
+			} else if (roomPoly.way.length == room.way.length - 1) {
+				if (numDifferences == 1) {
 					countCoords = 0;
 				}
 			}
-			if (roomPoly.way.length == room.way.length + 1) {
-				if (
-					qSVG.diffArray(roomPoly.way, room.way).length == 1 ||
-					diffCoords == 2
-				) {
-					countCoords = 0;
-				}
-			}
-			if (roomPoly.way.length == room.way.length - 1) {
-				if (qSVG.diffArray(roomPoly.way, room.way).length == 1) {
-					countCoords = 0;
-				}
-			}
+
 			if (countCoords == 0) {
 				foundRoom = true;
 				roomMeta = [
@@ -2182,31 +2337,30 @@ export const renderRooms = (
 	var toSplice = [];
 	for (var rr = 0; rr < roomMeta.length; rr++) {
 		var found = true;
+		const roomData = roomMeta[rr];
 		for (var pp = 0; pp < roomPolygonData.polygons.length; pp++) {
-			var countRoom = roomMeta[rr].coords.length;
+			var countRoom = roomData.coords.length;
 			let roomPoly = roomPolygonData.polygons[pp];
-			var diffCoords = qSVG.diffObjIntoArray(
+			var numDifferentCoords = getNumObjectArrayDifferences(
 				roomPoly.coords,
-				roomMeta[rr].coords
+				roomData.coords
 			);
-			if (roomPoly.way.length == roomMeta[rr].way.length) {
-				if (
-					qSVG.diffArray(roomPoly.way, roomMeta[rr].way).length == 0 ||
-					diffCoords == 0
-				) {
+			const numDifferences = getArrayDifferences(
+				roomPoly.way,
+				roomData.way
+			).length;
+			if (roomPoly.way.length == roomData.way.length) {
+				if (numDifferences == 0 || numDifferentCoords == 0) {
 					countRoom = 0;
 				}
 			}
-			if (roomPoly.way.length == roomMeta[rr].way.length + 1) {
-				if (
-					qSVG.diffArray(roomPoly.way, roomMeta[rr].way).length == 1 ||
-					diffCoords == 2
-				) {
+			if (roomPoly.way.length == roomData.way.length + 1) {
+				if (numDifferences == 1 || numDifferentCoords == 2) {
 					countRoom = 0;
 				}
 			}
-			if (roomPoly.way.length == roomMeta[rr].way.length - 1) {
-				if (qSVG.diffArray(roomPoly.way, roomMeta[rr].way).length == 1) {
+			if (roomPoly.way.length == roomData.way.length - 1) {
+				if (numDifferences == 1) {
 					countRoom = 0;
 				}
 			}
@@ -2226,102 +2380,72 @@ export const renderRooms = (
 		roomMeta.splice(toSplice[ss], 1);
 	}
 	setRoomMeta([...roomMeta]);
+};
 
-	// $("#boxRoom").empty();
-	// $("#boxSurface").empty();
-	// $("#boxArea").empty();
+export const getPolygonVisualCenter = (
+	room: RoomMetaData,
+	allRooms: RoomMetaData[]
+) => {
+	const polygon = room.coords;
+	const insideArray = room.inside;
+	const sample = 80;
+	const grid = [];
+	//BOUNDING BOX OF POLYGON
+	let minX = 0;
+	let minY = 0;
+	let maxX = 0;
+	let maxY = 0;
+	for (var i = 0; i < polygon.length; i++) {
+		var p = polygon[i];
+		if (!i || p.x < minX) minX = p.x;
+		if (!i || p.y < minY) minY = p.y;
+		if (!i || p.x > maxX) maxX = p.x;
+		if (!i || p.y > maxY) maxY = p.y;
+	}
+	var width = maxX - minX;
+	var height = maxY - minY;
+	//INIT GRID
+	var sampleWidth = Math.floor(width / sample);
+	var sampleHeight = Math.floor(height / sample);
+	for (var hh = 0; hh < sample; hh++) {
+		for (var ww = 0; ww < sample; ww++) {
+			var posX = minX + ww * sampleWidth;
+			var posY = minY + hh * sampleHeight;
+			if (pointInPolygon({ x: posX, y: posY }, polygon)) {
+				var found = true;
+				for (var ii = 0; ii < insideArray.length; ii++) {
+					if (
+						pointInPolygon(
+							{ x: posX, y: posY },
+							allRooms[insideArray[ii]].coordsOutside
+						)
+					) {
+						found = false;
+						break;
+					}
+				}
+				if (found) {
+					grid.push({ x: posX, y: posY });
+				}
+			}
+		}
+	}
+	let bestRange = 0;
+	let bestMatrix = 0;
 
-	// let globalArea = 0;
+	for (var matrix = 0; matrix < grid.length; matrix++) {
+		var minDistance = Infinity;
+		for (var pp = 0; pp < polygon.length - 1; pp++) {
+			var scanDistance = pDistance(grid[matrix], polygon[pp], polygon[pp + 1]);
 
-	// roomMeta.forEach((room) => {
-	// 	if (room.action == "add") globalArea = globalArea + room.area;
-
-	// 	var pathSurface = room.coords;
-	// 	var pathCreate = "M" + pathSurface[0].x + "," + pathSurface[0].y;
-	// 	for (var p = 1; p < pathSurface.length; p++) {
-	// 		pathCreate =
-	// 			pathCreate + " " + "L" + pathSurface[p].x + "," + pathSurface[p].y;
-	// 	}
-	// 	if (room.inside.length > 0) {
-	// 		for (var ins = 0; ins < room.inside.length; ins++) {
-	// 			pathCreate =
-	// 				pathCreate +
-	// 				" M" +
-	// 				roomPolygonData.polygons[room.inside[ins]].coords[
-	// 					roomPolygonData.polygons[room.inside[ins]].coords.length - 1
-	// 				].x +
-	// 				"," +
-	// 				roomPolygonData.polygons[room.inside[ins]].coords[
-	// 					roomPolygonData.polygons[room.inside[ins]].coords.length - 1
-	// 				].y;
-	// 			for (
-	// 				var free =
-	// 					roomPolygonData.polygons[room.inside[ins]].coords.length - 2;
-	// 				free > -1;
-	// 				free--
-	// 			) {
-	// 				pathCreate =
-	// 					pathCreate +
-	// 					" L" +
-	// 					roomPolygonData.polygons[room.inside[ins]].coords[free].x +
-	// 					"," +
-	// 					roomPolygonData.polygons[room.inside[ins]].coords[free].y;
-	// 			}
-	// 		}
-	// 	}
-	// 	createSvgElement("boxRoom", "path", {
-	// 		d: pathCreate,
-	// 		fill: "url(#" + room.color + ")",
-	// 		"fill-opacity": 1,
-	// 		stroke: "none",
-	// 		"fill-rule": "evenodd",
-	// 		class: "room",
-	// 	});
-
-	// 	createSvgElement("boxSurface", "path", {
-	// 		d: pathCreate,
-	// 		fill: "#fff",
-	// 		"fill-opacity": 1,
-	// 		stroke: "none",
-	// 		"fill-rule": "evenodd",
-	// 		class: "room",
-	// 	});
-
-	// 	var centroid = qSVG.polygonVisualCenter(room, roomMeta);
-
-	// 	if (room.name != "") {
-	// 		const styled = { color: "#343938" };
-	// 		if (room.color == "gradientBlack" || room.color == "gradientBlue")
-	// 			styled.color = "white";
-	// 		qSVG.textOnDiv(room.name, centroid, styled, "boxArea");
-	// 	}
-
-	// 	if (room.name != "") centroid.y = centroid.y + 20;
-	// 	let area =
-	// 		(room.area / (constants.METER_SIZE * constants.METER_SIZE)).toFixed(2) +
-	// 		" m²";
-	// 	const styled = {
-	// 		color: "#343938",
-	// 		fontSize: "12.5px",
-	// 		fontWeight: "normal",
-	// 	};
-	// 	if (room.surface != "") {
-	// 		styled.fontWeight = "bold";
-	// 		area = room.surface + " m²";
-	// 	}
-	// 	if (room.color == "gradientBlack" || room.color == "gradientBlue")
-	// 		styled.color = "white";
-	// 	if (room.showSurface) qSVG.textOnDiv(area, centroid, styled, "boxArea");
-	// });
-
-	// if (globalArea <= 0) {
-	// 	globalArea = 0;
-	// 	$("#areaValue").html("");
-	// } else {
-	// 	$("#areaValue").html(
-	// 		'<i class="fa fa-map-o" aria-hidden="true"></i> ' +
-	// 			(globalArea / 3600).toFixed(1) +
-	// 			" m²"
-	// 	);
-	// }
+			if (scanDistance.distance < minDistance) {
+				minDistance = scanDistance.distance;
+			}
+		}
+		if (minDistance > bestRange) {
+			bestMatrix = matrix;
+			bestRange = minDistance;
+		}
+	}
+	return grid[bestMatrix];
 };

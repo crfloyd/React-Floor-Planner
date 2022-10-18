@@ -1,5 +1,4 @@
 import { constants } from "../../../constants";
-import { qSVG } from "../../../qSVG";
 import { Object2D } from "../../models/Object2D";
 import {
 	createSvgElement,
@@ -17,7 +16,12 @@ import {
 	ViewboxData,
 	WallMetaData,
 } from "../../models/models";
-import { getNearestWall, getWallsOnPoint } from "../../utils/utils";
+import {
+	distanceBetween,
+	getMidPoint,
+	getNearestWall,
+	getWallsOnPoint,
+} from "../../utils/utils";
 
 export const handleMouseMoveSelectMode = (
 	target: EventTarget,
@@ -255,37 +259,38 @@ const updateLenghtText = (
 		];
 
 		let distance =
-			qSVG.measure(wall.coords[0], upPoints[0]) / constants.METER_SIZE;
+			distanceBetween(wall.coords[0], upPoints[0]) / constants.METER_SIZE;
 		upDistances.push({
 			coords: upPoints[0],
 			distance: +distance.toFixed(2),
 		});
-		distance = qSVG.measure(wall.coords[0], upPoints[1]) / constants.METER_SIZE;
+		distance =
+			distanceBetween(wall.coords[0], upPoints[1]) / constants.METER_SIZE;
 		upDistances.push({
 			coords: upPoints[1],
 			distance: +distance.toFixed(2),
 		});
 		distance =
-			qSVG.measure(wall.coords[1], downPoints[0]) / constants.METER_SIZE;
+			distanceBetween(wall.coords[1], downPoints[0]) / constants.METER_SIZE;
 		downDistances.push({
 			coords: downPoints[0],
 			distance: +distance.toFixed(2),
 		});
 		distance =
-			qSVG.measure(wall.coords[1], downPoints[1]) / constants.METER_SIZE;
+			distanceBetween(wall.coords[1], downPoints[1]) / constants.METER_SIZE;
 		downDistances.push({
 			coords: downPoints[1],
 			distance: +distance.toFixed(2),
 		});
 	});
 	let distance =
-		qSVG.measure(wall.coords[0], wall.coords[3]) / constants.METER_SIZE;
+		distanceBetween(wall.coords[0], wall.coords[3]) / constants.METER_SIZE;
 	upDistances.push({
 		coords: wall.coords[3],
 		distance: distance,
 	});
 	distance =
-		qSVG.measure(wall.coords[1], wall.coords[2]) / constants.METER_SIZE;
+		distanceBetween(wall.coords[1], wall.coords[2]) / constants.METER_SIZE;
 	downDistances.push({
 		coords: wall.coords[2],
 		distance: distance,
@@ -323,12 +328,7 @@ const updateLenghtText = (
 					"http://www.w3.org/2000/svg",
 					"text"
 				);
-				var startText = qSVG.middle(
-					previous.coords.x,
-					previous.coords.y,
-					current.coords.x,
-					current.coords.y
-				);
+				const startText = getMidPoint(previous.coords, current.coords);
 				textElement.setAttributeNS(null, "x", startText.x.toString());
 				textElement.setAttributeNS(null, "y", (startText.y + shift).toString());
 				textElement.setAttributeNS(null, "text-anchor", "middle");

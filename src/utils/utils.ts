@@ -20,11 +20,51 @@ export const intersectionOfSideEquations = (
 
 export const pointArraysAreEqual = (p1: Point2D[], p2: Point2D[]): boolean => {
 	if (p1.length != p2.length) return false;
+	let result = true;
 	p1.forEach((point1, idx) => {
 		const point2 = p2[idx];
-		if (!pointsAreEqual(point1, point2)) return false;
+		if (!pointsAreEqual(point1, point2)) {
+			result = false;
+			return;
+		}
 	});
-	return true;
+	return result;
+};
+
+export const getArrayDifferences = (arr1: any[], arr2: any[]) => {
+	return arr1
+		.concat(arr2)
+		.filter((val) => !arr1.includes(val) || !arr2.includes(val));
+};
+
+export const getNumObjectArrayDifferences = (
+	arr1: object[],
+	arr2: object[]
+) => {
+	let count = 0;
+	for (let k = 0; k < arr1.length - 1; k++) {
+		for (let n = 0; n < arr2.length - 1; n++) {
+			if (isObjectsEquals(arr1[k], arr2[n])) {
+				count++;
+			}
+		}
+	}
+	let waiting = arr1.length - 1;
+	if (waiting < arr2.length - 1) waiting = arr2.length;
+	return waiting - count;
+};
+
+export const arraysAreEqual = (array1: any[], array2: any[]) => {
+	if (array1.length != array2.length) return false;
+	let result = true;
+	array1.forEach((val1, idx) => {
+		const val2 = array2[idx];
+		if (val1 !== val2) {
+			result = false;
+			return;
+		}
+	});
+	return result;
 };
 
 export const pointsAreEqual = (p1: Point2D, p2: Point2D) => {
@@ -32,7 +72,101 @@ export const pointsAreEqual = (p1: Point2D, p2: Point2D) => {
 };
 
 export const distanceBetween = (p1: Point2D, p2: Point2D) => {
-	return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+	return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+};
+
+export const pointIsBetween = (
+	p: Point2D,
+	start: Point2D,
+	end: Point2D,
+	round = false
+) => {
+	if (round) {
+		p = { x: Math.round(p.x), y: Math.round(p.y) };
+		start = { x: Math.round(start.x), y: Math.round(start.y) };
+		end = { x: Math.round(end.x), y: Math.round(end.y) };
+	}
+
+	return (
+		((p.x >= start.x && p.x <= end.x) || (p.x >= end.x && p.x <= start.x)) &&
+		((p.y >= start.y && p.y <= end.y) || (p.y >= end.y && p.y <= start.y))
+	);
+};
+
+export const valueIsBetween = (
+	num: number,
+	compare1: number,
+	compare2: number,
+	round = false
+) => {
+	if (round) {
+		num = Math.round(num);
+		compare1 = Math.round(compare1);
+		compare2 = Math.round(compare2);
+	}
+	return (
+		(num >= compare1 && num <= compare2) || (num >= compare2 && num <= compare1)
+	);
+};
+
+export const pDistance = (p1: Point2D, p2: Point2D, p3: Point2D) => {
+	const { x: x1, y: y1 } = p1;
+	const { x: x2, y: y2 } = p2;
+	const { x: x3, y: y3 } = p3;
+	const A = x1 - x2;
+	const B = y1 - y2;
+	const C = x3 - x2;
+	const D = y3 - y2;
+	const dot = A * C + B * D;
+	const seqLen = C * C + D * D;
+	const param = seqLen == 0 ? -1 : dot / seqLen;
+	let x, y;
+	if (param < 0) {
+		x = x2;
+		y = y2;
+	} else if (param > 1) {
+		x = x3;
+		y = y3;
+	} else {
+		x = x2 + param * C;
+		y = y2 + param * D;
+	}
+	var dx = x1 - x;
+	var dy = y1 - y;
+	return {
+		x: x,
+		y: y,
+		distance: Math.sqrt(dx * dx + dy * dy),
+	};
+};
+
+export const getMidPoint = (p1: Point2D, p2: Point2D): Point2D => {
+	return {
+		x: Math.abs(p1.x + p2.x) / 2,
+		y: Math.abs(p1.y + p2.y) / 2,
+	};
+};
+
+export const vectorXY = (p1: Point2D, p2: Point2D): Point2D => {
+	return {
+		x: p2.x - p1.x,
+		y: p2.y - p1.y,
+	};
+};
+
+export const vectorVertex = (p1: Point2D, p2: Point2D, p3: Point2D) => {
+	var v1 = vectorXY(p1, p2);
+	var v2 = vectorXY(p2, p3);
+	var dist1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+	var dist2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+	var C = (v1.x * v2.x + v1.y * v2.y) / (dist1 * dist2);
+	var S = v1.x * v2.y - v1.y * v2.x;
+	var BAC = Math.sign(S) * Math.acos(C);
+	return BAC * (180 / Math.PI);
+};
+
+export const vectorDeter = (p1: Point2D, p2: Point2D) => {
+	return p1.x * p2.y - p1.y * p2.x;
 };
 
 export const getNearestWall = (

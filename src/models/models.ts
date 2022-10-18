@@ -115,7 +115,6 @@ export interface WallMetaData {
 	) => boolean;
 	getJunctions(allWalls: WallMetaData[]): WallJunction[];
 	getObjects(objectMeta: ObjectMetaData[]): ObjectMetaData[];
-	addToScene(): void;
 	makeVisible(): void;
 }
 

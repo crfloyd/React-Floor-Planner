@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { constants } from "../../constants";
-import { getNearestWall } from "../utils/utils";
-import { qSVG } from "../../qSVG";
+import { distanceBetween, getMidPoint, getNearestWall } from "../utils/utils";
 import {
 	CursorType,
 	Mode,
@@ -77,12 +76,7 @@ export const useDrawWalls = (
 	};
 
 	const setWallText = (startPoint: Point2D, endPoint: Point2D) => {
-		const startText = qSVG.middle(
-			startPoint.x,
-			startPoint.y,
-			endPoint.x,
-			endPoint.y
-		);
+		const startText = getMidPoint(startPoint, endPoint);
 		const angleText = angleBetweenPoints(
 			startPoint.x,
 			startPoint.y,
@@ -90,7 +84,7 @@ export const useDrawWalls = (
 			endPoint.y
 		);
 		const valueText = (
-			qSVG.measure(
+			distanceBetween(
 				{
 					x: startPoint.x,
 					y: startPoint.y,

@@ -7,16 +7,18 @@ import {
 	WallJunction,
 } from "./models";
 import { v4 as uuid } from "uuid";
-import { qSVG } from "../../qSVG";
 import {
 	findById,
 	intersectionOfEquations,
+	pointIsBetween,
 	pointsAreEqual,
 } from "../utils/utils";
 import { constants } from "../../constants";
 import {
+	angleBetweenEquations,
 	calculateDPath,
 	createEquation,
+	createSvgElement,
 	getWallNodes,
 	nearPointOnEquation,
 } from "../utils/svgTools";
@@ -97,7 +99,7 @@ export class Wall implements WallMetaData {
 					nearest.wall.end.y
 				);
 				const angleInter = moveAction
-					? qSVG.angleBetweenEquations(eqInter.A, wallEquations.equation2?.A)
+					? angleBetweenEquations(eqInter.A, wallEquations.equation2?.A ?? 0)
 					: 90;
 				if (
 					nearest.type == "start" &&
@@ -158,7 +160,7 @@ export class Wall implements WallMetaData {
 					nearest.wall.end.y
 				);
 				const angleInter = moveAction
-					? qSVG.angleBetweenEquations(eqInter.A, wallEquations.equation2?.A)
+					? angleBetweenEquations(eqInter.A, wallEquations.equation2?.A ?? 0)
 					: 90;
 
 				if (angleInter <= 20 || angleInter >= 160) {
@@ -270,25 +272,11 @@ export class Wall implements WallMetaData {
 		return createEquation(this.start.x, this.start.y, this.end.x, this.end.y);
 	};
 
-	addToScene = () => {
-		this.graph = qSVG.create("none", "path", {
-			d: this.dPath,
-			stroke: "none",
-			fill: constants.COLOR_WALL,
-			"stroke-width": 1,
-			"stroke-linecap": "butt",
-			"stroke-linejoin": "miter",
-			"stroke-miterlimit": 4,
-			"fill-rule": "nonzero",
-		});
-		$("#boxwall").append(this.graph);
-	};
-
 	pointInsideWall = (point: Point2D, round: boolean) => {
 		let p = { ...point };
 		let start = { ...this.start };
 		let end = { ...this.end };
-		return this.isBetween(p, start, end, round);
+		return pointIsBetween(p, start, end, round);
 	};
 
 	pointBetweenCoords(point: Point2D, coordSet: 1 | 2, round = false) {
@@ -296,7 +284,7 @@ export class Wall implements WallMetaData {
 		let start = coordSet == 1 ? this.coords[0] : this.coords[1];
 		let end = coordSet == 1 ? this.coords[3] : this.coords[2];
 
-		return this.isBetween(p, start, end, round);
+		return pointIsBetween(p, start, end, round);
 	}
 
 	getObjects(allObjects: ObjectMetaData[]): ObjectMetaData[] {
@@ -417,18 +405,5 @@ export class Wall implements WallMetaData {
 				}
 			});
 		return junctions;
-	}
-
-	private isBetween(p: Point2D, start: Point2D, end: Point2D, round = false) {
-		if (round) {
-			p = { x: Math.round(p.x), y: Math.round(p.y) };
-			start = { x: Math.round(start.x), y: Math.round(start.y) };
-			end = { x: Math.round(end.x), y: Math.round(end.y) };
-		}
-
-		return (
-			((p.x >= start.x && p.x <= end.x) || (p.x >= end.x && p.x <= start.x)) &&
-			((p.y >= start.y && p.y <= end.y) || (p.y >= end.y && p.y <= start.y))
-		);
 	}
 }

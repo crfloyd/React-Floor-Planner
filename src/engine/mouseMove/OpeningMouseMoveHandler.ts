@@ -1,9 +1,13 @@
 import { constants } from "../../../constants";
-import { qSVG } from "../../../qSVG";
 import { Point2D, ViewboxData, WallMetaData } from "../../models/models";
 import { Object2D } from "../../models/Object2D";
 import { getAngle, findNearestWallInRange } from "../../utils/svgTools";
-import { computeLimit } from "../../utils/utils";
+import {
+	computeLimit,
+	getMidPoint,
+	vectorDeter,
+	vectorXY,
+} from "../../utils/utils";
 import { CanvasState } from "../CanvasState";
 
 export const handleMouseMoveOpeningMode = (
@@ -40,22 +44,17 @@ export const handleMouseMoveOpeningMode = (
 				);
 
 				let angleWall = getAngle(wall.start, wall.end, "deg").deg;
-				var v1 = qSVG.vectorXY(
+				var v1 = vectorXY(
 					{ x: wall.start.x, y: wall.start.y },
 					{ x: wall.end.x, y: wall.end.y }
 				);
-				var v2 = qSVG.vectorXY({ x: wall.end.x, y: wall.end.y }, snap);
-				var newAngle = qSVG.vectorDeter(v1, v2);
+				var v2 = vectorXY({ x: wall.end.x, y: wall.end.y }, snap);
+				var newAngle = vectorDeter(v1, v2);
 				if (Math.sign(newAngle) == 1) {
 					angleWall += 180;
 					binder.angleSign = 1;
 				}
-				var startCoords = qSVG.middle(
-					wall.start.x,
-					wall.start.y,
-					wall.end.x,
-					wall.end.y
-				);
+				const startCoords = getMidPoint(wall.start, wall.end);
 				binder.x = startCoords.x;
 				binder.y = startCoords.y;
 				binder.angle = angleWall;
@@ -63,12 +62,12 @@ export const handleMouseMoveOpeningMode = (
 				$("#boxbind").append(binder.graph);
 			} else {
 				let angleWall = getAngle(wall.start, wall.end, "deg").deg;
-				var v1 = qSVG.vectorXY(
+				var v1 = vectorXY(
 					{ x: wall.start.x, y: wall.start.y },
 					{ x: wall.end.x, y: wall.end.y }
 				);
-				var v2 = qSVG.vectorXY({ x: wall.end.x, y: wall.end.y }, snap);
-				var newAngle = qSVG.vectorDeter(v1, v2);
+				var v2 = vectorXY({ x: wall.end.x, y: wall.end.y }, snap);
+				var newAngle = vectorDeter(v1, v2);
 				binder.angleSign = 0;
 				if (Math.sign(newAngle) == 1) {
 					binder.angleSign = 1;

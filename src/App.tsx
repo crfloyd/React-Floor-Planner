@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
-import { qSVG } from "../qSVG";
 import {
 	computeLimit,
+	distanceBetween,
 	findById,
 	getWallsOnPoint,
 	intersectionOfEquations,
@@ -452,7 +452,10 @@ function App() {
 
 	const splitWall = (wallToSplit: WallMetaData) => {
 		const eqWall = wallToSplit.getEquation();
-		const wallToSplitLength = qSVG.gap(wallToSplit.start, wallToSplit.end);
+		const wallToSplitLength = distanceBetween(
+			wallToSplit.start,
+			wallToSplit.end
+		);
 		const newWalls: { distance: number; coords: Point2D }[] = [];
 
 		wallMetaData.forEach((wall) => {
@@ -463,7 +466,7 @@ function App() {
 				wallToSplit.pointInsideWall(inter, true) &&
 				wall.pointInsideWall(inter, true)
 			) {
-				var distance = qSVG.gap(wallToSplit.start, inter);
+				var distance = distanceBetween(wallToSplit.start, inter);
 				if (distance > 5 && distance < wallToSplitLength) {
 					newWalls.push({ distance: distance, coords: inter });
 				}
