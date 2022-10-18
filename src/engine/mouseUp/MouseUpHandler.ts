@@ -4,9 +4,7 @@ import {
 	ObjectMetaData,
 	Mode,
 	RoomDisplayData,
-	SvgPathMetaData,
 	CursorType,
-	ViewboxData,
 	RoomMetaData,
 	WallMetaData,
 	Point2D,
@@ -15,9 +13,12 @@ import {
 import { updateMeasurementText } from "../../utils/svgTools";
 import { Wall } from "../../models/Wall";
 import { CanvasState } from "../CanvasState";
+import { handleMouseUpBindMode } from "./BindModeMouseUpHandler";
 
 export const handleMouseUp = (
 	snap: SnapData,
+	point: Point2D,
+	setPoint: (p: Point2D) => void,
 	canvasState: CanvasState,
 	resetMode: () => string,
 	showMeasurements: boolean,
@@ -36,7 +37,8 @@ export const handleMouseUp = (
 	clearWallHelperData: () => void,
 	wallEndConstructionData: { start: Point2D; end: Point2D } | null,
 	wallConstructionShouldEnd: boolean,
-	startWallDrawing: (startPoint: Point2D) => void
+	startWallDrawing: (startPoint: Point2D) => void,
+	selectedWallData: { wall: WallMetaData; before: Point2D } | null
 ) => {
 	if (showMeasurements) {
 		$("#boxScale").show(200);
@@ -50,8 +52,6 @@ export const handleMouseUp = (
 		setMode,
 		setDrag,
 		wallEquations,
-		point,
-		setPoint,
 		followerData,
 	} = canvasState;
 	setDrag(false);
@@ -92,7 +92,10 @@ export const handleMouseUp = (
 				break;
 			}
 			const area = binder.area / 3600;
-			binder.attr({ fill: "none", stroke: "#ddf00a", "stroke-width": 7 });
+			const svg = binder as SVGElement;
+			svg.setAttribute("fill", "none");
+			svg.setAttribute("stroke", "#ddf00a");
+			svg.setAttribute("stroke-width", "7");
 			const room = roomMetaData[binder.id];
 			updateRoomDisplayData({
 				size: area.toFixed(2),
@@ -195,80 +198,30 @@ export const handleMouseUp = (
 			break;
 		}
 		case Mode.Bind: {
-			setAction(false);
-			if (!binder) break;
-
-			mode = resetMode();
-
-			if (binder.type == "segment") {
-				var found = false;
-				if (binder.wall.start == binder.before) {
-					found = true;
+			const {
+				updatedMode,
+				updatedBinder,
+				updatedObjectMeta,
+				showObjectTools: shouldShowObjectTools,
+			} = handleMouseUpBindMode(
+				binder,
+				objectMetaData,
+				showOpeningTools,
+				selectedWallData,
+				wallClicked,
+				() => {
+					wallEquations.equation1 = null;
+					wallEquations.equation2 = null;
+					wallEquations.equation3 = null;
+					followerData.intersection = null;
 				}
-
-				if (found) {
-					wallClicked(binder.wall);
-					mode = Mode.EditWall;
-				}
-				wallEquations.equation1 = null;
-				wallEquations.equation2 = null;
-				wallEquations.equation3 = null;
-				followerData.intersection = null;
+			);
+			setMode(updatedMode);
+			setBinder(updatedBinder);
+			setObjectMetaData(updatedObjectMeta);
+			if (shouldShowObjectTools) {
+				showObjectTools();
 			}
-
-			if (binder.type == "obj") {
-				const obj = binder.obj as ObjectMetaData;
-				var moveDistance =
-					Math.abs(binder.oldXY.x - binder.x) +
-					Math.abs(binder.oldXY.y - binder.y);
-				if (moveDistance < 1) {
-					const min = obj.params.resizeLimit.width.min;
-					const max = obj.params.resizeLimit.width.max;
-					showOpeningTools(min, max, obj.size);
-					mode = Mode.EditDoor;
-				} else {
-					mode = Mode.Select;
-					setAction(false);
-					$(binder.graph).remove();
-					binder = setBinder(null);
-				}
-			}
-
-			if (binder && binder.type == "boundingBox") {
-				var moveObj =
-					Math.abs(binder.oldX - binder.x) + Math.abs(binder.oldY - binder.y);
-				var objTarget = binder.obj;
-				if (!objTarget.params.move) {
-					// TO REMOVE MEASURE ON PLAN
-					objTarget.graph.remove();
-					const updatedObjects = [...objectMetaData];
-					updatedObjects.splice(objectMetaData.indexOf(objTarget), 1);
-					setObjectMetaData(updatedObjects);
-					$("#boxinfo").html("Measure deleted!");
-				}
-				if (moveObj < 1 && objTarget.params.move) {
-					if (!objTarget.params.resize) {
-						$("#objBoundingBoxScale").hide();
-					} else {
-						showObjectTools();
-						$("#objBoundingBoxScale").show();
-					}
-
-					mode = Mode.EditBoundingBox;
-				} else {
-					mode = Mode.Select;
-					setAction(false);
-					$(binder.graph).remove();
-					binder = setBinder(null);
-				}
-			}
-
-			if (mode == Mode.Bind) {
-				binder.remove();
-				binder = setBinder(null);
-			}
-
-			mode = setMode(mode);
 			save();
 			break;
 		}

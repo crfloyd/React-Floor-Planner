@@ -96,10 +96,10 @@ export interface WallMetaData {
 	equations: WallSideEquations;
 	coords: Point2D[];
 	graph: any;
-	parent?: string | null;
-	child?: string | null;
-	dPath?: string | null;
-	backUp?: any;
+	parent: string | null;
+	child: string | null;
+	dPath: string | null;
+	backUp: any;
 
 	update: (
 		allWalls: WallMetaData[],

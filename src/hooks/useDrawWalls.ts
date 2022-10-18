@@ -13,7 +13,7 @@ import {
 import {
 	createWallGuideLine,
 	angleBetweenPoints,
-	nearWall,
+	findNearestWallInRange,
 } from "../utils/svgTools";
 
 interface WallHelperPathData {
@@ -41,7 +41,7 @@ export const useDrawWalls = (
 	mode: string,
 	continuousWallMode: boolean,
 	setCursor: (c: CursorType) => void,
-	updateSnap: (c: Point2D) => void
+	updatePoint: (c: Point2D) => void
 ) => {
 	const [wallHelperPathInfo, setWallHelperPathInfo] =
 		useState<WallHelperPathData | null>(null);
@@ -111,45 +111,39 @@ export const useDrawWalls = (
 	};
 
 	useEffect(() => {
-		// if (wallStartPoint == null) {
-		// 	clearState()
-		// 	return;
-		// }
-
 		// Only run in Line or Partition modes
 		if (mode !== Mode.Line && mode !== Mode.Partition) return;
 
 		// Find the node nearest the current mouse position;
 		const nearestWallData = getNearestWall(snapPosition, wallMetaData, 20);
 
-		// Guid positional data for nearest wall guide line
+		// Guide positional data for nearest wall guide line
 		const wallGuideLine = createWallGuideLine(snapPosition, wallMetaData, 10);
 
 		// Wall construction not started. In line mode but have not clicked
 		// yet to start wall creation. Just provide guide lines and helper icons,
 		// Also determines closest node or wall and provides that point.
 		if (!wallStartPoint) {
-			// console.log("drawing NOT started");
 			let cursor: CursorType = "grab";
-			let startPoint = { x: snapPosition.x, y: snapPosition.y };
+			// let startPoint = { x: snapPosition.x, y: snapPosition.y };
 			if (wallGuideLine) {
-				if (wallGuideLine.distance < 10) {
-					startPoint = { x: wallGuideLine.x, y: wallGuideLine.y };
-				}
+				// if (wallGuideLine.distance < 10) {
+				// 	startPoint = { x: wallGuideLine.x, y: wallGuideLine.y };
+				// }
 				setHelperLineSvgData(wallGuideLine.svgData);
 			} else {
 				cursor = "crosshair";
 			}
 
 			if (nearestWallData) {
-				startPoint = nearestWallData.bestPoint;
+				// startPoint = nearestWallData.bestPoint;
 				cursor = "grab";
 				setWallHelperNodeCircle(nearestWallData.bestPoint);
 			} else {
 				setWallHelperNodeCircle(null);
 			}
 
-			updateSnap(startPoint);
+			// updatePoint(startPoint);
 			setCursor(cursor);
 			return;
 		}
@@ -163,7 +157,7 @@ export const useDrawWalls = (
 		// update the start point to the nearest node if available
 		if (wallHelperPathInfo == null && nearestWallData) {
 			startPoint = nearestWallData.bestPoint;
-			updateSnap(startPoint);
+			updatePoint(startPoint);
 			cursor =
 				nearestWallData.bestWallId == wallMetaData[wallMetaData.length - 1].id
 					? "validation"
@@ -195,7 +189,11 @@ export const useDrawWalls = (
 
 		// If there is a nearby wall, flag drawing end true
 		// and snap endpoint to it.
-		const nearestPointOnWall = nearWall(snapPosition, wallMetaData, 12);
+		const nearestPointOnWall = findNearestWallInRange(
+			snapPosition,
+			wallMetaData,
+			12
+		);
 		if (nearestPointOnWall) {
 			// console.log("Wall Should End:", nearestPointOnWall);
 			shouldDrawingEnd = true;

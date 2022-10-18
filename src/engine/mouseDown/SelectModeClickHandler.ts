@@ -1,35 +1,36 @@
 import {
 	Mode,
 	ObjectMetaData,
+	Point2D,
 	ViewboxData,
 	WallMetaData,
 } from "../../models/models";
 import { calculateSnap } from "../../utils/utils";
 import { CanvasState } from "../CanvasState";
-import { handleNodeClicked } from "./NodeClickHandler";
-import { handleSegmentClicked } from "./SegmentClickHandler";
+import { handleSelectModeNodeClicked } from "./SelectModeNodeClickHandler";
+import { handleSelectModeSegmentClicked } from "./SelectModeSegmentClickHandler";
 
 interface Props {
 	event: React.TouchEvent | React.MouseEvent;
+	setPoint: (p: Point2D) => void;
 	canvasState: CanvasState;
 	viewbox: ViewboxData;
 	objectMetaData: ObjectMetaData[];
 	wallMetaData: WallMetaData[];
 	setWallMetaData: (w: WallMetaData[]) => void;
+	setSelectedWallData: (data: { wall: WallMetaData; before: Point2D }) => void;
 }
 
 export const handleSelectModeClick = ({
 	event,
 	canvasState: {
 		binder,
-		setBinder,
 		setMode,
 		setAction,
 		wallEquations,
 		followerData,
 		setObjectEquationData,
 		setWallEquations,
-		setPoint,
 		setDrag,
 		setCurrentNodeWallObjects,
 		setCurrentNodeWalls,
@@ -38,6 +39,8 @@ export const handleSelectModeClick = ({
 	objectMetaData,
 	wallMetaData,
 	setWallMetaData,
+	setSelectedWallData,
+	setPoint,
 }: Props) => {
 	switch (binder?.type) {
 		case "segment": {
@@ -45,18 +48,18 @@ export const handleSelectModeClick = ({
 			setAction(true);
 			$("#boxScale").hide(100);
 			const {
-				binder: binderResult,
+				selectedWallData,
 				wallMeta: wallMetaResult,
 				objectEquationData: objectEquationsResult,
 				wallEquations: wallEquationsResult,
-			} = handleSegmentClicked(
+			} = handleSelectModeSegmentClicked(
 				binder,
 				wallMetaData,
 				objectMetaData,
 				wallEquations,
 				followerData
 			);
-			setBinder(binderResult);
+			setSelectedWallData(selectedWallData);
 			setWallMetaData(wallMetaResult);
 			setObjectEquationData(objectEquationsResult);
 			setWallEquations(wallEquationsResult);
@@ -69,7 +72,7 @@ export const handleSelectModeClick = ({
 			var node = binder.data;
 			setPoint({ x: node.x, y: node.y });
 
-			const { nodeWalls, nodeWallObjects } = handleNodeClicked({
+			const { nodeWalls, nodeWallObjects } = handleSelectModeNodeClicked({
 				x: node.x,
 				y: node.y,
 				wallMeta: wallMetaData,

@@ -11,7 +11,7 @@ import {
 import {
 	createWallGuideLine,
 	getAngle,
-	nearWall,
+	findNearestWallInRange,
 	pointInPolygon,
 	refreshWalls,
 	setInWallMeasurementText,
@@ -422,17 +422,17 @@ export const handleMouseMoveBindMode = (
 	// OBJ MOVING
 	// **********************************************************************
 	if (binder.type == "obj" && action) {
-		const wallSelect = nearWall(snap, wallMeta) as {
-			wall: WallMetaData;
-			x: number;
-			y: number;
-			distance: number;
-		};
-		if (wallSelect?.wall.type !== "separate") {
+		const nearestWallData = findNearestWallInRange(
+			snap,
+			wallMeta,
+			Infinity,
+			false
+		);
+		if (nearestWallData && nearestWallData.wall.type !== "separate") {
 			// wallSelect.wall.inWallRib(objectMeta);
-			setInWallMeasurementText(wallSelect.wall, objectMeta);
+			setInWallMeasurementText(nearestWallData.wall, objectMeta);
 			var objTarget = binder.obj;
-			var wall = wallSelect.wall;
+			var wall = nearestWallData.wall;
 			let angleWall = getAngle(wall.start, wall.end, "both").deg;
 			var v1 = qSVG.vectorXY(
 				{ x: wall.start.x, y: wall.start.y },
@@ -447,17 +447,21 @@ export const handleMouseMoveBindMode = (
 				binder.angleSign = 1;
 				objTarget.angleSign = 1;
 			}
-			var limits = computeLimit(wall.equations.base, binder.size, wallSelect);
+			var limits = computeLimit(
+				wall.equations.base,
+				binder.size,
+				nearestWallData
+			);
 			if (
 				wall.pointInsideWall(limits[0], false) &&
 				wall.pointInsideWall(limits[1], false)
 			) {
-				binder.x = wallSelect.x;
-				binder.y = wallSelect.y;
+				binder.x = nearestWallData.x;
+				binder.y = nearestWallData.y;
 				binder.angle = angleWall;
 				binder.thick = wall.thick;
-				objTarget.x = wallSelect.x;
-				objTarget.y = wallSelect.y;
+				objTarget.x = nearestWallData.x;
+				objTarget.y = nearestWallData.y;
 				objTarget.angle = angleWall;
 				objTarget.thick = wall.thick;
 				objTarget.limit = limits;
@@ -466,8 +470,9 @@ export const handleMouseMoveBindMode = (
 			}
 
 			if (
-				(wallSelect.x == wall.start.x && wallSelect.y == wall.start.y) ||
-				(wallSelect.x == wall.end.x && wallSelect.y == wall.end.y)
+				(nearestWallData.x == wall.start.x &&
+					nearestWallData.y == wall.start.y) ||
+				(nearestWallData.x == wall.end.x && nearestWallData.y == wall.end.y)
 			) {
 				if (wall.pointInsideWall(limits[0], false)) {
 					binder.x = limits[0].x;

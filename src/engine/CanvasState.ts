@@ -40,12 +40,6 @@ export class CanvasState {
 		return this.modeOption;
 	};
 
-	point: Point2D = { x: 0, y: 0 };
-	setPoint = (p: Point2D) => {
-		this.point = p;
-		return this.point;
-	};
-
 	action = false;
 	setAction = (a: boolean) => {
 		this.action = a;

@@ -204,6 +204,7 @@ export const calculateSnap = (
 	if (!offset) {
 		throw new Error("Could not get canvas offset");
 	}
+
 	const x_mouse =
 		eX * viewbox.zoomFactor -
 		offset.left * viewbox.zoomFactor +

@@ -2,7 +2,7 @@ import { constants } from "../../../constants";
 import { qSVG } from "../../../qSVG";
 import { Point2D, ViewboxData, WallMetaData } from "../../models/models";
 import { Object2D } from "../../models/Object2D";
-import { getAngle, nearWall } from "../../utils/svgTools";
+import { getAngle, findNearestWallInRange } from "../../utils/svgTools";
 import { computeLimit } from "../../utils/utils";
 import { CanvasState } from "../CanvasState";
 
@@ -12,7 +12,12 @@ export const handleMouseMoveOpeningMode = (
 	viewbox: ViewboxData,
 	wallMetaData: WallMetaData[]
 ) => {
-	const wallSelect = nearWall(snap, wallMetaData);
+	const wallSelect = findNearestWallInRange(
+		snap,
+		wallMetaData,
+		Infinity,
+		false
+	);
 	if (wallSelect) {
 		var wall = wallSelect.wall;
 		if (wall.type != "separate") {

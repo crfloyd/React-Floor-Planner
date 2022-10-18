@@ -13,7 +13,12 @@ interface Props {
 	objectMeta: ObjectMetaData[];
 }
 
-export const handleNodeClicked = ({ x, y, wallMeta, objectMeta }: Props) => {
+export const handleSelectModeNodeClicked = ({
+	x,
+	y,
+	wallMeta,
+	objectMeta,
+}: Props) => {
 	const nodeControl = { x, y };
 	const nodeWallsMeta: WallMetaData[] = [];
 

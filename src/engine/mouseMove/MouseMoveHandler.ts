@@ -3,6 +3,7 @@ import {
 	Mode,
 	ObjectEquationData,
 	ObjectMetaData,
+	Point2D,
 	RoomMetaData,
 	RoomPolygonData,
 	SnapData,
@@ -18,6 +19,7 @@ import { handleMouseMoveSelectMode } from "./SelectModeMouseMoveHandler";
 
 export const handleMouseMove = (
 	snap: SnapData,
+	point: Point2D,
 	target: EventTarget,
 	canvasState: CanvasState,
 	viewbox: ViewboxData,
@@ -28,7 +30,8 @@ export const handleMouseMove = (
 	objectMetaData: ObjectMetaData[],
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void,
 	resetObjectEquationData: () => ObjectEquationData[],
-	setCursor: (crsr: CursorType) => void
+	setCursor: (crsr: CursorType) => void,
+	setWallUnderCursor: (wall: WallMetaData | null) => void
 ) => {
 	if (
 		![
@@ -61,7 +64,9 @@ export const handleMouseMove = (
 				setCursor,
 				handleCameraChange,
 				wallMetaData,
-				objectMetaData
+				objectMetaData,
+				setWallUnderCursor,
+				point
 			);
 			break;
 		case Mode.Line:

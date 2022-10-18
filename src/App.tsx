@@ -134,9 +134,13 @@ function App() {
 
 	const onRoomColorClicked = (val: string) => {
 		setSelectedRoomData({ ...selectedRoomData, background: val });
-		canvasState.binder.background = canvasState.binder.attr({
-			fill: "url(#" + val + ")",
-		});
+		const backgroundFill = "url(#" + val + ")";
+		const svg = canvasState.binder as SVGElement;
+		svg.setAttribute("fill", backgroundFill);
+		// svg.back
+		// canvasState.binder.background = canvasState.binder.attr({
+		// 	fill: "url(#" + val + ")",
+		// });
 	};
 
 	const onApplySurfaceClicked = () => {

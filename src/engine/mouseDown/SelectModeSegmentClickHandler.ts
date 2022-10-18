@@ -16,8 +16,8 @@ import {
 } from "../../utils/utils";
 import { Wall } from "../../models/Wall";
 
-export const handleSegmentClicked = (
-	binder: any,
+export const handleSelectModeSegmentClicked = (
+	selectedWallData: { wall: WallMetaData; before: Point2D },
 	wallMeta: WallMetaData[],
 	objectMeta: ObjectMetaData[],
 	wallEquations: WallEquationGroup,
@@ -26,8 +26,11 @@ export const handleSegmentClicked = (
 		intersection: Point2D | null;
 	}
 ) => {
-	const wall = Wall.fromWall(binder.wall);
-	binder.before = binder.wall.start;
+	const wall = Wall.fromWall(selectedWallData.wall);
+	selectedWallData = {
+		...selectedWallData,
+		before: selectedWallData.wall.start,
+	};
 	wallEquations.equation2 = wall.getEquation();
 	if (wall.parent != null) {
 		const parent = findById(wall.parent, wallMeta);
@@ -61,7 +64,7 @@ export const handleSegmentClicked = (
 					}
 					wall.parent = null;
 					found = true;
-					binder = { ...binder, wall: wall };
+					selectedWallData = { ...selectedWallData, wall: wall };
 					return;
 				}
 			});
@@ -281,5 +284,5 @@ export const handleSegmentClicked = (
 		),
 	}));
 
-	return { binder, wallMeta, objectEquationData, wallEquations };
+	return { selectedWallData, wallMeta, objectEquationData, wallEquations };
 };

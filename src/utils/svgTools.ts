@@ -1881,13 +1881,26 @@ export const polygonIntoWalls = (
 	return { inside: inside, outside: outside };
 };
 
-export const nearWall = (
-	snap: Point2D,
+/**
+ * Attemps to find the nearest wall to the fromPoint provided
+ * within the given range.If snapToVertice is true, the point
+ * returned will snap to the nearest wall vertice if within
+ * the provided range.
+ *
+ * @param fromPoint
+ * @param wallMeta
+ * @param range
+ * @param snapToVertice
+ * @returns
+ */
+export const findNearestWallInRange = (
+	fromPoint: Point2D,
 	wallMeta: WallMetaData[],
-	range = Infinity
+	range: number,
+	snapToVertice = true
 ): { x: number; y: number; distance: number; wall: WallMetaData } | null => {
 	let wallDistance = Infinity;
-	let wallSelected: {
+	let wallPointSelected: {
 		x: number;
 		y: number;
 		distance: number;
@@ -1897,10 +1910,10 @@ export const nearWall = (
 	if (wallMeta.length == 0) return null;
 	wallMeta.forEach((wall) => {
 		var eq = createEquation(wall.start.x, wall.start.y, wall.end.x, wall.end.y);
-		result = nearPointOnEquation(eq, snap);
+		result = nearPointOnEquation(eq, fromPoint);
 		if (result.distance < wallDistance && wall.pointInsideWall(result, false)) {
 			wallDistance = result.distance;
-			wallSelected = {
+			wallPointSelected = {
 				wall: wall,
 				x: result.x,
 				y: result.y,
@@ -1908,17 +1921,20 @@ export const nearWall = (
 			};
 		}
 	});
-	const vertexData = nearVertice(snap, wallMeta);
-	if (vertexData && vertexData.distance < wallDistance) {
-		wallDistance = vertexData.distance;
-		wallSelected = {
-			wall: vertexData.wall,
-			x: vertexData.x,
-			y: vertexData.y,
-			distance: vertexData.distance,
-		};
+	if (snapToVertice) {
+		const vertexData = nearVertice(fromPoint, wallMeta);
+		if (vertexData && vertexData.distance < range) {
+			wallDistance = vertexData.distance;
+			wallPointSelected = {
+				wall: vertexData.wall,
+				x: vertexData.x,
+				y: vertexData.y,
+				distance: vertexData.distance,
+			};
+		}
 	}
-	return wallDistance <= range ? wallSelected : null;
+
+	return wallDistance <= range ? wallPointSelected : null;
 };
 
 type VertexData = {

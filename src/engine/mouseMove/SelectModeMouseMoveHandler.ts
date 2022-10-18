@@ -22,13 +22,16 @@ import { getNearestWall, getWallsOnPoint } from "../../utils/utils";
 export const handleMouseMoveSelectMode = (
 	target: EventTarget,
 	snap: SnapData,
-	{ binder, setBinder, point, drag }: CanvasState,
+	{ binder, setBinder, drag }: CanvasState,
 	viewbox: ViewboxData,
 	setCursor: (crsr: CursorType) => void,
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void,
 	wallMeta: WallMetaData[],
-	objectMeta: ObjectMetaData[]
+	objectMeta: ObjectMetaData[],
+	setWallUnderCursor: (wall: WallMetaData | null) => void,
+	point: Point2D
 ) => {
+	setWallUnderCursor(null);
 	if (drag) {
 		setCursor("move");
 		const distX = (snap.xMouse - point.x) * viewbox.zoomFactor;
@@ -172,6 +175,7 @@ export const handleMouseMoveSelectMode = (
 			if (wallUnderCursor && binder == null) {
 				const objWall = wallUnderCursor.getObjects(objectMeta);
 				if (objWall.length > 0) updateLenghtText(wallUnderCursor, objectMeta);
+				setWallUnderCursor(wallUnderCursor);
 				binder = setBinder({ wall: wallUnderCursor, type: "segment" });
 				// binder.wall.inWallRib(objectMeta);
 				setInWallMeasurementText(binder.wall, objectMeta);

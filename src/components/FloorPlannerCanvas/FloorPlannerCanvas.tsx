@@ -1,4 +1,4 @@
-import React, { createRef, useEffect, useMemo, useRef, useState } from "react";
+import React, { createRef, useEffect, useMemo, useState } from "react";
 import { constants } from "../../../constants";
 import { qSVG } from "../../../qSVG";
 import { calculateSnap } from "../../utils/utils";
@@ -11,7 +11,6 @@ import {
 	Mode,
 	LayerSettings,
 	RoomDisplayData,
-	SvgPathMetaData,
 	CursorType,
 	ViewboxData,
 	RoomPolygonData,
@@ -21,13 +20,7 @@ import {
 	Point2D,
 	SnapData,
 } from "../../models/models";
-import {
-	angleBetweenPoints,
-	createWallGuideLine,
-	polygonize,
-	refreshWalls,
-	renderRooms,
-} from "../../utils/svgTools";
+import { polygonize, refreshWalls, renderRooms } from "../../utils/svgTools";
 import { GradientData } from "./GradientData";
 import LinearGradient from "./LinearGradient";
 import Patterns from "./Patterns";
@@ -122,6 +115,14 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		xMouse: 0,
 		yMouse: 0,
 	});
+	const [point, setPoint] = useState<Point2D>({ x: 0, y: 0 });
+	const [selectedWallData, setSelectedWallData] = useState<{
+		wall: WallMetaData;
+		before: Point2D;
+	} | null>(null);
+	const [wallUnderCursor, setWallUnderCursor] = useState<WallMetaData | null>(
+		null
+	);
 
 	const gradientData = useMemo<
 		{ id: string; color1: string; color2: string }[]
@@ -144,12 +145,24 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		canvasState.mode,
 		continuousWallMode,
 		setCursor,
-		(newPoint: Point2D) => canvasState.setPoint(newPoint)
+		(newPoint: Point2D) => setPoint(newPoint)
 	);
 
 	const { scaleBoxDisplayData } = useDrawScaleBox(wallMetaData);
 
 	const { save } = useHistory();
+
+	// useEffect(() => {
+	// 	console.log("Binder updated: ", canvasState.binder);
+	// }, [canvasState.binder]);
+
+	// useEffect(() => {
+	// 	console.log("wallUnderCursor updated: ", wallUnderCursor);
+	// }, [wallUnderCursor]);
+
+	// useEffect(() => {
+	// 	console.log("selectedWall updated: ", selectedWallData);
+	// }, [selectedWallData]);
 
 	useEffect(() => {
 		switch (cursor) {
@@ -291,11 +304,15 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					setWallMetaData,
 					objectMetaData,
 					startWallDrawing,
+					setSelectedWallData,
+					setPoint,
 				})
 			}
 			onMouseUp={(e) => {
 				handleMouseUp(
 					snapPosition,
+					point,
+					setPoint,
 					canvasState,
 					() => {
 						applyMode(Mode.Select, "");
@@ -317,7 +334,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					clearWallHelperState,
 					wallEndConstructionData,
 					shouldWallConstructionEnd,
-					startWallDrawing
+					startWallDrawing,
+					selectedWallData
 				);
 			}}
 			onMouseMove={(e) => {
@@ -341,6 +359,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 
 				handleMouseMove(
 					snap,
+					point,
 					e.target,
 					canvasState,
 					viewbox,
@@ -351,7 +370,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					objectMetaData,
 					handleCameraChange,
 					() => canvasState.setObjectEquationData([]),
-					setCursor
+					setCursor,
+					setWallUnderCursor
 				);
 			}}
 			style={{
@@ -541,7 +561,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 				visibility={layerSettings.showMeasurements ? "visible" : "hidden"}
 			></g>
 			<g id="boxScale" visibility={showBoxScale ? "visible" : "hidden"}>
-				{showBoxScale && scaleBoxDisplayData && (
+				{showBoxScale && scaleBoxDisplayData && wallMetaData.length > 2 && (
 					<path
 						d={scaleBoxDisplayData.path}
 						stroke="#555"

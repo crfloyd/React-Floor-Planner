@@ -51,7 +51,7 @@ export class Wall implements WallMetaData {
 		Object.assign(this, init);
 	}
 
-	static fromWall = (from: Wall): Wall => {
+	static fromWall = (from: WallMetaData): Wall => {
 		const newWall = new Wall(from.start, from.end, from.type, from.thick);
 		newWall.id = from.id;
 		newWall.parent = from.parent;
