@@ -4,12 +4,12 @@ import {
 	ObjectMetaData,
 	Point2D,
 	ViewboxData,
-	WallMetaData,
-} from "../../models/models";
-import { findNearestWallInRange } from "../../utils/svgTools";
-import { calculateSnap } from "../../utils/utils";
-import { CanvasState } from "../CanvasState";
-import { handleSelectModeClick } from "./SelectModeClickHandler";
+	WallMetaData
+} from '../../models/models';
+import { findNearestWallInRange } from '../../utils/svgTools';
+import { calculateSnap } from '../../utils/utils';
+import { CanvasState } from '../CanvasState';
+import { handleSelectModeClick } from './SelectModeClickHandler';
 
 interface Props {
 	event: React.TouchEvent | React.MouseEvent;
@@ -34,7 +34,7 @@ export const handleMouseDown = ({
 	setWallMetaData,
 	objectMetaData,
 	startWallDrawing,
-	setSelectedWallData,
+	setSelectedWallData
 }: Props) => {
 	event?.preventDefault();
 
@@ -60,7 +60,7 @@ export const handleMouseDown = ({
 		}
 		case Mode.EditDoor: {
 			setAction(true);
-			setCursor("pointer");
+			setCursor('pointer');
 			break;
 		}
 		case Mode.Select: {
@@ -72,7 +72,7 @@ export const handleMouseDown = ({
 				wallMetaData,
 				setWallMetaData,
 				setSelectedWallData,
-				setPoint,
+				setPoint
 			});
 		}
 	}

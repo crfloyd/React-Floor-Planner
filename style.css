@@ -120,19 +120,19 @@ header {
 	}
 }
 body {
-	font-family: "Roboto", sans-serif;
+	font-family: 'Roboto', sans-serif;
 	overflow: hidden;
 	background-color: #e1ddd9;
 }
-input[type="range"] {
+input[type='range'] {
 	-webkit-appearance: none;
 	margin: 18px 0;
 	width: 100%;
 }
-input[type="range"]:focus {
+input[type='range']:focus {
 	outline: none;
 }
-input[type="range"]::-webkit-slider-runnable-track {
+input[type='range']::-webkit-slider-runnable-track {
 	width: 100%;
 	height: 8.4px;
 	cursor: pointer;
@@ -141,7 +141,7 @@ input[type="range"]::-webkit-slider-runnable-track {
 	border-radius: 1.3px;
 	border: 0.2px solid #010101;
 }
-input[type="range"]::-webkit-slider-thumb {
+input[type='range']::-webkit-slider-thumb {
 	border: 1px solid #000000;
 	height: 20px;
 	width: 16px;
@@ -151,10 +151,10 @@ input[type="range"]::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	margin-top: -14px;
 }
-input[type="range"]:focus::-webkit-slider-runnable-track {
+input[type='range']:focus::-webkit-slider-runnable-track {
 	background: #367ebd;
 }
-input[type="range"]::-moz-range-track {
+input[type='range']::-moz-range-track {
 	width: 100%;
 	height: 8.4px;
 	cursor: pointer;
@@ -163,7 +163,7 @@ input[type="range"]::-moz-range-track {
 	border-radius: 1.3px;
 	border: 0.2px solid #010101;
 }
-input[type="range"]::-moz-range-thumb {
+input[type='range']::-moz-range-thumb {
 	border: 1px solid #000000;
 	height: 20px;
 	width: 16px;
@@ -171,10 +171,10 @@ input[type="range"]::-moz-range-thumb {
 	background: #ffffff;
 	cursor: pointer;
 }
-input[type="range"]::-moz-focus-outer {
+input[type='range']::-moz-focus-outer {
 	border: 0;
 }
-input[type="range"]::-ms-track {
+input[type='range']::-ms-track {
 	width: 100%;
 	height: 8.4px;
 	cursor: pointer;
@@ -184,19 +184,19 @@ input[type="range"]::-ms-track {
 	border-width: 16px 0;
 	color: transparent;
 }
-input[type="range"]::-ms-fill-lower {
+input[type='range']::-ms-fill-lower {
 	background: #2a6495;
 	border: 0.2px solid #010101;
 	border-radius: 2.6px;
 	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
 }
-input[type="range"]::-ms-fill-upper {
+input[type='range']::-ms-fill-upper {
 	background: #3071a9;
 	border: 0.2px solid #010101;
 	border-radius: 2.6px;
 	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
 }
-input[type="range"]::-ms-thumb {
+input[type='range']::-ms-thumb {
 	box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
 	border: 1px solid #000000;
 	height: 20px;
@@ -205,10 +205,10 @@ input[type="range"]::-ms-thumb {
 	background: #ffffff;
 	cursor: pointer;
 }
-input[type="range"]:focus::-ms-fill-lower {
+input[type='range']:focus::-ms-fill-lower {
 	background: #3071a9;
 }
-input[type="range"]:focus::-ms-fill-upper {
+input[type='range']:focus::-ms-fill-upper {
 	background: #367ebd;
 }
 
@@ -222,7 +222,7 @@ input[type="range"]:focus::-ms-fill-upper {
 	z-index: 1000;
 }
 .modalBox::after {
-	content: "";
+	content: '';
 	background-image: linear-gradient(#fff, #777);
 	opacity: 0.5;
 	top: 0;
@@ -268,9 +268,9 @@ input[type="range"]:focus::-ms-fill-upper {
 
 .area {
 	display: block;
-	color: "#34e0be";
-	font-size: "12.5px";
-	font-weight: "normal";
+	color: '#34e0be';
+	font-size: '12.5px';
+	font-weight: 'normal';
 }
 
 .funkyradio div {
@@ -285,13 +285,13 @@ input[type="range"]:focus::-ms-fill-upper {
 	font-weight: normal;
 }
 
-.funkyradio input[type="radio"]:empty,
-.funkyradio input[type="checkbox"]:empty {
+.funkyradio input[type='radio']:empty,
+.funkyradio input[type='checkbox']:empty {
 	display: none;
 }
 
-.funkyradio input[type="radio"]:empty ~ label,
-.funkyradio input[type="checkbox"]:empty ~ label {
+.funkyradio input[type='radio']:empty ~ label,
+.funkyradio input[type='checkbox']:empty ~ label {
 	position: relative;
 	line-height: 2.5em;
 	/* text-indent: 3.25em; */
@@ -302,81 +302,81 @@ input[type="range"]:focus::-ms-fill-upper {
 	user-select: none;
 }
 
-.funkyradio input[type="radio"]:empty ~ label:before,
-.funkyradio input[type="checkbox"]:empty ~ label:before {
+.funkyradio input[type='radio']:empty ~ label:before,
+.funkyradio input[type='checkbox']:empty ~ label:before {
 	position: absolute;
 	display: block;
 	top: 0;
 	bottom: 0;
 	left: 0;
-	content: "";
+	content: '';
 	width: 2.5em;
 	background: #d1d3d4;
 	border-radius: 3px 0 0 3px;
 }
 
-.funkyradio input[type="radio"]:hover:not(:checked) ~ label,
-.funkyradio input[type="checkbox"]:hover:not(:checked) ~ label {
+.funkyradio input[type='radio']:hover:not(:checked) ~ label,
+.funkyradio input[type='checkbox']:hover:not(:checked) ~ label {
 	color: #888;
 }
 
-.funkyradio input[type="radio"]:hover:not(:checked) ~ label:before,
-.funkyradio input[type="checkbox"]:hover:not(:checked) ~ label:before {
-	content: "\2714";
+.funkyradio input[type='radio']:hover:not(:checked) ~ label:before,
+.funkyradio input[type='checkbox']:hover:not(:checked) ~ label:before {
+	content: '\2714';
 	text-indent: 0.9em;
 	color: #c2c2c2;
 }
 
-.funkyradio input[type="radio"]:checked ~ label,
-.funkyradio input[type="checkbox"]:checked ~ label {
+.funkyradio input[type='radio']:checked ~ label,
+.funkyradio input[type='checkbox']:checked ~ label {
 	color: #777;
 }
 
-.funkyradio input[type="radio"]:checked ~ label:before,
-.funkyradio input[type="checkbox"]:checked ~ label:before {
-	content: "\2714";
+.funkyradio input[type='radio']:checked ~ label:before,
+.funkyradio input[type='checkbox']:checked ~ label:before {
+	content: '\2714';
 	text-indent: 0.9em;
 	color: #333;
 	background-color: #ccc;
 }
 
-.funkyradio input[type="radio"]:focus ~ label:before,
-.funkyradio input[type="checkbox"]:focus ~ label:before {
+.funkyradio input[type='radio']:focus ~ label:before,
+.funkyradio input[type='checkbox']:focus ~ label:before {
 	box-shadow: 0 0 0 3px #999;
 }
 
-.funkyradio-default input[type="radio"]:checked ~ label:before,
-.funkyradio-default input[type="checkbox"]:checked ~ label:before {
+.funkyradio-default input[type='radio']:checked ~ label:before,
+.funkyradio-default input[type='checkbox']:checked ~ label:before {
 	color: #333;
 	background-color: #ccc;
 }
 
-.funkyradio-primary input[type="radio"]:checked ~ label:before,
-.funkyradio-primary input[type="checkbox"]:checked ~ label:before {
+.funkyradio-primary input[type='radio']:checked ~ label:before,
+.funkyradio-primary input[type='checkbox']:checked ~ label:before {
 	color: #fff;
 	background-color: #337ab7;
 }
 
-.funkyradio-success input[type="radio"]:checked ~ label:before,
-.funkyradio-success input[type="checkbox"]:checked ~ label:before {
+.funkyradio-success input[type='radio']:checked ~ label:before,
+.funkyradio-success input[type='checkbox']:checked ~ label:before {
 	color: #fff;
 	background-color: #5cb85c;
 }
 
-.funkyradio-danger input[type="radio"]:checked ~ label:before,
-.funkyradio-danger input[type="checkbox"]:checked ~ label:before {
+.funkyradio-danger input[type='radio']:checked ~ label:before,
+.funkyradio-danger input[type='checkbox']:checked ~ label:before {
 	color: #fff;
 	background-color: #d9534f;
 }
 
-.funkyradio-warning input[type="radio"]:checked ~ label:before,
-.funkyradio-warning input[type="checkbox"]:checked ~ label:before {
+.funkyradio-warning input[type='radio']:checked ~ label:before,
+.funkyradio-warning input[type='checkbox']:checked ~ label:before {
 	color: #fff;
 	background-color: #f0ad4e;
 }
 
-.funkyradio-info input[type="radio"]:checked ~ label:before,
-.funkyradio-info input[type="checkbox"]:checked ~ label:before {
+.funkyradio-info input[type='radio']:checked ~ label:before,
+.funkyradio-info input[type='checkbox']:checked ~ label:before {
 	color: #fff;
 	background-color: #5bc0de;
 }

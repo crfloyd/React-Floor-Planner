@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 interface Props {
 	data: {
@@ -27,7 +27,7 @@ const ObjectTools = ({
 	onRotationChanged,
 	onNumStepsChanged,
 	onTrashClicked,
-	onBackClicked,
+	onBackClicked
 }: Props) => {
 	const [boundObjectWidth, setBoundObjectWidth] = useState(5);
 	const [boundObjectHeight, setBoundObjectHeight] = useState(5);
@@ -46,9 +46,8 @@ const ObjectTools = ({
 			<hr />
 			<section id="objBoundingBoxScale">
 				<p>
-					Width [
-					<span id="bboxWidthScale">{`${data.minWidth}-${data.maxWidth}`}</span>
-					] : <span id="bboxWidthVal">{boundObjectWidth}</span> cm
+					Width [<span id="bboxWidthScale">{`${data.minWidth}-${data.maxWidth}`}</span>] :{' '}
+					<span id="bboxWidthVal">{boundObjectWidth}</span> cm
 				</p>
 				<input
 					type="range"
@@ -65,9 +64,8 @@ const ObjectTools = ({
 					}}
 				/>
 				<p>
-					Length [
-					<span id="bboxHeightScale">{`${data.minHeight}-${data.maxHeight}`}</span>
-					] : <span id="bboxHeightVal">{boundObjectHeight}</span> cm
+					Length [<span id="bboxHeightScale">{`${data.minHeight}-${data.maxHeight}`}</span>] :{' '}
+					<span id="bboxHeightVal">{boundObjectHeight}</span> cm
 				</p>
 				<input
 					type="range"
@@ -87,7 +85,7 @@ const ObjectTools = ({
 
 			<section id="objBoundingBoxRotation">
 				<p>
-					<i className="fa fa-compass" aria-hidden="true"></i> Rotation :{" "}
+					<i className="fa fa-compass" aria-hidden="true"></i> Rotation :{' '}
 					<span id="bboxRotationVal">{boundObjectRotation}</span> °
 				</p>
 				<input
@@ -122,8 +120,7 @@ const ObjectTools = ({
 								setNumSteps(nextVal);
 								onNumStepsChanged(nextVal);
 							}
-						}}
-					>
+						}}>
 						<i className="fa fa-plus" aria-hidden="true"></i>
 					</button>
 					<button
@@ -135,8 +132,7 @@ const ObjectTools = ({
 								setNumSteps(nextVal);
 								onNumStepsChanged(nextVal);
 							}
-						}}
-					>
+						}}>
 						<i className="fa fa-minus" aria-hidden="true"></i>
 					</button>
 				</div>
@@ -249,17 +245,15 @@ const ObjectTools = ({
 				id="bboxTrash"
 				onClick={() => {
 					onTrashClicked();
-				}}
-			>
+				}}>
 				<i className="fa fa-2x fa-trash-o" aria-hidden="true"></i>
 			</button>
 			<button
 				className="btn btn-info"
-				style={{ marginTop: "100px" }}
+				style={{ marginTop: '100px' }}
 				onClick={() => {
 					onBackClicked();
-				}}
-			>
+				}}>
 				<i className="fa fa-2x fa-backward" aria-hidden="true"></i>
 			</button>
 		</div>

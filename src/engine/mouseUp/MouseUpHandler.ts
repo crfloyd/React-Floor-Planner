@@ -1,4 +1,4 @@
-import { constants } from "../../../constants";
+import { constants } from '../../../constants';
 import {
 	ObjectMetaData,
 	Mode,
@@ -7,13 +7,13 @@ import {
 	RoomMetaData,
 	WallMetaData,
 	Point2D,
-	SnapData,
-} from "../../models/models";
-import { updateMeasurementText } from "../../utils/svgTools";
-import { Wall } from "../../models/Wall";
-import { CanvasState } from "../CanvasState";
-import { handleMouseUpBindMode } from "./BindModeMouseUpHandler";
-import { distanceBetween } from "../../utils/utils";
+	SnapData
+} from '../../models/models';
+import { updateMeasurementText } from '../../utils/svgTools';
+import { Wall } from '../../models/Wall';
+import { CanvasState } from '../CanvasState';
+import { handleMouseUpBindMode } from './BindModeMouseUpHandler';
+import { distanceBetween } from '../../utils/utils';
 
 export const handleMouseUp = (
 	snap: SnapData,
@@ -41,9 +41,9 @@ export const handleMouseUp = (
 	selectedWallData: { wall: WallMetaData; before: Point2D } | null
 ) => {
 	if (showMeasurements) {
-		$("#boxScale").show(200);
+		$('#boxScale').show(200);
 	}
-	let {
+	const {
 		binder,
 		setBinder,
 		action,
@@ -52,14 +52,14 @@ export const handleMouseUp = (
 		setMode,
 		setDrag,
 		wallEquations,
-		followerData,
+		followerData
 	} = canvasState;
 	setDrag(false);
-	setCursor("default");
+	setCursor('default');
 	if (mode == Mode.Select) {
 		if (binder) {
 			binder.remove();
-			binder = setBinder(null);
+			setBinder(null);
 			save();
 		}
 	}
@@ -68,8 +68,8 @@ export const handleMouseUp = (
 		case Mode.Text: {
 			if (!action) {
 				setAction(true);
-				$("#textToLayer").modal();
-				mode = setMode(Mode.EditText);
+				$('#textToLayer').modal();
+				setMode(Mode.EditText);
 			}
 			break;
 		}
@@ -77,13 +77,12 @@ export const handleMouseUp = (
 			const objData = [...objectMetaData, binder];
 			$(binder.graph).remove();
 			const lastObject = objData[objData.length - 1];
-			let targetBox =
-				lastObject.class == "energy" ? "boxEnergy" : "boxcarpentry";
-			$("#" + targetBox).append(lastObject.graph);
+			const targetBox = lastObject.class == 'energy' ? 'boxEnergy' : 'boxcarpentry';
+			$('#' + targetBox).append(lastObject.graph);
 			setBinder(null);
 			setObjectMetaData(objData);
-			$("#boxinfo").html("Object added");
-			mode = resetMode();
+			$('#boxinfo').html('Object added');
+			resetMode();
 			save();
 			break;
 		}
@@ -93,59 +92,57 @@ export const handleMouseUp = (
 			}
 			const area = binder.area / 3600;
 			const svg = binder as SVGElement;
-			svg.setAttribute("fill", "none");
-			svg.setAttribute("stroke", "#ddf00a");
-			svg.setAttribute("stroke-width", "7");
+			svg.setAttribute('fill', 'none');
+			svg.setAttribute('stroke', '#ddf00a');
+			svg.setAttribute('stroke-width', '7');
 			const room = roomMetaData[binder.id];
 			updateRoomDisplayData({
 				size: area.toFixed(2),
 				roomIndex: binder.id,
-				surface: room.surface ?? "",
+				surface: room.surface ?? '',
 				showSurface: room.showSurface,
 				background: room.color,
 				name: room.name,
-				action: room.action,
+				action: room.action
 			});
 
-			mode = setMode(Mode.EditRoom);
+			setMode(Mode.EditRoom);
 			save();
 			break;
 		}
 		case Mode.Node: {
-			mode = resetMode();
+			resetMode();
 			if (!binder) break;
 			// ALSO ON MOUSEUP WITH HAVE CIRCLEBINDER ON ADDPOINT
 			const oldWall = binder.data;
-			var newWall = new Wall(
+			const newWall = new Wall(
 				{ x: oldWall.x, y: oldWall.y },
 				oldWall.wall.end,
-				"normal",
+				'normal',
 				oldWall.wall.thick
 			);
 			const updatedWalls = [...wallMetaData, newWall];
 			setWallMetaData(updatedWalls);
 			oldWall.wall.end = { x: oldWall.x, y: oldWall.y };
 			binder.remove();
-			binder = setBinder(null);
+			setBinder(null);
 			save();
 			break;
 		}
 		case Mode.Opening: {
 			if (binder == null) {
-				$("#boxinfo").html("The plan currently contains no wall.");
-				mode = resetMode();
+				$('#boxinfo').html('The plan currently contains no wall.');
+				resetMode();
 				break;
 			}
 
 			const updatedObjects = [...objectMetaData, binder];
 			$(binder.graph).remove();
-			$("#boxcarpentry").append(
-				updatedObjects[updatedObjects.length - 1].graph
-			);
+			$('#boxcarpentry').append(updatedObjects[updatedObjects.length - 1].graph);
 			setObjectMetaData(updatedObjects);
-			binder = setBinder(null);
-			$("#boxinfo").html("Element added");
-			mode = resetMode();
+			setBinder(null);
+			$('#boxinfo').html('Element added');
+			resetMode();
 			save();
 			break;
 		}
@@ -154,47 +151,38 @@ export const handleMouseUp = (
 			// $("#linetemp").remove(); // DEL LINE HELP CONSTRUC 0 45 90
 			clearWallHelperData();
 			if (!wallEndConstructionData) return;
-			var sizeWall = distanceBetween(wallEndConstructionData.end, point);
+			let sizeWall = distanceBetween(wallEndConstructionData.end, point);
 			sizeWall = sizeWall / constants.METER_SIZE;
-			if (
-				wallEndConstructionData &&
-				$("#line_construc").length &&
-				sizeWall > 0.3
-			) {
-				var sizeWall =
-					mode === Mode.Partition
-						? constants.PARTITION_SIZE
-						: constants.WALL_SIZE;
-				var wall = new Wall(
+			if (wallEndConstructionData && $('#line_construc').length && sizeWall > 0.3) {
+				sizeWall = mode === Mode.Partition ? constants.PARTITION_SIZE : constants.WALL_SIZE;
+				const wall = new Wall(
 					wallEndConstructionData.start,
 					wallEndConstructionData.end,
-					"normal",
+					'normal',
 					sizeWall
 				);
 				const updatedWalls = [...wallMetaData, wall];
 				setWallMetaData(updatedWalls);
 
 				if (continuousWallMode && !wallConstructionShouldEnd) {
-					setCursor("validation");
+					setCursor('validation');
 					setAction(true);
 					startWallDrawing(wallEndConstructionData.end);
 				} else setAction(false);
-				$("#boxinfo").html(
+				$('#boxinfo').html(
 					"Wall added <span style='font-size:0.6em'>approx. " +
-						(distanceBetween(point, wallEndConstructionData.end) / 60).toFixed(
-							2
-						) +
-						" m</span>"
+						(distanceBetween(point, wallEndConstructionData.end) / 60).toFixed(2) +
+						' m</span>'
 				);
 				if (wallConstructionShouldEnd) setAction(false);
 				save();
 			} else {
 				setAction(false);
-				$("#boxinfo").html("Select mode");
-				mode = resetMode();
+				$('#boxinfo').html('Select mode');
+				resetMode();
 				if (binder) {
 					binder.remove();
-					binder = setBinder(null);
+					setBinder(null);
 				}
 				setPoint({ x: snap.x, y: snap.y });
 			}
@@ -205,7 +193,7 @@ export const handleMouseUp = (
 				updatedMode,
 				updatedBinder,
 				updatedObjectMeta,
-				showObjectTools: shouldShowObjectTools,
+				showObjectTools: shouldShowObjectTools
 			} = handleMouseUpBindMode(
 				binder,
 				objectMetaData,

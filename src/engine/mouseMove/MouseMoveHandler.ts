@@ -8,14 +8,14 @@ import {
 	RoomPolygonData,
 	SnapData,
 	ViewboxData,
-	WallMetaData,
-} from "../../models/models";
-import { CanvasState } from "../CanvasState";
-import { handleMouseMoveBindMode } from "./BindModeMouseMoveHandler";
-import { handleMouseMoveOverObject } from "./ObjectModeMouseMoveHandler";
-import { handleMouseMoveOpeningMode } from "./OpeningMouseMoveHandler";
-import { handleMouseMoveRoomMode } from "./RoomModeMoveHandler";
-import { handleMouseMoveSelectMode } from "./SelectModeMouseMoveHandler";
+	WallMetaData
+} from '../../models/models';
+import { CanvasState } from '../CanvasState';
+import { handleMouseMoveBindMode } from './BindModeMouseMoveHandler';
+import { handleMouseMoveOverObject } from './ObjectModeMouseMoveHandler';
+import { handleMouseMoveOpeningMode } from './OpeningMouseMoveHandler';
+import { handleMouseMoveRoomMode } from './RoomModeMoveHandler';
+import { handleMouseMoveSelectMode } from './SelectModeMouseMoveHandler';
 
 export const handleMouseMove = (
 	snap: SnapData,
@@ -41,7 +41,7 @@ export const handleMouseMove = (
 			Mode.Select,
 			Mode.Line,
 			Mode.Partition,
-			Mode.Bind,
+			Mode.Bind
 		].includes(canvasState.mode)
 	)
 		return;

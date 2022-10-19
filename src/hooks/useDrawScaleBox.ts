@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { constants } from "../../constants";
-import { Point2D, WallMetaData } from "../models/models";
+import { useEffect, useState } from 'react';
+import { constants } from '../../constants';
+import { Point2D, WallMetaData } from '../models/models';
 
 interface ScaleBoxDisplayData {
 	path: string;
@@ -8,8 +8,7 @@ interface ScaleBoxDisplayData {
 }
 
 export const useDrawScaleBox = (wallMetaData: WallMetaData[]) => {
-	const [scaleBoxDisplayData, setScaleBoxDisplayData] =
-		useState<ScaleBoxDisplayData | null>(null);
+	const [scaleBoxDisplayData, setScaleBoxDisplayData] = useState<ScaleBoxDisplayData | null>(null);
 
 	useEffect(() => {
 		let minX = 0,
@@ -33,36 +32,36 @@ export const useDrawScaleBox = (wallMetaData: WallMetaData[]) => {
 			if (!i || px > maxX) maxX = px;
 			if (!i || py > maxY) maxY = py;
 		}
-		var width = maxX - minX;
-		var height = maxY - minY;
+		const width = maxX - minX;
+		const height = maxY - minY;
 
-		var labelWidth = ((maxX - minX) / constants.METER_SIZE).toFixed(2);
-		var labelHeight = ((maxY - minY) / constants.METER_SIZE).toFixed(2);
+		const labelWidth = ((maxX - minX) / constants.METER_SIZE).toFixed(2);
+		const labelHeight = ((maxY - minY) / constants.METER_SIZE).toFixed(2);
 
-		var sideRight = "m" + (maxX + 40) + "," + minY;
-		sideRight += " l60,0 m-40,10 l10,-10 l10,10 m-10,-10";
-		sideRight += " l0," + height;
-		sideRight += " m-30,0 l60,0 m-40,-10 l10,10 l10,-10";
+		let sideRight = 'm' + (maxX + 40) + ',' + minY;
+		sideRight += ' l60,0 m-40,10 l10,-10 l10,10 m-10,-10';
+		sideRight += ' l0,' + height;
+		sideRight += ' m-30,0 l60,0 m-40,-10 l10,10 l10,-10';
 
-		sideRight += "M" + minX + "," + (minY - 40);
-		sideRight += " l0,-60 m10,40 l-10,-10 l10,-10 m-10,10";
-		sideRight += " l" + width + ",0";
-		sideRight += " m0,30 l0,-60 m-10,40 l10,-10 l-10,-10";
+		sideRight += 'M' + minX + ',' + (minY - 40);
+		sideRight += ' l0,-60 m10,40 l-10,-10 l10,-10 m-10,10';
+		sideRight += ' l' + width + ',0';
+		sideRight += ' m0,30 l0,-60 m-10,40 l10,-10 l-10,-10';
 
 		setScaleBoxDisplayData({
 			path: sideRight,
 			textItems: [
 				{
 					position: { x: maxX + 70, y: (maxY + minY) / 2 + 35 },
-					content: labelHeight + " m",
-					rotation: "rotate(270 " + (maxX + 70) + "," + (maxY + minY) / 2 + ")",
+					content: labelHeight + ' m',
+					rotation: 'rotate(270 ' + (maxX + 70) + ',' + (maxY + minY) / 2 + ')'
 				},
 				{
 					position: { x: (maxX + minX) / 2, y: minY - 95 },
-					content: labelWidth + " m",
-					rotation: "",
-				},
-			],
+					content: labelWidth + ' m',
+					rotation: ''
+				}
+			]
 		});
 	}, [wallMetaData]);
 

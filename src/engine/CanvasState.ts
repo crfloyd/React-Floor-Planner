@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
 	Mode,
 	NodeWallObjectData,
@@ -8,13 +8,13 @@ import {
 	RoomPolygonData,
 	WallEquation,
 	WallEquationGroup,
-	WallMetaData,
-} from "../models/models";
+	WallMetaData
+} from '../models/models';
 
 const useRoomState = () => {
 	const [roomPolygonData, setRoomPolygonData] = useState<RoomPolygonData>({
 		polygons: [],
-		vertex: [],
+		vertex: []
 	});
 	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
 
@@ -34,7 +34,7 @@ export class CanvasState {
 		return this.mode;
 	};
 
-	modeOption = "";
+	modeOption = '';
 	setModeOption = (val: string) => {
 		this.modeOption = val;
 		return this.modeOption;
@@ -84,7 +84,7 @@ export class CanvasState {
 	wallEquations: WallEquationGroup = {
 		equation1: null,
 		equation2: null,
-		equation3: null,
+		equation3: null
 	};
 	setWallEquations = (newEquations: WallEquationGroup) => {
 		this.wallEquations = newEquations;

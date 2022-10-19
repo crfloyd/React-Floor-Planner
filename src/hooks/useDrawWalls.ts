@@ -1,19 +1,15 @@
-import { useEffect, useState } from "react";
-import { constants } from "../../constants";
-import { distanceBetween, getMidPoint, getNearestWall } from "../utils/utils";
+import { useEffect, useState } from 'react';
+import { constants } from '../../constants';
+import { distanceBetween, getMidPoint, getNearestWall } from '../utils/utils';
 import {
 	CursorType,
 	Mode,
 	Point2D,
 	SnapData,
 	SvgPathMetaData,
-	WallMetaData,
-} from "../models/models";
-import {
-	createWallGuideLine,
-	angleBetweenPoints,
-	findNearestWallInRange,
-} from "../utils/svgTools";
+	WallMetaData
+} from '../models/models';
+import { createWallGuideLine, angleBetweenPoints, findNearestWallInRange } from '../utils/svgTools';
 
 interface WallHelperPathData {
 	x1: number;
@@ -42,21 +38,16 @@ export const useDrawWalls = (
 	setCursor: (c: CursorType) => void,
 	updatePoint: (c: Point2D) => void
 ) => {
-	const [wallHelperPathInfo, setWallHelperPathInfo] =
-		useState<WallHelperPathData | null>(null);
-	const [wallHelperTextData, setWallHelperTextData] =
-		useState<WallHelperTextData | null>(null);
-	const [wallHelperNodeCircle, setWallHelperNodeCircle] =
-		useState<Point2D | null>();
+	const [wallHelperPathInfo, setWallHelperPathInfo] = useState<WallHelperPathData | null>(null);
+	const [wallHelperTextData, setWallHelperTextData] = useState<WallHelperTextData | null>(null);
+	const [wallHelperNodeCircle, setWallHelperNodeCircle] = useState<Point2D | null>();
 	const [wallEndConstructionData, setWallEndConstructionData] =
 		useState<WallEndConstructionData | null>(null);
-	const [helperLineSvgData, setHelperLineSvgData] =
-		useState<SvgPathMetaData | null>();
+	const [helperLineSvgData, setHelperLineSvgData] = useState<SvgPathMetaData | null>();
 
 	const [wallEndPoint, setWallEndPoint] = useState<Point2D | null>(null);
 	const [wallStartPoint, setWallStartPoint] = useState<Point2D | null>(null);
-	const [shouldWallConstructionEnd, setShouldWallConstructionEnd] =
-		useState(false);
+	const [shouldWallConstructionEnd, setShouldWallConstructionEnd] = useState(false);
 
 	const clearWallHelperState = () => {
 		// console.trace("Clearing Draw State", mode);
@@ -77,21 +68,16 @@ export const useDrawWalls = (
 
 	const setWallText = (startPoint: Point2D, endPoint: Point2D) => {
 		const startText = getMidPoint(startPoint, endPoint);
-		const angleText = angleBetweenPoints(
-			startPoint.x,
-			startPoint.y,
-			endPoint.x,
-			endPoint.y
-		);
+		const angleText = angleBetweenPoints(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
 		const valueText = (
 			distanceBetween(
 				{
 					x: startPoint.x,
-					y: startPoint.y,
+					y: startPoint.y
 				},
 				{
 					x: endPoint.x,
-					y: endPoint.y,
+					y: endPoint.y
 				}
 			) / 60
 		).toFixed(2);
@@ -99,8 +85,8 @@ export const useDrawWalls = (
 		setWallHelperTextData({
 			x: startText.x,
 			y: startText.y - 15,
-			content: +valueText < 0.1 ? "" : valueText + " m",
-			angle: angleText.deg,
+			content: +valueText < 0.1 ? '' : valueText + ' m',
+			angle: angleText.deg
 		});
 	};
 
@@ -118,7 +104,7 @@ export const useDrawWalls = (
 		// yet to start wall creation. Just provide guide lines and helper icons,
 		// Also determines closest node or wall and provides that point.
 		if (!wallStartPoint) {
-			let cursor: CursorType = "grab";
+			let cursor: CursorType = 'grab';
 			// let startPoint = { x: snapPosition.x, y: snapPosition.y };
 			if (wallGuideLine) {
 				// if (wallGuideLine.distance < 10) {
@@ -126,12 +112,12 @@ export const useDrawWalls = (
 				// }
 				setHelperLineSvgData(wallGuideLine.svgData);
 			} else {
-				cursor = "crosshair";
+				cursor = 'crosshair';
 			}
 
 			if (nearestWallData) {
 				// startPoint = nearestWallData.bestPoint;
-				cursor = "grab";
+				cursor = 'grab';
 				setWallHelperNodeCircle(nearestWallData.bestPoint);
 			} else {
 				setWallHelperNodeCircle(null);
@@ -145,7 +131,7 @@ export const useDrawWalls = (
 		// console.log("Drawing started");
 
 		let startPoint = { ...wallStartPoint };
-		let cursor: CursorType = "crosshair";
+		let cursor: CursorType = 'crosshair';
 
 		// If this is the first update since starting the wall,
 		// update the start point to the nearest node if available
@@ -154,15 +140,14 @@ export const useDrawWalls = (
 			updatePoint(startPoint);
 			cursor =
 				nearestWallData.bestWallId == wallMetaData[wallMetaData.length - 1].id
-					? "validation"
-					: "grab";
+					? 'validation'
+					: 'grab';
 		}
 
 		let endPoint: Point2D = { ...snapPosition };
 
 		// If the start and end position is too close to draw, just return
-		const delta =
-			Math.abs(startPoint.x - endPoint.x) + Math.abs(startPoint.y - endPoint.y);
+		const delta = Math.abs(startPoint.x - endPoint.x) + Math.abs(startPoint.y - endPoint.y);
 		if (delta <= constants.GRID_SIZE) return;
 
 		const pathData: WallHelperPathData = {
@@ -170,7 +155,7 @@ export const useDrawWalls = (
 			x2: endPoint.x,
 			y1: startPoint.y,
 			y2: endPoint.y,
-			constructOpacity: 0.7,
+			constructOpacity: 0.7
 		};
 
 		// snap endpoint to guidline if one exists
@@ -183,17 +168,13 @@ export const useDrawWalls = (
 
 		// If there is a nearby wall, flag drawing end true
 		// and snap endpoint to it.
-		const nearestPointOnWall = findNearestWallInRange(
-			snapPosition,
-			wallMetaData,
-			12
-		);
+		const nearestPointOnWall = findNearestWallInRange(snapPosition, wallMetaData, 12);
 		if (nearestPointOnWall) {
 			// console.log("Wall Should End:", nearestPointOnWall);
 			shouldDrawingEnd = true;
 			// TO SNAP SEGMENT TO FINALIZE X2Y2
 			endPoint = { x: nearestPointOnWall.x, y: nearestPointOnWall.y };
-			cursor = "grab";
+			cursor = 'grab';
 		}
 
 		// If there is a nearby node, snap endpoint to it and flag
@@ -205,33 +186,27 @@ export const useDrawWalls = (
 			shouldDrawingEnd = true;
 			setHelperLineSvgData(null);
 			if (
-				nearestWallData.bestWallId ==
-					wallMetaData[wallMetaData.length - 1].id &&
+				nearestWallData.bestWallId == wallMetaData[wallMetaData.length - 1].id &&
 				continuousWallMode
 			) {
-				cursor = "validation";
+				cursor = 'validation';
 			} else {
-				cursor = "grab";
+				cursor = 'grab';
 			}
 		} else {
-			if (!shouldDrawingEnd) cursor = "crosshair";
+			if (!shouldDrawingEnd) cursor = 'crosshair';
 		}
 
-		const angleData = angleBetweenPoints(
-			startPoint.x,
-			startPoint.y,
-			endPoint.x,
-			endPoint.y
-		);
+		const angleData = angleBetweenPoints(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
 		const wallAngleDegrees = Math.abs(angleData.deg);
-		var coeff = angleData.deg / wallAngleDegrees; // -45 -> -1     45 -> 1
-		var phi = startPoint.y - coeff * startPoint.x;
-		var xDiag = (endPoint.y - phi) / coeff;
+		const coeff = angleData.deg / wallAngleDegrees; // -45 -> -1     45 -> 1
+		const phi = startPoint.y - coeff * startPoint.x;
+		const xDiag = (endPoint.y - phi) / coeff;
 
 		// TODO: Why is this check here? Maybe check for wallHelperPathInfo null?
 		// if (binder == null) {
 		if (!nearestWallData) {
-			var found = false;
+			let found = false;
 			let x = endPoint.x;
 			let y = endPoint.y;
 
@@ -246,11 +221,7 @@ export const useDrawWalls = (
 				found = true;
 			}
 			// HELP FOR DIAG LINE
-			if (
-				wallAngleDegrees < 55 &&
-				wallAngleDegrees > 35 &&
-				Math.abs(xDiag - endPoint.x) < 20
-			) {
+			if (wallAngleDegrees < 55 && wallAngleDegrees > 35 && Math.abs(xDiag - endPoint.x) < 20) {
 				x = xDiag;
 				// x = Xdiag;
 				found = true;
@@ -278,7 +249,7 @@ export const useDrawWalls = (
 
 		setWallEndConstructionData({
 			start: startPoint,
-			end: endPoint,
+			end: endPoint
 		});
 
 		setWallText(startPoint, endPoint);
@@ -292,6 +263,6 @@ export const useDrawWalls = (
 		wallHelperPathInfo,
 		wallEndConstructionData,
 		helperLineSvgData,
-		shouldWallConstructionEnd,
+		shouldWallConstructionEnd
 	};
 };

@@ -4,24 +4,19 @@ import {
 	WallEquationGroup,
 	WallMetaData,
 	WallSideEquations,
-	WallJunction,
-} from "./models";
-import { v4 as uuid } from "uuid";
-import {
-	findById,
-	intersectionOfEquations,
-	pointIsBetween,
-	pointsAreEqual,
-} from "../utils/utils";
-import { constants } from "../../constants";
+	WallJunction
+} from './models';
+import { v4 as uuid } from 'uuid';
+import { findById, intersectionOfEquations, pointIsBetween, pointsAreEqual } from '../utils/utils';
+import { constants } from '../../constants';
 import {
 	angleBetweenEquations,
 	calculateDPath,
 	createEquation,
 	createSvgElement,
 	getWallNodes,
-	nearPointOnEquation,
-} from "../utils/svgTools";
+	nearPointOnEquation
+} from '../utils/svgTools';
 
 export class Wall implements WallMetaData {
 	id: string;
@@ -47,7 +42,7 @@ export class Wall implements WallMetaData {
 		this.equations = {
 			up: { A: 0, B: 0 },
 			down: { A: 0, B: 0 },
-			base: { A: 0, B: 0 },
+			base: { A: 0, B: 0 }
 		};
 		this.graph = {};
 		Object.assign(this, init);
@@ -67,11 +62,7 @@ export class Wall implements WallMetaData {
 		return newWall;
 	};
 
-	update = (
-		allWalls: WallMetaData[],
-		wallEquations: WallEquationGroup,
-		moveAction: boolean
-	) => {
+	update = (allWalls: WallMetaData[], wallEquations: WallEquationGroup, moveAction: boolean) => {
 		let previousWall = null;
 		let previousWallStart: Point2D = { x: 0, y: 0 };
 		let previousWallEnd: Point2D = { x: 0, y: 0 };
@@ -90,7 +81,7 @@ export class Wall implements WallMetaData {
 			}
 		} else {
 			const nearestNodesToStart = getWallNodes(this.start, allWalls, this);
-			for (let k in nearestNodesToStart) {
+			for (const k in nearestNodesToStart) {
 				const nearest = nearestNodesToStart[k];
 				const eqInter = createEquation(
 					nearest.wall.start.x,
@@ -102,7 +93,7 @@ export class Wall implements WallMetaData {
 					? angleBetweenEquations(eqInter.A, wallEquations.equation2?.A ?? 0)
 					: 90;
 				if (
-					nearest.type == "start" &&
+					nearest.type == 'start' &&
 					nearest.wall.parent == null &&
 					angleInter > 20 &&
 					angleInter < 160
@@ -117,7 +108,7 @@ export class Wall implements WallMetaData {
 					}
 				}
 				if (
-					nearest.type == "end" &&
+					nearest.type == 'end' &&
 					nearest.wall.child == null &&
 					angleInter > 20 &&
 					angleInter < 160
@@ -167,7 +158,7 @@ export class Wall implements WallMetaData {
 					return;
 				}
 
-				if (nearest.type == "end" && nearest.wall.child == null) {
+				if (nearest.type == 'end' && nearest.wall.child == null) {
 					this.child = nearest.wall.id;
 					nearest.wall.child = this.id;
 					const nextWall = findById(this.child, allWalls);
@@ -177,7 +168,7 @@ export class Wall implements WallMetaData {
 						thickness = nextWall.thick;
 					}
 				}
-				if (nearest.type == "start" && nearest.wall.parent == null) {
+				if (nearest.type == 'start' && nearest.wall.parent == null) {
 					this.child = nearest.wall.id;
 					nearest.wall.parent = this.id;
 					const nextWall = findById(this.child, allWalls);
@@ -190,10 +181,7 @@ export class Wall implements WallMetaData {
 			});
 		}
 
-		const angleWall = Math.atan2(
-			this.end.y - this.start.y,
-			this.end.x - this.start.x
-		);
+		const angleWall = Math.atan2(this.end.y - this.start.y, this.end.x - this.start.x);
 
 		this.angle = angleWall;
 		const wallThickX = (this.thick / 2) * Math.sin(angleWall);
@@ -210,16 +198,11 @@ export class Wall implements WallMetaData {
 			this.end.x - wallThickX,
 			this.end.y + wallThickY
 		);
-		const eqWallBase = createEquation(
-			this.start.x,
-			this.start.y,
-			this.end.x,
-			this.end.y
-		);
+		const eqWallBase = createEquation(this.start.x, this.start.y, this.end.x, this.end.y);
 		this.equations = {
 			up: eqWallUp,
 			down: eqWallDw,
-			base: eqWallBase,
+			base: eqWallBase
 		};
 		// console.log(
 		// 	"id:",
@@ -236,7 +219,7 @@ export class Wall implements WallMetaData {
 		// 	this.child
 		// );
 
-		let dWay = calculateDPath(
+		const dWay = calculateDPath(
 			this,
 			angleWall,
 			previousWallStart,
@@ -245,7 +228,7 @@ export class Wall implements WallMetaData {
 			eqWallUp,
 			eqWallDw,
 			previousWall?.thick ?? 0,
-			""
+			''
 		);
 
 		this.dPath =
@@ -258,12 +241,12 @@ export class Wall implements WallMetaData {
 				eqWallUp,
 				eqWallDw,
 				thickness,
-				dWay ?? ""
+				dWay ?? ''
 			) ?? null;
 	};
 
 	makeVisible = () => {
-		this.type = "normal";
+		this.type = 'normal';
 		this.thick = this.backUp;
 		this.backUp = false;
 	};
@@ -273,16 +256,16 @@ export class Wall implements WallMetaData {
 	};
 
 	pointInsideWall = (point: Point2D, round: boolean) => {
-		let p = { ...point };
-		let start = { ...this.start };
-		let end = { ...this.end };
+		const p = { ...point };
+		const start = { ...this.start };
+		const end = { ...this.end };
 		return pointIsBetween(p, start, end, round);
 	};
 
 	pointBetweenCoords(point: Point2D, coordSet: 1 | 2, round = false) {
-		let p = { ...point };
-		let start = coordSet == 1 ? this.coords[0] : this.coords[1];
-		let end = coordSet == 1 ? this.coords[3] : this.coords[2];
+		const p = { ...point };
+		const start = coordSet == 1 ? this.coords[0] : this.coords[1];
+		const end = coordSet == 1 ? this.coords[3] : this.coords[2];
 
 		return pointIsBetween(p, start, end, round);
 	}
@@ -290,13 +273,8 @@ export class Wall implements WallMetaData {
 	getObjects(allObjects: ObjectMetaData[]): ObjectMetaData[] {
 		const objectsOnWall: ObjectMetaData[] = [];
 		allObjects.forEach((obj) => {
-			if (obj.family == "inWall") {
-				const eq = createEquation(
-					this.start.x,
-					this.start.y,
-					this.end.x,
-					this.end.y
-				);
+			if (obj.family == 'inWall') {
+				const eq = createEquation(this.start.x, this.start.y, this.end.x, this.end.y);
 				const searchResult = nearPointOnEquation(eq, obj);
 				if (searchResult.distance < 0.01 && this.pointInsideWall(obj, false)) {
 					objectsOnWall.push(obj);
@@ -308,12 +286,7 @@ export class Wall implements WallMetaData {
 
 	getJunctions(allWalls: WallMetaData[]): WallJunction[] {
 		const junctions: WallJunction[] = [];
-		const thisWallEquation = createEquation(
-			this.start.x,
-			this.start.y,
-			this.end.x,
-			this.end.y
-		);
+		const thisWallEquation = createEquation(this.start.x, this.start.y, this.end.x, this.end.y);
 		allWalls
 			.filter((w) => w != this)
 			.forEach((otherWall, idx) => {
@@ -325,81 +298,61 @@ export class Wall implements WallMetaData {
 					otherWall.end.x,
 					otherWall.end.y
 				);
-				const intersec = intersectionOfEquations(
-					thisWallEquation,
-					otherWallEquation
-				);
+				const intersec = intersectionOfEquations(thisWallEquation, otherWallEquation);
 				if (intersec) {
 					if (
-						(this.end.x == otherWall.start.x &&
-							this.end.y == otherWall.start.y) ||
+						(this.end.x == otherWall.start.x && this.end.y == otherWall.start.y) ||
 						(this.start.x == otherWall.end.x && this.start.y == otherWall.end.y)
 					) {
-						if (
-							this.end.x == otherWall.start.x &&
-							this.end.y == otherWall.start.y
-						) {
+						if (this.end.x == otherWall.start.x && this.end.y == otherWall.start.y) {
 							junctions.push({
 								segment: 0,
 								child: idx,
 								values: [otherWall.start.x, otherWall.start.y],
-								type: "natural",
+								type: 'natural'
 							});
 						}
-						if (
-							this.start.x == otherWall.end.x &&
-							this.start.y == otherWall.end.y
-						) {
+						if (this.start.x == otherWall.end.x && this.start.y == otherWall.end.y) {
 							junctions.push({
 								segment: 0,
 								child: idx,
 								values: [this.start.x, this.start.y],
-								type: "natural",
+								type: 'natural'
 							});
 						}
 					} else {
-						if (
-							this.pointInsideWall(intersec, true) &&
-							otherWall.pointInsideWall(intersec, true)
-						) {
+						if (this.pointInsideWall(intersec, true) && otherWall.pointInsideWall(intersec, true)) {
 							// intersec[0] = intersec[0];
 							// intersec[1] = intersec[1];
 							junctions.push({
 								segment: 0,
 								child: idx,
 								values: [intersec.x, intersec.y],
-								type: "intersection",
+								type: 'intersection'
 							});
 						}
 					}
 				}
 				// IF EQ1 == EQ 2 FIND IF START OF SECOND SEG == END OF FIRST seg (eq.A maybe values H ou V)
 				if (
-					(Math.abs(thisWallEquation.A as number) ==
-						Math.abs(otherWallEquation.A as number) ||
+					(Math.abs(thisWallEquation.A as number) == Math.abs(otherWallEquation.A as number) ||
 						thisWallEquation.A == otherWallEquation.A) &&
 					thisWallEquation.B == otherWallEquation.B
 				) {
-					if (
-						this.end.x == otherWall.start.x &&
-						this.end.y == otherWall.start.y
-					) {
+					if (this.end.x == otherWall.start.x && this.end.y == otherWall.start.y) {
 						junctions.push({
 							segment: 0,
 							child: idx,
 							values: [otherWall.start.x, otherWall.start.y],
-							type: "natural",
+							type: 'natural'
 						});
 					}
-					if (
-						this.start.x == otherWall.end.x &&
-						this.start.y == otherWall.end.y
-					) {
+					if (this.start.x == otherWall.end.x && this.start.y == otherWall.end.y) {
 						junctions.push({
 							segment: 0,
 							child: idx,
 							values: [this.start.x, this.start.y],
-							type: "natural",
+							type: 'natural'
 						});
 					}
 				}

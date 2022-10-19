@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
 interface Props {
 	onSelectMode: () => void;
@@ -7,18 +7,18 @@ interface Props {
 
 export const useKeybindings = ({ onSelectMode, onWallMode }: Props) => {
 	useEffect(() => {
-		document.addEventListener("keydown", onKeyPress);
+		document.addEventListener('keydown', onKeyPress);
 		return () => {
-			document.removeEventListener("keydown", onKeyPress);
+			document.removeEventListener('keydown', onKeyPress);
 		};
 	}, []);
 	const onKeyPress = (e: KeyboardEvent) => {
 		switch (e.key) {
-			case "Escape":
-			case "s":
+			case 'Escape':
+			case 's':
 				onSelectMode();
 				break;
-			case "w":
+			case 'w':
 				onWallMode();
 				break;
 

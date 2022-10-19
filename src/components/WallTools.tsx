@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { WallMetaData } from "../models/models";
+import { useEffect, useState } from 'react';
+import { WallMetaData } from '../models/models';
 
 interface Props {
 	wall?: WallMetaData | null;
@@ -18,23 +18,21 @@ const WallTools = ({
 	onSeparationClicked,
 	onTransformToWallClicked,
 	onWallTrashClicked,
-	onGoBackClicked,
+	onGoBackClicked
 }: Props) => {
 	const [wallWidth, setWallWidth] = useState(7);
 
-	const isSeparationWall = wall?.type === "separate";
+	const isSeparationWall = wall?.type === 'separate';
 
 	return (
 		<div id="wallTools" className="leftBox">
-			<h2 id="titleWallTools">{`Modify the ${
-				isSeparationWall ? "separation" : "wall"
-			}`}</h2>
+			<h2 id="titleWallTools">{`Modify the ${isSeparationWall ? 'separation' : 'wall'}`}</h2>
 			<hr />
 			{!isSeparationWall && (
 				<section id="rangeThick">
 					<p>
-						Width [<span id="wallWidthScale">7-50</span>]
-						<span id="wallWidthVal">{wallWidth}</span> cm
+						Width [<span id="wallWidthScale">7-50</span>]<span id="wallWidthVal">{wallWidth}</span>{' '}
+						cm
 					</p>
 					<input
 						type="range"
@@ -63,8 +61,7 @@ const WallTools = ({
 								className="btn btn-default fully"
 								onClick={() => {
 									onSplitClicked();
-								}}
-							>
+								}}>
 								<i className="fa fa-2x fa-scissors" aria-hidden="true"></i>
 							</button>
 						</li>
@@ -84,8 +81,7 @@ const WallTools = ({
 								onClick={() => {
 									onSeparationClicked();
 								}}
-								id="wallInvisible"
-							>
+								id="wallInvisible">
 								<i className="fa fa-2x fa-crop" aria-hidden="true"></i>
 							</button>
 						</li>
@@ -104,8 +100,7 @@ const WallTools = ({
 								onClick={() => {
 									onTransformToWallClicked();
 								}}
-								id="wallVisible"
-							>
+								id="wallVisible">
 								<i className="fa fa-2x fa-crop" aria-hidden="true"></i>
 							</button>
 						</li>
@@ -118,19 +113,17 @@ const WallTools = ({
 						id="wallTrash"
 						onClick={() => {
 							onWallTrashClicked();
-						}}
-					>
+						}}>
 						<i className="fa fa-2x fa-trash-o" aria-hidden="true"></i>
 					</button>
 				</li>
 				<li>
 					<button
 						className="btn btn-info fully"
-						style={{ marginTop: "50px" }}
+						style={{ marginTop: '50px' }}
 						onClick={() => {
 							onGoBackClicked();
-						}}
-					>
+						}}>
 						<i className="fa fa-2x fa-backward" aria-hidden="true"></i>
 					</button>
 				</li>

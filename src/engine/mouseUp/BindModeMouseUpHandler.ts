@@ -3,8 +3,8 @@ import {
 	ObjectMetaData,
 	Point2D,
 	WallEquationGroup,
-	WallMetaData,
-} from "../../models/models";
+	WallMetaData
+} from '../../models/models';
 
 export const handleMouseUpBindMode = (
 	binder: any,
@@ -36,12 +36,11 @@ export const handleMouseUpBindMode = (
 			updatedBinder: binder,
 			updatedMode: mode,
 			updatedObjectMeta: objectMetaData,
-			showObjectTools,
+			showObjectTools
 		};
-	if (binder.type == "obj") {
+	if (binder.type == 'obj') {
 		const obj = binder.obj as ObjectMetaData;
-		var moveDistance =
-			Math.abs(binder.oldXY.x - binder.x) + Math.abs(binder.oldXY.y - binder.y);
+		const moveDistance = Math.abs(binder.oldXY.x - binder.x) + Math.abs(binder.oldXY.y - binder.y);
 		if (moveDistance < 1) {
 			const min = obj.params.resizeLimit.width.min;
 			const max = obj.params.resizeLimit.width.max;
@@ -54,23 +53,22 @@ export const handleMouseUpBindMode = (
 		}
 	}
 
-	if (binder && binder.type == "boundingBox") {
-		var moveObj =
-			Math.abs(binder.oldX - binder.x) + Math.abs(binder.oldY - binder.y);
-		var objTarget = binder.obj;
+	if (binder && binder.type == 'boundingBox') {
+		const moveObj = Math.abs(binder.oldX - binder.x) + Math.abs(binder.oldY - binder.y);
+		const objTarget = binder.obj;
 		if (!objTarget.params.move) {
 			// TO REMOVE MEASURE ON PLAN
 			objTarget.graph.remove();
 			objectMetaData = objectMetaData.filter((o) => o !== objTarget);
-			$("#boxinfo").html("Measure deleted!");
+			$('#boxinfo').html('Measure deleted!');
 		}
 		if (moveObj < 1 && objTarget.params.move) {
 			if (!objTarget.params.resize) {
-				$("#objBoundingBoxScale").hide();
+				$('#objBoundingBoxScale').hide();
 			} else {
-				console.log("showObjTools true");
+				console.log('showObjTools true');
 				showObjectTools = true;
-				$("#objBoundingBoxScale").show();
+				$('#objBoundingBoxScale').show();
 			}
 
 			mode = Mode.EditBoundingBox;
@@ -90,6 +88,6 @@ export const handleMouseUpBindMode = (
 		updatedBinder: binder,
 		updatedMode: mode,
 		updatedObjectMeta: objectMetaData,
-		showObjectTools,
+		showObjectTools
 	};
 };

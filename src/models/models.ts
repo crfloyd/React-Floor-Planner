@@ -10,21 +10,21 @@ export interface PointDistance {
 }
 
 export const Mode = {
-	Select: "select_mode",
-	Text: "text_mode",
-	EditText: "edit_text_mode",
-	EditRoom: "edit_room_mode",
-	Object: "object_mode",
-	Distance: "distance_mode",
-	Room: "room_mode",
-	Node: "node_mode",
-	Opening: "door_mode",
-	Line: "line_mode",
-	Partition: "partition_mode",
-	EditWall: "edit_wall_mode",
-	EditDoor: "edit_door_mode",
-	EditBoundingBox: "edit_boundingBox_mode",
-	Bind: "bind_mode",
+	Select: 'select_mode',
+	Text: 'text_mode',
+	EditText: 'edit_text_mode',
+	EditRoom: 'edit_room_mode',
+	Object: 'object_mode',
+	Distance: 'distance_mode',
+	Room: 'room_mode',
+	Node: 'node_mode',
+	Opening: 'door_mode',
+	Line: 'line_mode',
+	Partition: 'partition_mode',
+	EditWall: 'edit_wall_mode',
+	EditDoor: 'edit_door_mode',
+	EditBoundingBox: 'edit_boundingBox_mode',
+	Bind: 'bind_mode'
 };
 
 export interface RoomMetaData {
@@ -57,7 +57,7 @@ export interface RoomPolygonData {
 }
 
 export interface WallEquation {
-	A: number | "h" | "v";
+	A: number | 'h' | 'v';
 	B: number;
 	follow?: WallMetaData | null;
 	backup?: WallMetaData | null;
@@ -73,7 +73,7 @@ export interface WallJunction {
 	segment: number;
 	child: number;
 	values: number[];
-	type: "natural" | "intersection";
+	type: 'natural' | 'intersection';
 }
 
 export interface WallVertex {
@@ -101,18 +101,10 @@ export interface WallMetaData {
 	dPath: string | null;
 	backUp: any;
 
-	update: (
-		allWalls: WallMetaData[],
-		wallEquations: WallEquationGroup,
-		moveAction: boolean
-	) => void;
+	update: (allWalls: WallMetaData[], wallEquations: WallEquationGroup, moveAction: boolean) => void;
 	getEquation: () => WallEquation;
 	pointInsideWall: (point: Point2D, round: boolean) => boolean;
-	pointBetweenCoords: (
-		point: Point2D,
-		coordSet: 1 | 2,
-		round: boolean
-	) => boolean;
+	pointBetweenCoords: (point: Point2D, coordSet: 1 | 2, round: boolean) => boolean;
 	getJunctions(allWalls: WallMetaData[]): WallJunction[];
 	getObjects(objectMeta: ObjectMetaData[]): ObjectMetaData[];
 	makeVisible(): void;
@@ -255,11 +247,11 @@ export interface SnapData {
 }
 
 export type CursorType =
-	| "crosshair"
-	| "move"
-	| "pointer"
-	| "validation"
-	| "default"
-	| "trash"
-	| "scissor"
-	| "grab";
+	| 'crosshair'
+	| 'move'
+	| 'pointer'
+	| 'validation'
+	| 'default'
+	| 'trash'
+	| 'scissor'
+	| 'grab';

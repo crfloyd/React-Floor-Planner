@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 
 interface Props {
 	data: {
@@ -17,7 +17,7 @@ const DoorWindowTools = ({
 	onFlipOpeningClicked,
 	onOpeningWidthChanged,
 	onTrashClicked,
-	onBackClicked,
+	onBackClicked
 }: Props) => {
 	return (
 		<>
@@ -32,16 +32,14 @@ const DoorWindowTools = ({
 						id="objToolsHinge"
 						onClick={() => {
 							onFlipOpeningClicked();
-						}}
-					>
+						}}>
 						Flip Opening
 					</button>
 				</li>
 
 				<p>
-					Width [
-					<span id="doorWindowWidthScale">{`${data.minWidth}-${data.maxWidth}`}</span>
-					] : <span id="doorWindowWidthVal">{data.width}</span> cm
+					Width [<span id="doorWindowWidthScale">{`${data.minWidth}-${data.maxWidth}`}</span>] :{' '}
+					<span id="doorWindowWidthVal">{data.width}</span> cm
 				</p>
 				<input
 					type="range"
@@ -61,15 +59,14 @@ const DoorWindowTools = ({
 						className="btn btn-danger fully objTrash"
 						onClick={() => {
 							onTrashClicked();
-						}}
-					>
+						}}>
 						<i className="fa fa-2x fa-trash-o" aria-hidden="true"></i>
 					</button>
 				</li>
 				<li>
 					<button
 						className="btn btn-info"
-						style={{ marginTop: "100px" }}
+						style={{ marginTop: '100px' }}
 						onClick={() => {
 							onBackClicked();
 							// applyMode(Mode.Select);
@@ -79,8 +76,7 @@ const DoorWindowTools = ({
 
 							// binder.graph.remove();
 							// rib(wallMeta);
-						}}
-					>
+						}}>
 						<i className="fa fa-2x fa-backward" aria-hidden="true"></i>
 					</button>
 				</li>

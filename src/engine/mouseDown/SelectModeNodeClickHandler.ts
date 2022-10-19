@@ -1,9 +1,5 @@
-import {
-	NodeWallObjectData,
-	ObjectMetaData,
-	WallMetaData,
-} from "../../models/models";
-import { distanceBetween, findById, pointsAreEqual } from "../../utils/utils";
+import { NodeWallObjectData, ObjectMetaData, WallMetaData } from '../../models/models';
+import { distanceBetween, findById, pointsAreEqual } from '../../utils/utils';
 
 interface Props {
 	x: number;
@@ -12,17 +8,12 @@ interface Props {
 	objectMeta: ObjectMetaData[];
 }
 
-export const handleSelectModeNodeClicked = ({
-	x,
-	y,
-	wallMeta,
-	objectMeta,
-}: Props) => {
+export const handleSelectModeNodeClicked = ({ x, y, wallMeta, objectMeta }: Props) => {
 	const nodeControl = { x, y };
 	const nodeWallsMeta: WallMetaData[] = [];
 
 	// Determine distance of opposed node on edge(s) and parent of this node
-	for (var ee = wallMeta.length - 1; ee > -1; ee--) {
+	for (let ee = wallMeta.length - 1; ee > -1; ee--) {
 		// Search for youngest wall coords in node
 		if (
 			pointsAreEqual(wallMeta[ee].start, nodeControl) ||
@@ -36,8 +27,7 @@ export const handleSelectModeNodeClicked = ({
 		const child = findById(nodeWallsMeta[0].child, wallMeta);
 		if (
 			child &&
-			(pointsAreEqual(child.start, nodeControl) ||
-				pointsAreEqual(child.end, nodeControl))
+			(pointsAreEqual(child.start, nodeControl) || pointsAreEqual(child.end, nodeControl))
 		)
 			nodeWallsMeta.push(child);
 	}
@@ -45,33 +35,32 @@ export const handleSelectModeNodeClicked = ({
 		const parent = findById(nodeWallsMeta[0].parent, wallMeta);
 		if (
 			parent &&
-			(pointsAreEqual(parent.start, nodeControl) ||
-				pointsAreEqual(parent.end, nodeControl))
+			(pointsAreEqual(parent.start, nodeControl) || pointsAreEqual(parent.end, nodeControl))
 		)
 			nodeWallsMeta.push(parent);
 	}
 
 	const wallObjects: NodeWallObjectData[] = [];
-	for (var k in nodeWallsMeta) {
+	for (const k in nodeWallsMeta) {
 		if (
 			pointsAreEqual(nodeWallsMeta[k].start, nodeControl) ||
 			pointsAreEqual(nodeWallsMeta[k].end, nodeControl)
 		) {
-			var nodeTarget = nodeWallsMeta[k].start;
+			let nodeTarget = nodeWallsMeta[k].start;
 			if (pointsAreEqual(nodeWallsMeta[k].start, nodeControl)) {
 				nodeTarget = nodeWallsMeta[k].end;
 			}
 			const objWall = nodeWallsMeta[k].getObjects(objectMeta);
 			const wall = nodeWallsMeta[k];
-			for (var i = 0; i < objWall.length; i++) {
-				var objTarget = objWall[i];
-				var distance = distanceBetween(objTarget, nodeTarget);
+			for (let i = 0; i < objWall.length; i++) {
+				const objTarget = objWall[i];
+				const distance = distanceBetween(objTarget, nodeTarget);
 				wallObjects.push({
 					wall: wall,
 					from: nodeTarget,
 					distance: distance,
 					obj: objTarget,
-					index: i,
+					index: i
 				});
 			}
 		}

@@ -1,4 +1,4 @@
-import { constants } from "../../constants";
+import { constants } from '../../constants';
 import {
 	Point2D,
 	SVGCreationData,
@@ -12,8 +12,8 @@ import {
 	WallVertex,
 	Polygon,
 	RoomPolygonData,
-	RoomMetaData,
-} from "../models/models";
+	RoomMetaData
+} from '../models/models';
 import {
 	arraysAreEqual,
 	distanceBetween,
@@ -23,18 +23,17 @@ import {
 	getNumObjectArrayDifferences,
 	intersectionOfEquations,
 	intersectionOfSideEquations,
-	isObjectsEquals,
 	pDistance,
 	perpendicularEquation,
 	pointsAreEqual,
 	valueIsBetween,
-	vectorVertex,
-} from "./utils";
+	vectorVertex
+} from './utils';
 
 export const createSvgElement = (id: string, shape: string, attrs?: any) => {
-	const svg = document.createElementNS("http://www.w3.org/2000/svg", shape);
+	const svg = document.createElementNS('http://www.w3.org/2000/svg', shape);
 	if (attrs) {
-		for (var k in attrs) {
+		for (const k in attrs) {
 			const v = attrs[k];
 			if (v) {
 				svg.setAttribute(k, v);
@@ -43,8 +42,8 @@ export const createSvgElement = (id: string, shape: string, attrs?: any) => {
 		}
 	}
 
-	if (id != "none") {
-		$("#" + id).append(svg);
+	if (id != 'none') {
+		$('#' + id).append(svg);
 	}
 	return svg;
 };
@@ -64,32 +63,32 @@ export const carpentryCalc = (
 		resize: false,
 		resizeLimit: {
 			width: { min: 0, max: 0 },
-			height: { min: 0, max: 0 },
+			height: { min: 0, max: 0 }
 		},
-		rotate: false,
+		rotate: false
 	};
 
 	const circlePath = (cx: number, cy: number, r: number) => {
 		return (
-			"M " +
+			'M ' +
 			cx +
-			" " +
+			' ' +
 			cy +
-			" m -" +
+			' m -' +
 			r +
-			", 0 a " +
+			', 0 a ' +
 			r +
-			"," +
+			',' +
 			r +
-			" 0 1,0 " +
+			' 0 1,0 ' +
 			r * 2 +
-			",0 a " +
+			',0 a ' +
 			r +
-			"," +
+			',' +
 			r +
-			" 0 1,0 -" +
+			' 0 1,0 -' +
 			r * 2 +
-			",0"
+			',0'
 		);
 	};
 
@@ -98,328 +97,328 @@ export const carpentryCalc = (
 	if (classType == objClass.HOVER_BOX) {
 		construc.push({
 			path:
-				"M " +
+				'M ' +
 				-size / 2 +
-				"," +
+				',' +
 				-thickness / 2 +
-				" L " +
+				' L ' +
 				-size / 2 +
-				"," +
+				',' +
 				thickness / 2 +
-				" L " +
+				' L ' +
 				size / 2 +
-				"," +
+				',' +
 				thickness / 2 +
-				" L " +
+				' L ' +
 				size / 2 +
-				"," +
+				',' +
 				-thickness / 2 +
-				" Z",
-			fill: "#5cba79",
-			stroke: "#5cba79",
-			strokeDashArray: "",
+				' Z',
+			fill: '#5cba79',
+			stroke: '#5cba79',
+			strokeDashArray: ''
 		});
 	}
 
 	if (classType == objClass.DOOR_WINDOW) {
-		if (type == "simple") {
+		if (type == 'simple') {
 			construc.push({
 				path:
-					"M " +
+					'M ' +
 					-size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" L " +
+					' L ' +
 					-size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" Z",
-				fill: "#ccc",
-				stroke: "none",
-				strokeDashArray: "",
+					' Z',
+				fill: '#ccc',
+				stroke: 'none',
+				strokeDashArray: ''
 			});
 			construc.push({
 				path:
-					"M " +
+					'M ' +
 					-size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" L " +
+					' L ' +
 					-size / 2 +
-					"," +
+					',' +
 					(-size - thickness / 2) +
-					"  A" +
+					'  A' +
 					size +
-					"," +
+					',' +
 					size +
-					" 0 0,1 " +
+					' 0 0,1 ' +
 					size / 2 +
-					"," +
+					',' +
 					-thickness / 2,
-				fill: "none",
+				fill: 'none',
 				stroke: constants.COLOR_WALL,
-				strokeDashArray: "",
+				strokeDashArray: ''
 			});
 			result.resize = true;
 			result.resizeLimit.width = { min: 40, max: 120 };
 		}
-		if (type == "double") {
+		if (type == 'double') {
 			construc.push({
 				path:
-					"M " +
+					'M ' +
 					-size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" L " +
+					' L ' +
 					-size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" Z",
-				fill: "#ccc",
-				stroke: "none",
-				strokeDashArray: "",
+					' Z',
+				fill: '#ccc',
+				stroke: 'none',
+				strokeDashArray: ''
 			});
 			construc.push({
 				path:
-					"M " +
+					'M ' +
 					-size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" L " +
+					' L ' +
 					-size / 2 +
-					"," +
+					',' +
 					(-size / 2 - thickness / 2) +
-					"  A" +
+					'  A' +
 					size / 2 +
-					"," +
+					',' +
 					size / 2 +
-					" 0 0,1 0," +
+					' 0 0,1 0,' +
 					-thickness / 2,
-				fill: "none",
+				fill: 'none',
 				stroke: constants.COLOR_WALL,
-				strokeDashArray: "",
+				strokeDashArray: ''
 			});
 			construc.push({
 				path:
-					"M " +
+					'M ' +
 					size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					(-size / 2 - thickness / 2) +
-					"  A" +
+					'  A' +
 					size / 2 +
-					"," +
+					',' +
 					size / 2 +
-					" 0 0,0 0," +
+					' 0 0,0 0,' +
 					-thickness / 2,
-				fill: "none",
+				fill: 'none',
 				stroke: constants.COLOR_WALL,
-				strokeDashArray: "",
+				strokeDashArray: ''
 			});
 			result.resize = true;
 			result.resizeLimit.width = { min: 40, max: 160 };
 		}
-		if (type == "pocket") {
+		if (type == 'pocket') {
 			construc.push({
 				path:
-					"M " +
+					'M ' +
 					-size / 2 +
-					"," +
+					',' +
 					(-(thickness / 2) - 4) +
-					" L " +
+					' L ' +
 					-size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					(-(thickness / 2) - 4) +
-					" Z",
-				fill: "#ccc",
-				stroke: "none",
-				strokeDashArray: "none",
+					' Z',
+				fill: '#ccc',
+				stroke: 'none',
+				strokeDashArray: 'none'
 			});
 			construc.push({
 				path:
-					"M " +
+					'M ' +
 					-size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" L " +
+					' L ' +
 					-size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" M " +
+					' M ' +
 					size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					-thickness / 2,
-				fill: "none",
-				stroke: "#494646",
-				strokeDashArray: "5 5",
+				fill: 'none',
+				stroke: '#494646',
+				strokeDashArray: '5 5'
 			});
 			construc.push({
 				path:
-					"M " +
+					'M ' +
 					-size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" L " +
+					' L ' +
 					-size / 2 +
-					"," +
+					',' +
 					(-thickness / 2 - 5) +
-					" L " +
+					' L ' +
 					+size / 2 +
-					"," +
+					',' +
 					(-thickness / 2 - 5) +
-					" L " +
+					' L ' +
 					+size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" Z",
-				fill: "url(#hatch)",
-				stroke: "#494646",
-				strokeDashArray: "",
+					' Z',
+				fill: 'url(#hatch)',
+				stroke: '#494646',
+				strokeDashArray: ''
 			});
 			result.resize = true;
 			result.resizeLimit.width = { min: 60, max: 200 };
 		}
-		if (type == "opening") {
+		if (type == 'opening') {
 			construc.push({
 				path:
-					"M " +
+					'M ' +
 					-size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" L " +
+					' L ' +
 					-size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" Z",
-				fill: "#ccc",
-				stroke: "#494646",
-				strokeDashArray: "5,5",
+					' Z',
+				fill: '#ccc',
+				stroke: '#494646',
+				strokeDashArray: '5,5'
 			});
 			construc.push({
 				path:
-					"M " +
+					'M ' +
 					-size / 2 +
-					"," +
+					',' +
 					-(thickness / 2) +
-					" L " +
+					' L ' +
 					-size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					(-size / 2 + 5) +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					(-size / 2 + 5) +
-					"," +
+					',' +
 					-(thickness / 2) +
-					" Z",
-				fill: "none",
-				stroke: "#494646",
-				strokeDashArray: "none",
+					' Z',
+				fill: 'none',
+				stroke: '#494646',
+				strokeDashArray: 'none'
 			});
 			construc.push({
 				path:
-					"M " +
+					'M ' +
 					(size / 2 - 5) +
-					"," +
+					',' +
 					-(thickness / 2) +
-					" L " +
+					' L ' +
 					(size / 2 - 5) +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					-(thickness / 2) +
-					" Z",
-				fill: "none",
-				stroke: "#494646",
-				strokeDashArray: "none",
+					' Z',
+				fill: 'none',
+				stroke: '#494646',
+				strokeDashArray: 'none'
 			});
 			result.resize = true;
 			result.resizeLimit.width = { min: 40, max: 500 };
 		}
-		if (type == "fix") {
+		if (type == 'fix') {
 			construc.push({
 				path:
-					"M " +
+					'M ' +
 					-size / 2 +
-					",-2 L " +
+					',-2 L ' +
 					-size / 2 +
-					",2 L " +
+					',2 L ' +
 					size / 2 +
-					",2 L " +
+					',2 L ' +
 					size / 2 +
-					",-2 Z",
-				fill: "#ccc",
-				stroke: "none",
-				strokeDashArray: "",
+					',-2 Z',
+				fill: '#ccc',
+				stroke: 'none',
+				strokeDashArray: ''
 			});
 			construc.push({
 				path:
-					"M " +
+					'M ' +
 					-size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" L " +
+					' L ' +
 					-size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" M " +
+					' M ' +
 					size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					-thickness / 2,
-				fill: "none",
-				stroke: "#ccc",
-				strokeDashArray: "",
+				fill: 'none',
+				stroke: '#ccc',
+				strokeDashArray: ''
 			});
 			result.resize = true;
 			result.resizeLimit.width = { min: 30, max: 300 };
@@ -429,26 +428,26 @@ export const carpentryCalc = (
 	if (classType == objClass.BOUNDING_BOX) {
 		construc.push({
 			path:
-				"M" +
+				'M' +
 				(-size / 2 - 10) +
-				"," +
+				',' +
 				(-thickness / 2 - 10) +
-				" L" +
+				' L' +
 				(size / 2 + 10) +
-				"," +
+				',' +
 				(-thickness / 2 - 10) +
-				" L" +
+				' L' +
 				(size / 2 + 10) +
-				"," +
+				',' +
 				(thickness / 2 + 10) +
-				" L" +
+				' L' +
 				(-size / 2 - 10) +
-				"," +
+				',' +
 				(thickness / 2 + 10) +
-				" Z",
-			fill: "none",
-			stroke: "#aaa",
-			strokeDashArray: "",
+				' Z',
+			fill: 'none',
+			stroke: '#aaa',
+			strokeDashArray: ''
 		});
 
 		// construc.push({'path':"M"+dividerObj[0].x+","+dividerObj[0].y+" L"+dividerObj[1].x+","+dividerObj[1].y+" L"+dividerObj[2].x+","+dividerObj[2].y+" L"+dividerObj[3].x+","+dividerObj[3].y+" Z", 'fill':'none', 'stroke':"#000", 'strokeDashArray': ''});
@@ -460,12 +459,12 @@ export const carpentryCalc = (
 		result.rotate = true;
 		construc.push({
 			text: divider.text,
-			x: "0",
-			y: "0",
+			x: '0',
+			y: '0',
 			fill: type,
 			stroke: type,
-			fontSize: divider.size + "px",
-			strokeWidth: "0px",
+			fontSize: divider.size + 'px',
+			strokeWidth: '0px'
 		});
 	}
 
@@ -476,46 +475,46 @@ export const carpentryCalc = (
 		result.rotate = true;
 		result.width = 60;
 		result.height = 180;
-		if (type == "simpleStair") {
+		if (type == 'simpleStair') {
 			construc.push({
 				path:
-					"M " +
+					'M ' +
 					-size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" L " +
+					' L ' +
 					-size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					thickness / 2 +
-					" L " +
+					' L ' +
 					size / 2 +
-					"," +
+					',' +
 					-thickness / 2 +
-					" Z",
-				fill: "#fff",
-				stroke: "#000",
-				strokeDashArray: "",
+					' Z',
+				fill: '#fff',
+				stroke: '#000',
+				strokeDashArray: ''
 			});
 
-			var heightStep = thickness / divider;
-			for (var i = 1; i < divider + 1; i++) {
+			const heightStep = thickness / divider;
+			for (let i = 1; i < divider + 1; i++) {
 				construc.push({
 					path:
-						"M " +
+						'M ' +
 						-size / 2 +
-						"," +
+						',' +
 						(-thickness / 2 + i * heightStep) +
-						" L " +
+						' L ' +
 						size / 2 +
-						"," +
+						',' +
 						(-thickness / 2 + i * heightStep),
-					fill: "none",
-					stroke: "#000",
-					strokeDashArray: "none",
+					fill: 'none',
+					stroke: '#000',
+					strokeDashArray: 'none'
 				});
 			}
 			result.resizeLimit.width = { min: 40, max: 200 };
@@ -528,155 +527,155 @@ export const carpentryCalc = (
 		result.move = true;
 		result.resize = false;
 		result.rotate = false;
-		if (type == "switch") {
+		if (type == 'switch') {
 			construc.push({
 				path: circlePath(0, 0, 16),
-				fill: "#fff",
-				stroke: "#333",
-				strokeDashArray: "",
+				fill: '#fff',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			construc.push({
 				path: circlePath(-2, 4, 5),
-				fill: "none",
-				stroke: "#333",
-				strokeDashArray: "",
+				fill: 'none',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			construc.push({
-				path: "m 0,0 5,-9",
-				fill: "none",
-				stroke: "#333",
-				strokeDashArray: "",
+				path: 'm 0,0 5,-9',
+				fill: 'none',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			result.width = 36;
 			result.height = 36;
-			result.family = "stick";
+			result.family = 'stick';
 		}
-		if (type == "doubleSwitch") {
+		if (type == 'doubleSwitch') {
 			construc.push({
 				path: circlePath(0, 0, 16),
-				fill: "#fff",
-				stroke: "#333",
-				strokeDashArray: "",
+				fill: '#fff',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			construc.push({
 				path: circlePath(0, 0, 4),
-				fill: "none",
-				stroke: "#333",
-				strokeDashArray: "",
+				fill: 'none',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			construc.push({
-				path: "m 2,-3 5,-8 3,2",
-				fill: "none",
-				stroke: "#333",
-				strokeDashArray: "",
+				path: 'm 2,-3 5,-8 3,2',
+				fill: 'none',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			construc.push({
-				path: "m -2,3 -5,8 -3,-2",
-				fill: "none",
-				stroke: "#333",
-				strokeDashArray: "",
+				path: 'm -2,3 -5,8 -3,-2',
+				fill: 'none',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			result.width = 36;
 			result.height = 36;
-			result.family = "stick";
+			result.family = 'stick';
 		}
-		if (type == "dimmer") {
+		if (type == 'dimmer') {
 			construc.push({
 				path: circlePath(0, 0, 16),
-				fill: "#fff",
-				stroke: "#333",
-				strokeDashArray: "",
+				fill: '#fff',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			construc.push({
 				path: circlePath(-2, 4, 5),
-				fill: "none",
-				stroke: "#333",
-				strokeDashArray: "",
+				fill: 'none',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			construc.push({
-				path: "m 0,0 5,-9",
-				fill: "none",
-				stroke: "#333",
-				strokeDashArray: "",
+				path: 'm 0,0 5,-9',
+				fill: 'none',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			construc.push({
-				path: "M -2,-6 L 10,-4 L-2,-2 Z",
-				fill: "none",
-				stroke: "#333",
-				strokeDashArray: "",
+				path: 'M -2,-6 L 10,-4 L-2,-2 Z',
+				fill: 'none',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			result.width = 36;
 			result.height = 36;
-			result.family = "stick";
+			result.family = 'stick';
 		}
-		if (type == "plug") {
+		if (type == 'plug') {
 			construc.push({
 				path: circlePath(0, 0, 16),
-				fill: "#fff",
-				stroke: "#000",
-				strokeDashArray: "",
+				fill: '#fff',
+				stroke: '#000',
+				strokeDashArray: ''
 			});
 			construc.push({
-				path: "M 10,-6 a 10,10 0 0 1 -5,8 10,10 0 0 1 -10,0 10,10 0 0 1 -5,-8",
-				fill: "none",
-				stroke: "#333",
-				strokeDashArray: "",
+				path: 'M 10,-6 a 10,10 0 0 1 -5,8 10,10 0 0 1 -10,0 10,10 0 0 1 -5,-8',
+				fill: 'none',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			construc.push({
-				path: "m 0,3 v 7",
-				fill: "none",
-				stroke: "#333",
-				strokeDashArray: "",
+				path: 'm 0,3 v 7',
+				fill: 'none',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			construc.push({
-				path: "m -10,4 h 20",
-				fill: "none",
-				stroke: "#333",
-				strokeDashArray: "",
+				path: 'm -10,4 h 20',
+				fill: 'none',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			result.width = 36;
 			result.height = 36;
-			result.family = "stick";
+			result.family = 'stick';
 		}
-		if (type == "roofLight") {
+		if (type == 'roofLight') {
 			construc.push({
 				path: circlePath(0, 0, 16),
-				fill: "#fff",
-				stroke: "#000",
-				strokeDashArray: "",
+				fill: '#fff',
+				stroke: '#000',
+				strokeDashArray: ''
 			});
 			construc.push({
-				path: "M -8,-8 L 8,8 M -8,8 L 8,-8",
-				fill: "none",
-				stroke: "#333",
-				strokeDashArray: "",
+				path: 'M -8,-8 L 8,8 M -8,8 L 8,-8',
+				fill: 'none',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			result.width = 36;
 			result.height = 36;
-			result.family = "free";
+			result.family = 'free';
 		}
-		if (type == "wallLight") {
+		if (type == 'wallLight') {
 			construc.push({
 				path: circlePath(0, 0, 16),
-				fill: "#fff",
-				stroke: "#000",
-				strokeDashArray: "",
+				fill: '#fff',
+				stroke: '#000',
+				strokeDashArray: ''
 			});
 			construc.push({
-				path: "M -8,-8 L 8,8 M -8,8 L 8,-8",
-				fill: "none",
-				stroke: "#333",
-				strokeDashArray: "",
+				path: 'M -8,-8 L 8,8 M -8,8 L 8,-8',
+				fill: 'none',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			construc.push({
-				path: "M -10,10 L 10,10",
-				fill: "none",
-				stroke: "#333",
-				strokeDashArray: "",
+				path: 'M -10,10 L 10,10',
+				fill: 'none',
+				stroke: '#333',
+				strokeDashArray: ''
 			});
 			result.width = 36;
 			result.height = 36;
-			result.family = "stick";
+			result.family = 'stick';
 		}
 	}
 
@@ -688,31 +687,30 @@ export const getWallNodes = (
 	wallMeta: WallMetaData[],
 	except: WallMetaData | null = null
 ) => {
-	var nodes = [];
-	for (var k in wallMeta) {
+	const nodes = [];
+	for (const k in wallMeta) {
 		const wall = wallMeta[k];
 		if (except && wall.id === except.id) continue;
 
 		if (wall.start.x === coords.x && wall.start.y === coords.y) {
-			nodes.push({ wall: wall, type: "start" });
+			nodes.push({ wall: wall, type: 'start' });
 		}
 		if (wall.end.x === coords.x && wall.end.y === coords.y) {
-			nodes.push({ wall: wall, type: "end" });
+			nodes.push({ wall: wall, type: 'end' });
 		}
 	}
 	return nodes;
 };
 
 const clearParentsAndChildren = (wallMeta: WallMetaData[]) => {
-	for (var i = 0; i < wallMeta.length; i++) {
+	for (let i = 0; i < wallMeta.length; i++) {
 		const wall = wallMeta[i];
 		const parentId = wall.parent;
 		if (parentId != null) {
 			const parent = findById(parentId, wallMeta);
 			if (
 				!parent ||
-				(!pointsAreEqual(parent.start, wall.start) &&
-					!pointsAreEqual(parent.end, wall.start))
+				(!pointsAreEqual(parent.start, wall.start) && !pointsAreEqual(parent.end, wall.start))
 			) {
 				wall.parent = null;
 			}
@@ -720,12 +718,11 @@ const clearParentsAndChildren = (wallMeta: WallMetaData[]) => {
 
 		const childId = wall.child;
 		if (childId) {
-			const child = findById(childId ?? "", wallMeta);
+			const child = findById(childId ?? '', wallMeta);
 			if (
 				!child ||
 				// (child.start !== wall.end && child.end !== wall.end)
-				(!pointsAreEqual(child.start, wall.end) &&
-					!pointsAreEqual(child.end, wall.end))
+				(!pointsAreEqual(child.start, wall.end) && !pointsAreEqual(child.end, wall.end))
 			) {
 				wall.child = null;
 			}
@@ -746,42 +743,20 @@ export const calculateDPath = (
 ) => {
 	const refRelative = fromParent ? wall.parent : wall.child;
 	const refPoint = fromParent ? wall.start : wall.end;
-	const perpEquation = perpendicularEquation(
-		upEquation,
-		refPoint.x,
-		refPoint.y
-	);
+	const perpEquation = perpendicularEquation(upEquation, refPoint.x, refPoint.y);
 	if (refRelative == null) {
 		const interUp = intersectionOfEquations(upEquation, perpEquation);
 		const interDw = intersectionOfEquations(downEquation, perpEquation);
 
-		let newPath = "";
+		let newPath = '';
 		if (fromParent && interUp && interDw) {
 			wall.coords = [interUp, interDw];
-			newPath =
-				"M" +
-				interUp.x +
-				"," +
-				interUp.y +
-				" L" +
-				interDw.x +
-				"," +
-				interDw.y +
-				" ";
+			newPath = 'M' + interUp.x + ',' + interUp.y + ' L' + interDw.x + ',' + interDw.y + ' ';
 		} else {
 			if (interDw && interUp) {
 				wall.coords.push(interDw, interUp);
 				newPath =
-					dWay +
-					"L" +
-					interDw.x +
-					"," +
-					interDw.y +
-					" L" +
-					interUp.x +
-					"," +
-					interUp.y +
-					" Z";
+					dWay + 'L' + interDw.x + ',' + interDw.y + ' L' + interUp.x + ',' + interUp.y + ' Z';
 			}
 		}
 
@@ -823,11 +798,11 @@ export const calculateDPath = (
 		if (upEquation.A == comparisonUpEq.A) {
 			interUp = {
 				x: refPoint.x + wallThickX,
-				y: refPoint.y - wallThickY,
+				y: refPoint.y - wallThickY
 			};
 			interDw = {
 				x: refPoint.x - wallThickX,
-				y: refPoint.y + wallThickY,
+				y: refPoint.y + wallThickY
 			};
 		}
 
@@ -835,7 +810,7 @@ export const calculateDPath = (
 			const miterPoint = fromParent ? comparePointEnd : comparePointStart;
 			const miter = distanceBetween(interUp, {
 				x: miterPoint.x,
-				y: miterPoint.y,
+				y: miterPoint.y
 			});
 			if (miter > 55) {
 				const eqAUp = fromParent ? perpEquation : upEquation;
@@ -857,32 +832,11 @@ export const calculateDPath = (
 
 	if (fromParent && interUp && interDw) {
 		wall.coords = [interUp, interDw];
-		return (
-			"M" +
-			interUp.x +
-			"," +
-			interUp.y +
-			" L" +
-			interDw.x +
-			"," +
-			interDw.y +
-			" "
-		);
+		return 'M' + interUp.x + ',' + interUp.y + ' L' + interDw.x + ',' + interDw.y + ' ';
 	} else {
 		if (interUp && interDw) {
 			wall.coords.push(interDw, interUp);
-			return (
-				dWay +
-				"L" +
-				interDw.x +
-				"," +
-				interDw.y +
-				" L" +
-				interUp.x +
-				"," +
-				interUp.y +
-				" Z"
-			);
+			return dWay + 'L' + interDw.x + ',' + interDw.y + ' L' + interUp.x + ',' + interUp.y + ' Z';
 		}
 	}
 };
@@ -894,9 +848,7 @@ export const refreshWalls = (
 ) => {
 	clearParentsAndChildren(wallMetas);
 
-	wallMetas.forEach((wall) =>
-		wall.update(wallMetas, wallEquations, moveAction)
-	);
+	wallMetas.forEach((wall) => wall.update(wallMetas, wallEquations, moveAction));
 };
 
 export const setInWallMeasurementText = (
@@ -904,53 +856,53 @@ export const setInWallMeasurementText = (
 	objectMetas: ObjectMetaData[],
 	option = false
 ) => {
-	if (!option) $("#boxRib").empty();
+	if (!option) $('#boxRib').empty();
 	const upWalls: WallMeasurementData[] = [];
 	const downWalls: WallMeasurementData[] = [];
 	upWalls.push({
-		side: "up",
+		side: 'up',
 		coords: wall.coords[0],
-		distance: 0,
+		distance: 0
 	});
 	downWalls.push({
-		side: "down",
+		side: 'down',
 		coords: wall.coords[1],
-		distance: 0,
+		distance: 0
 	});
 
 	const addMeasureData = (
 		p1: { x: number; y: number },
 		p2: { x: number; y: number },
-		objSide: "up" | "down"
+		objSide: 'up' | 'down'
 	) => {
-		const mesureArray = objSide === "up" ? upWalls : downWalls;
+		const mesureArray = objSide === 'up' ? upWalls : downWalls;
 		const distance = distanceBetween(p1, p2) / constants.METER_SIZE;
 		mesureArray.push({
 			side: objSide,
 			coords: p2,
-			distance: parseInt(distance.toFixed(2)),
+			distance: parseInt(distance.toFixed(2))
 		});
 	};
 
 	const objectsOnWall = wall.getObjects(objectMetas);
-	for (let ob in objectsOnWall) {
+	for (const ob in objectsOnWall) {
 		const objTarget = objectsOnWall[ob];
 		const upPoints = [
 			nearPointOnEquation(wall.equations.up, objTarget.limit[0]),
-			nearPointOnEquation(wall.equations.up, objTarget.limit[1]),
+			nearPointOnEquation(wall.equations.up, objTarget.limit[1])
 		];
 		const downPoints = [
 			nearPointOnEquation(wall.equations.down, objTarget.limit[0]),
-			nearPointOnEquation(wall.equations.down, objTarget.limit[1]),
+			nearPointOnEquation(wall.equations.down, objTarget.limit[1])
 		];
-		addMeasureData(wall.coords[0], upPoints[0], "up");
-		addMeasureData(wall.coords[0], upPoints[1], "up");
-		addMeasureData(wall.coords[1], downPoints[0], "down");
-		addMeasureData(wall.coords[1], downPoints[1], "down");
+		addMeasureData(wall.coords[0], upPoints[0], 'up');
+		addMeasureData(wall.coords[0], upPoints[1], 'up');
+		addMeasureData(wall.coords[1], downPoints[0], 'down');
+		addMeasureData(wall.coords[1], downPoints[1], 'down');
 	}
 
-	addMeasureData(wall.coords[0], wall.coords[3], "up");
-	addMeasureData(wall.coords[1], wall.coords[2], "down");
+	addMeasureData(wall.coords[0], wall.coords[3], 'up');
+	addMeasureData(wall.coords[1], wall.coords[2], 'down');
 
 	upWalls.sort((a, b) => {
 		return parseInt((a.distance - b.distance).toFixed(2));
@@ -966,7 +918,7 @@ export const setInWallMeasurementText = (
 export const updateMeasurementText = (wallMeta: WallMetaData[], shift = 5) => {
 	const { downWalls, upWalls } = buildWallMeasurementData(wallMeta);
 
-	if (shift == 5) $("#boxRib").empty();
+	if (shift == 5) $('#boxRib').empty();
 
 	upWalls.forEach((upWallArray) => {
 		addWallMeasurementsToScene(upWallArray, wallMeta, shift);
@@ -989,7 +941,7 @@ const buildWallMeasurementData = (
 ): { upWalls: WallMeasurementData[][]; downWalls: WallMeasurementData[][] } => {
 	const upWalls: WallMeasurementData[][] = [];
 	const downWalls: WallMeasurementData[][] = [];
-	for (let i in wallMeta) {
+	for (const i in wallMeta) {
 		const wall = wallMeta[i];
 		if (!wall.equations.base) continue;
 
@@ -997,128 +949,107 @@ const buildWallMeasurementData = (
 		upDataArray.push({
 			wallIndex: +i,
 			crossEdge: +i,
-			side: "up",
+			side: 'up',
 			coords: wall.coords[0],
-			distance: 0,
+			distance: 0
 		});
 
 		const downDataArray: WallMeasurementData[] = [];
 		downDataArray.push({
 			wallIndex: +i,
 			crossEdge: +i,
-			side: "down",
+			side: 'down',
 			coords: wall.coords[1],
-			distance: 0,
+			distance: 0
 		});
-		for (let p in wallMeta) {
+		for (const p in wallMeta) {
 			if (i === p) continue;
 
 			const comparisonWall = wallMeta[p];
 			if (!comparisonWall.equations.base) continue;
 
-			const cross = intersectionOfSideEquations(
-				wall.equations.base,
-				comparisonWall.equations.base
-			);
+			const cross = intersectionOfSideEquations(wall.equations.base, comparisonWall.equations.base);
 			if (!cross || !wall.pointInsideWall(cross, true)) continue;
 
-			let inter = intersectionOfSideEquations(
-				wall.equations.up,
-				comparisonWall.equations.up
-			);
+			let inter = intersectionOfSideEquations(wall.equations.up, comparisonWall.equations.up);
 			if (
 				inter &&
 				wall.pointBetweenCoords(inter, 1, true) &&
 				comparisonWall.pointBetweenCoords(inter, 1, true)
 			) {
-				let distance =
-					distanceBetween(wall.coords[0], inter) / constants.METER_SIZE;
+				const distance = distanceBetween(wall.coords[0], inter) / constants.METER_SIZE;
 				upDataArray.push({
 					wallIndex: +i,
 					crossEdge: +p,
-					side: "up",
+					side: 'up',
 					coords: inter,
-					distance: +distance.toFixed(2),
+					distance: +distance.toFixed(2)
 				});
 			}
 
-			inter = intersectionOfSideEquations(
-				wall.equations.up,
-				comparisonWall.equations.down
-			);
+			inter = intersectionOfSideEquations(wall.equations.up, comparisonWall.equations.down);
 			if (
 				inter &&
 				wall.pointBetweenCoords(inter, 1, true) &&
 				comparisonWall.pointBetweenCoords(inter, 2, true)
 			) {
-				let distance =
-					distanceBetween(wall.coords[0], inter) / constants.METER_SIZE;
+				const distance = distanceBetween(wall.coords[0], inter) / constants.METER_SIZE;
 				upDataArray.push({
 					wallIndex: +i,
 					crossEdge: +p,
-					side: "up",
+					side: 'up',
 					coords: inter,
-					distance: +distance.toFixed(2),
+					distance: +distance.toFixed(2)
 				});
 			}
 
-			inter = intersectionOfSideEquations(
-				wall.equations.down,
-				comparisonWall.equations.up
-			);
+			inter = intersectionOfSideEquations(wall.equations.down, comparisonWall.equations.up);
 			if (
 				inter &&
 				wall.pointBetweenCoords(inter, 2, true) &&
 				comparisonWall.pointBetweenCoords(inter, 1, true)
 			) {
-				let distance =
-					distanceBetween(wall.coords[1], inter) / constants.METER_SIZE;
+				const distance = distanceBetween(wall.coords[1], inter) / constants.METER_SIZE;
 				downDataArray.push({
 					wallIndex: +i,
 					crossEdge: +p,
-					side: "down",
+					side: 'down',
 					coords: inter,
-					distance: +distance.toFixed(2),
+					distance: +distance.toFixed(2)
 				});
 			}
 
-			inter = intersectionOfSideEquations(
-				wall.equations.down,
-				comparisonWall.equations.down
-			);
+			inter = intersectionOfSideEquations(wall.equations.down, comparisonWall.equations.down);
 			if (
 				inter &&
 				wall.pointBetweenCoords(inter, 2, true) &&
 				comparisonWall.pointBetweenCoords(inter, 2, true)
 			) {
-				let distance =
-					distanceBetween(wall.coords[1], inter) / constants.METER_SIZE;
+				const distance = distanceBetween(wall.coords[1], inter) / constants.METER_SIZE;
 				downDataArray.push({
 					wallIndex: +i,
 					crossEdge: +p,
-					side: "down",
+					side: 'down',
 					coords: inter,
-					distance: +distance.toFixed(2),
+					distance: +distance.toFixed(2)
 				});
 			}
 		}
-		let distance =
-			distanceBetween(wall.coords[0], wall.coords[3]) / constants.METER_SIZE;
+		const distance = distanceBetween(wall.coords[0], wall.coords[3]) / constants.METER_SIZE;
 		upDataArray.push({
 			wallIndex: +i,
 			crossEdge: +i,
-			side: "up",
+			side: 'up',
 			coords: wall.coords[3],
-			distance: +distance.toFixed(2),
+			distance: +distance.toFixed(2)
 		});
-		let distance2 =
-			distanceBetween(wall.coords[1], wall.coords[2]) / constants.METER_SIZE;
+		const distance2 = distanceBetween(wall.coords[1], wall.coords[2]) / constants.METER_SIZE;
 		downDataArray.push({
 			wallIndex: +i,
 			crossEdge: +i,
-			side: "down",
+			side: 'down',
 			coords: wall.coords[2],
-			distance: +distance2.toFixed(2),
+			distance: +distance2.toFixed(2)
 		});
 
 		upWalls.push(upDataArray);
@@ -1126,12 +1057,12 @@ const buildWallMeasurementData = (
 	}
 
 	// Sort by distance
-	for (let a in upWalls) {
+	for (const a in upWalls) {
 		upWalls[a].sort(function (a, b) {
 			return +(a.distance - b.distance).toFixed(2);
 		});
 	}
-	for (let a in downWalls) {
+	for (const a in downWalls) {
 		downWalls[a].sort(function (a, b) {
 			return +(a.distance - b.distance).toFixed(2);
 		});
@@ -1164,7 +1095,7 @@ const addWallMeasurementsToScene = (
 					for (let pp = 0; pp < 4; pp++) {
 						polygon.push({
 							x: wallMeta[crossEdge].coords[pp].x,
-							y: wallMeta[crossEdge].coords[pp].y,
+							y: wallMeta[crossEdge].coords[pp].y
 						});
 					}
 					if (pointInPolygon(measureData[0].coords, polygon)) {
@@ -1174,12 +1105,10 @@ const addWallMeasurementsToScene = (
 					for (let pp = 0; pp < 4; pp++) {
 						polygon.push({
 							x: wallMeta[prevCrossEdge].coords[pp].x,
-							y: wallMeta[prevCrossEdge].coords[pp].y,
+							y: wallMeta[prevCrossEdge].coords[pp].y
 						});
 					}
-					if (
-						pointInPolygon(measureData[measureData.length - 1].coords, polygon)
-					) {
+					if (pointInPolygon(measureData[measureData.length - 1].coords, polygon)) {
 						continue;
 					}
 				}
@@ -1187,13 +1116,13 @@ const addWallMeasurementsToScene = (
 
 			let angle = wallMeta[edge].angle * (180 / Math.PI);
 			let shiftValue = -shift;
-			if (previous.side == "down") {
+			if (previous.side == 'down') {
 				shiftValue = -shiftValue + 10;
 			}
 			if (angle > 90 || angle < -89) {
 				angle -= 180;
 				shiftValue = -shift;
-				if (previous.side !== "down") {
+				if (previous.side !== 'down') {
 					shiftValue = -shiftValue + 10;
 				}
 			}
@@ -1203,37 +1132,27 @@ const addWallMeasurementsToScene = (
 	}
 };
 
-const addInWallMeasurementsToScene = (
-	measureData: WallMeasurementData[],
-	wall: WallMetaData
-) => {
+const addInWallMeasurementsToScene = (measureData: WallMeasurementData[], wall: WallMetaData) => {
 	for (let i = 1; i < measureData.length; i++) {
-		var angleTextValue = wall.angle * (180 / Math.PI);
+		let angleTextValue = wall.angle * (180 / Math.PI);
 		const current = measureData[i];
 		const previous = measureData[i - 1];
 		const valueText = Math.abs(previous.distance - current.distance);
 
 		let shift = -5;
-		if (previous.side === "down") {
+		if (previous.side === 'down') {
 			shift = -shift + 10;
 		}
 		if (angleTextValue > 89 || angleTextValue < -89) {
 			angleTextValue -= 180;
-			if (previous.side === "down") {
+			if (previous.side === 'down') {
 				shift = -5;
 			} else {
 				shift = -shift + 10;
 			}
 		}
 
-		addSizeTextToScene(
-			current,
-			previous,
-			valueText,
-			angleTextValue,
-			shift,
-			true
-		);
+		addSizeTextToScene(current, previous, valueText, angleTextValue, shift, true);
 	}
 };
 
@@ -1245,56 +1164,42 @@ const addSizeTextToScene = (
 	shiftValue: number,
 	inWall = false
 ) => {
-	const sizeTextSvg = document.createElementNS(
-		"http://www.w3.org/2000/svg",
-		"text"
-	);
+	const sizeTextSvg = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 	const startText = getMidPoint(previous.coords, current.coords);
-	sizeTextSvg.setAttributeNS(null, "x", startText.x.toString());
-	sizeTextSvg.setAttributeNS(null, "y", (startText.y + shiftValue).toString());
-	sizeTextSvg.setAttributeNS(null, "text-anchor", "middle");
-	sizeTextSvg.setAttributeNS(null, "font-family", "roboto");
-	sizeTextSvg.setAttributeNS(null, "stroke", "#ffffff");
+	sizeTextSvg.setAttributeNS(null, 'x', startText.x.toString());
+	sizeTextSvg.setAttributeNS(null, 'y', (startText.y + shiftValue).toString());
+	sizeTextSvg.setAttributeNS(null, 'text-anchor', 'middle');
+	sizeTextSvg.setAttributeNS(null, 'font-family', 'roboto');
+	sizeTextSvg.setAttributeNS(null, 'stroke', '#ffffff');
 	sizeTextSvg.textContent = valueText.toFixed(2);
 	if (+sizeTextSvg.textContent < 1) {
-		sizeTextSvg.setAttributeNS(null, "font-size", inWall ? "0.8em" : "0.73em");
-		sizeTextSvg.textContent = sizeTextSvg.textContent.substring(
-			1,
-			sizeTextSvg.textContent.length
-		);
+		sizeTextSvg.setAttributeNS(null, 'font-size', inWall ? '0.8em' : '0.73em');
+		sizeTextSvg.textContent = sizeTextSvg.textContent.substring(1, sizeTextSvg.textContent.length);
 	} else {
-		sizeTextSvg.setAttributeNS(null, "font-size", inWall ? "1em" : "0.9em");
+		sizeTextSvg.setAttributeNS(null, 'font-size', inWall ? '1em' : '0.9em');
 	}
-	sizeTextSvg.setAttributeNS(null, "stroke-width", inWall ? "0.27px" : "0.2px");
-	sizeTextSvg.setAttributeNS(null, "fill", inWall ? "#666666" : "#555555");
-	sizeTextSvg.setAttribute(
-		"transform",
-		`rotate(${angleText} ${startText.x},${startText.y})`
-	);
+	sizeTextSvg.setAttributeNS(null, 'stroke-width', inWall ? '0.27px' : '0.2px');
+	sizeTextSvg.setAttributeNS(null, 'fill', inWall ? '#666666' : '#555555');
+	sizeTextSvg.setAttribute('transform', `rotate(${angleText} ${startText.x},${startText.y})`);
 
-	$("#boxRib").append(sizeTextSvg);
+	$('#boxRib').append(sizeTextSvg);
 };
 
-export const createEquation = (
-	x0: number,
-	y0: number,
-	x1: number,
-	y1: number
-): WallEquation => {
+export const createEquation = (x0: number, y0: number, x1: number, y1: number): WallEquation => {
 	if (x1 - x0 == 0) {
 		return {
-			A: "v",
-			B: x0,
+			A: 'v',
+			B: x0
 		};
 	} else if (y1 - y0 == 0) {
 		return {
-			A: "h",
-			B: y0,
+			A: 'h',
+			B: y0
 		};
 	} else {
 		return {
 			A: (y1 - y0) / (x1 - x0),
-			B: y1 - x1 * ((y1 - y0) / (x1 - x0)),
+			B: y1 - x1 * ((y1 - y0) / (x1 - x0))
 		};
 	}
 };
@@ -1310,15 +1215,12 @@ export const angleBetweenPoints = (
 	return { rad, deg };
 };
 
-export const angleBetweenEquations = (
-	m1: number | "v" | "h",
-	m2: number | "v" | "h"
-) => {
-	if (m1 == "h") m1 = 0;
-	if (m2 == "h") m2 = 0;
-	if (m1 == "v") m1 = 10000;
-	if (m2 == "v") m2 = 10000;
-	var angleRad = Math.atan(Math.abs((m2 - m1) / (1 + m1 * m2)));
+export const angleBetweenEquations = (m1: number | 'v' | 'h', m2: number | 'v' | 'h') => {
+	if (m1 == 'h') m1 = 0;
+	if (m2 == 'h') m2 = 0;
+	if (m1 == 'v') m1 = 10000;
+	if (m2 == 'v') m2 = 10000;
+	const angleRad = Math.atan(Math.abs((m2 - m1) / (1 + m1 * m2)));
 	return (360 * angleRad) / (2 * Math.PI);
 };
 
@@ -1330,21 +1232,13 @@ export const angleBetweenThreePoints = (
 	x3: number,
 	y3: number
 ): { rad: number; deg: number } => {
-	var a = Math.sqrt(
-		Math.pow(Math.abs(x2 - x1), 2) + Math.pow(Math.abs(y2 - y1), 2)
-	);
-	var b = Math.sqrt(
-		Math.pow(Math.abs(x2 - x3), 2) + Math.pow(Math.abs(y2 - y3), 2)
-	);
-	var c = Math.sqrt(
-		Math.pow(Math.abs(x3 - x1), 2) + Math.pow(Math.abs(y3 - y1), 2)
-	);
+	const a = Math.sqrt(Math.pow(Math.abs(x2 - x1), 2) + Math.pow(Math.abs(y2 - y1), 2));
+	const b = Math.sqrt(Math.pow(Math.abs(x2 - x3), 2) + Math.pow(Math.abs(y2 - y3), 2));
+	const c = Math.sqrt(Math.pow(Math.abs(x3 - x1), 2) + Math.pow(Math.abs(y3 - y1), 2));
 	const rad =
 		a == 0 || b == 0
 			? Math.PI / 2
-			: Math.acos(
-					(Math.pow(a, 2) + Math.pow(b, 2) - Math.pow(c, 2)) / (2 * a * b)
-			  );
+			: Math.acos((Math.pow(a, 2) + Math.pow(b, 2) - Math.pow(c, 2)) / (2 * a * b));
 	const deg = (360 * rad) / (2 * Math.PI);
 	return { rad, deg };
 };
@@ -1352,14 +1246,14 @@ export const angleBetweenThreePoints = (
 export const getAngle = (
 	p1: Point2D,
 	p2: Point2D,
-	format: "deg" | "rad" | "both" = "both"
+	format: 'deg' | 'rad' | 'both' = 'both'
 ): { deg: number; rad: number } => {
-	var dy = p2.y - p1.y;
-	var dx = p2.x - p1.x;
+	const dy = p2.y - p1.y;
+	const dx = p2.x - p1.x;
 
 	const result = { deg: 0, rad: 0 };
 	result.rad = Math.atan2(dy, dx);
-	if (format === "deg" || format == "both") {
+	if (format === 'deg' || format == 'both') {
 		result.deg = (result.rad * 180) / Math.PI;
 	}
 
@@ -1368,11 +1262,10 @@ export const getAngle = (
 
 const calculateArea = (coords: Point2D[]) => {
 	if (coords.length < 2) return false;
-	var realArea = 0;
-	var j = coords.length - 1;
-	for (var i = 0; i < coords.length; i++) {
-		realArea =
-			realArea + (coords[j].x + coords[i].x) * (coords[j].y - coords[i].y);
+	let realArea = 0;
+	let j = coords.length - 1;
+	for (let i = 0; i < coords.length; i++) {
+		realArea = realArea + (coords[j].x + coords[i].x) * (coords[j].y - coords[i].y);
 		j = i;
 	}
 	realArea = realArea / 2;
@@ -1380,13 +1273,12 @@ const calculateArea = (coords: Point2D[]) => {
 };
 
 const calculateRoomArea = (vertex: WallVertex[], coords: number[]) => {
-	var realArea = 0;
-	var j = coords.length - 2;
-	for (var i = 0; i < coords.length - 1; i++) {
+	let realArea = 0;
+	let j = coords.length - 2;
+	for (let i = 0; i < coords.length - 1; i++) {
 		realArea =
 			realArea +
-			(vertex[coords[j]].x + vertex[coords[i]].x) *
-				(vertex[coords[j]].y - vertex[coords[i]].y);
+			(vertex[coords[j]].x + vertex[coords[i]].x) * (vertex[coords[j]].y - vertex[coords[i]].y);
 		j = i;
 	}
 	realArea = realArea / 2;
@@ -1395,15 +1287,14 @@ const calculateRoomArea = (vertex: WallVertex[], coords: number[]) => {
 
 // Point in polygon algorithm
 export const pointInPolygon = (point: Point2D, polygon: Point2D[]) => {
-	var inside = false;
-	for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-		var xi = polygon[i].x,
+	let inside = false;
+	for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+		const xi = polygon[i].x,
 			yi = polygon[i].y;
-		var xj = polygon[j].x,
+		const xj = polygon[j].x,
 			yj = polygon[j].y;
-		var intersect =
-			yi > point.y != yj > point.y &&
-			point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
+		const intersect =
+			yi > point.y != yj > point.y && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
 		if (intersect) {
 			inside = !inside;
 		}
@@ -1418,7 +1309,7 @@ export const createWallGuideLine = (
 	except: WallMetaData[] = []
 ) => {
 	// ORANGE LINES 90° NEAR SEGMENT
-	var equation: any = {};
+	const equation: any = {};
 	let p1: Point2D = { x: 0, y: 0 };
 	let p2: Point2D = { x: 0, y: 0 };
 	let p3: Point2D = { x: 0, y: 0 };
@@ -1429,29 +1320,29 @@ export const createWallGuideLine = (
 	for (let index = 0; index < wallMeta.length; index++) {
 		if (except.indexOf(wallMeta[index]) != -1) continue;
 
-		var x1 = wallMeta[index].start.x;
-		var y1 = wallMeta[index].start.y;
-		var x2 = wallMeta[index].end.x;
-		var y2 = wallMeta[index].end.y;
+		const x1 = wallMeta[index].start.x;
+		const y1 = wallMeta[index].start.y;
+		const x2 = wallMeta[index].end.x;
+		const y2 = wallMeta[index].end.y;
 
 		// EQUATION 90° of segment nf/nf-1 at X2/Y2 Point
 		if (Math.abs(y2 - y1) == 0) {
-			equation.C = "v"; // C/D equation 90° Coef = -1/E
+			equation.C = 'v'; // C/D equation 90° Coef = -1/E
 			equation.D = x1;
-			equation.E = "h"; // E/F equation Segment
+			equation.E = 'h'; // E/F equation Segment
 			equation.F = y1;
-			equation.G = "v"; // G/H equation 90° Coef = -1/E
+			equation.G = 'v'; // G/H equation 90° Coef = -1/E
 			equation.H = x2;
-			equation.I = "h"; // I/J equation Segment
+			equation.I = 'h'; // I/J equation Segment
 			equation.J = y2;
 		} else if (Math.abs(x2 - x1) == 0) {
-			equation.C = "h"; // C/D equation 90° Coef = -1/E
+			equation.C = 'h'; // C/D equation 90° Coef = -1/E
 			equation.D = y1;
-			equation.E = "v"; // E/F equation Segment
+			equation.E = 'v'; // E/F equation Segment
 			equation.F = x1;
-			equation.G = "h"; // G/H equation 90° Coef = -1/E
+			equation.G = 'h'; // G/H equation 90° Coef = -1/E
 			equation.H = y2;
-			equation.I = "v"; // I/J equation Segment
+			equation.I = 'v'; // I/J equation Segment
 			equation.J = x2;
 		} else {
 			equation.C = (x1 - x2) / (y2 - y1);
@@ -1514,7 +1405,7 @@ export const createWallGuideLine = (
 		p1: way == 2 ? p1 : p2,
 		p2: way == 2 ? p2 : p1,
 		p3: p3,
-		stroke: "#d7ac57",
+		stroke: '#d7ac57'
 	};
 
 	return {
@@ -1522,23 +1413,23 @@ export const createWallGuideLine = (
 		y: p3.y,
 		wall: wallMeta[node],
 		distance: distance,
-		svgData: helperData,
+		svgData: helperData
 	};
 };
 
 export const nearPointOnEquation = (equation: WallEquation, point: Point2D) => {
 	// Y = Ax + B ---- equation {A:val, B:val}
-	if (equation.A === "h") {
+	if (equation.A === 'h') {
 		return {
 			x: point.x,
 			y: equation.B,
-			distance: Math.abs(equation.B - point.y),
+			distance: Math.abs(equation.B - point.y)
 		};
-	} else if (equation.A === "v") {
+	} else if (equation.A === 'v') {
 		return {
 			x: equation.B,
 			y: point.y,
-			distance: Math.abs(equation.B - point.x),
+			distance: Math.abs(equation.B - point.x)
 		};
 	} else {
 		const p1 = { x: point.x, y: equation.A * point.x + equation.B };
@@ -1548,22 +1439,22 @@ export const nearPointOnEquation = (equation: WallEquation, point: Point2D) => {
 };
 
 export const create = (id: string, shape: string, attrs: string[]) => {
-	const svg = $(document.createElementNS("http://www.w3.org/2000/svg", shape));
-	for (var k in attrs) {
+	const svg = $(document.createElementNS('http://www.w3.org/2000/svg', shape));
+	for (const k in attrs) {
 		svg.attr(k, attrs[k]);
 	}
-	if (id != "none") {
-		$("#" + id).append(svg);
+	if (id != 'none') {
+		$('#' + id).append(svg);
 	}
 	return svg;
 };
 
 export const vertexList = (junction: WallJunction[]) => {
-	var verticies: WallVertex[] = [];
+	const verticies: WallVertex[] = [];
 	// var vertextest = [];
-	for (var jj = 0; jj < junction.length; jj++) {
-		var found = true;
-		for (var vv = 0; vv < verticies.length; vv++) {
+	for (let jj = 0; jj < junction.length; jj++) {
+		let found = true;
+		for (let vv = 0; vv < verticies.length; vv++) {
 			if (
 				Math.round(junction[jj].values[0]) == Math.round(verticies[vv].x) &&
 				Math.round(junction[jj].values[1]) == Math.round(verticies[vv].y)
@@ -1581,44 +1472,42 @@ export const vertexList = (junction: WallJunction[]) => {
 				y: Math.round(junction[jj].values[1]),
 				segment: [junction[jj].segment],
 				bypass: 0,
-				type: junction[jj].type,
+				type: junction[jj].type
 			});
 		}
 	}
 
-	var toClean = [];
-	for (var ss = 0; ss < verticies.length; ss++) {
+	let toClean = [];
+	for (let ss = 0; ss < verticies.length; ss++) {
 		const vert = verticies[ss];
 		const vertChildren: { id: number; angle: number }[] = [];
 		const vertRemoved: number[] = [];
 		vert.child = vertChildren;
 		vert.removed = vertRemoved;
-		for (var sg = 0; sg < vert.segment.length; sg++) {
+		for (let sg = 0; sg < vert.segment.length; sg++) {
 			const vertSegment = vert.segment[sg];
-			for (var sc = 0; sc < verticies.length; sc++) {
+			for (let sc = 0; sc < verticies.length; sc++) {
 				if (sc === ss) continue;
 				const vertCompare = verticies[sc];
-				for (var scg = 0; scg < vertCompare.segment.length; scg++) {
+				for (let scg = 0; scg < vertCompare.segment.length; scg++) {
 					if (vertCompare.segment[scg] == vertSegment) {
 						vertChildren.push({
 							id: sc,
-							angle: Math.floor(getAngle(vert, vertCompare, "deg").deg),
+							angle: Math.floor(getAngle(vert, vertCompare, 'deg').deg)
 						});
 					}
 				}
 			}
 		}
 		toClean = [];
-		for (var fr = 0; fr < vertChildren.length - 1; fr++) {
-			for (var ft = fr + 1; ft < vertChildren.length; ft++) {
-				if (fr != ft && typeof vertChildren[fr] != "undefined") {
-					found = true;
-
+		for (let fr = 0; fr < vertChildren.length - 1; fr++) {
+			for (let ft = fr + 1; ft < vertChildren.length; ft++) {
+				if (fr != ft && typeof vertChildren[fr] != 'undefined') {
 					const angleFt = vertChildren[ft].angle;
 					const angleFr = vertChildren[fr].angle;
-					if (valueIsBetween(angleFt, angleFr + 3, angleFr - 3) && found) {
-						var dist1 = distanceBetween(vert, verticies[vertChildren[ft].id]);
-						var dist2 = distanceBetween(vert, verticies[vertChildren[fr].id]);
+					if (valueIsBetween(angleFt, angleFr + 3, angleFr - 3)) {
+						const dist1 = distanceBetween(vert, verticies[vertChildren[ft].id]);
+						const dist2 = distanceBetween(vert, verticies[vertChildren[fr].id]);
 						toClean.push(dist1 > dist2 ? ft : fr);
 					}
 				}
@@ -1628,7 +1517,7 @@ export const vertexList = (junction: WallJunction[]) => {
 			return b - a;
 		});
 		toClean.push(-1);
-		for (var cc = 0; cc < toClean.length - 1; cc++) {
+		for (let cc = 0; cc < toClean.length - 1; cc++) {
 			if (toClean[cc] > toClean[cc + 1]) {
 				vert.removed.push(vertChildren[toClean[cc]].id);
 				vertChildren.splice(toClean[cc], 1);
@@ -1650,37 +1539,29 @@ export const polygonize = (walls: WallMetaData[]) => {
 
 	const vertex = vertexList(junction);
 
-	var edgesChild = [];
-	for (var j = 0; j < vertex.length; j++) {
+	const edgesChild = [];
+	for (let j = 0; j < vertex.length; j++) {
 		const vert = vertex[j];
 		const numChild = vert.child?.length ?? 0;
-		for (var vv = 0; vv < numChild; vv++) {
+		for (let vv = 0; vv < numChild; vv++) {
 			const child = vert.child;
 			if (child) {
 				edgesChild.push([j, child[vv].id]);
 			}
 		}
 	}
-	var polygons: Polygon[] = [];
-	for (var jc = 0; jc < edgesChild.length; jc++) {
-		var bestVertexIndex = 0;
-		var bestVertexValue = Infinity;
-		for (var j = 0; j < vertex.length; j++) {
+	const polygons: Polygon[] = [];
+	for (let jc = 0; jc < edgesChild.length; jc++) {
+		let bestVertexIndex = 0;
+		let bestVertexValue = Infinity;
+		for (let j = 0; j < vertex.length; j++) {
 			const vert = vertex[j];
 			const vertChild = vert.child ?? [];
-			if (
-				vert.x < bestVertexValue &&
-				vertChild.length > 1 &&
-				vert.bypass == 0
-			) {
+			if (vert.x < bestVertexValue && vertChild.length > 1 && vert.bypass == 0) {
 				bestVertexValue = vert.x;
 				bestVertexIndex = j;
 			}
-			if (
-				vert.x == bestVertexValue &&
-				vertChild.length > 1 &&
-				vert.bypass == 0
-			) {
+			if (vert.x == bestVertexValue && vertChild.length > 1 && vert.bypass == 0) {
 				if (vert.y > vertex[bestVertexIndex].y) {
 					bestVertexValue = vert.x;
 					bestVertexIndex = j;
@@ -1695,13 +1576,11 @@ export const polygonize = (walls: WallMetaData[]) => {
 			bestVertex.bypass = 1;
 		}
 		if (waypoints.length > 0) {
-			const tempSurface = waypoints[0].split("-").map((a) => parseInt(a));
-			var lengthRoom = calculateRoomArea(vertex, tempSurface);
-			var bestArea = lengthRoom;
-			var found = true;
-			for (var sss = 0; sss < polygons.length; sss++) {
+			const tempSurface = waypoints[0].split('-').map((a) => parseInt(a));
+			const lengthRoom = calculateRoomArea(vertex, tempSurface);
+			const bestArea = lengthRoom;
+			for (let sss = 0; sss < polygons.length; sss++) {
 				if (arraysAreEqual(polygons[sss].way, tempSurface)) {
-					found = false;
 					bestVertex.bypass = 1;
 					break;
 				}
@@ -1712,14 +1591,14 @@ export const polygonize = (walls: WallMetaData[]) => {
 			}
 			if (bestVertex.bypass == 0) {
 				// <-------- TO REVISE IMPORTANT !!!!!!!! bestArea Control ???
-				var realCoords = polygonIntoWalls(vertex, tempSurface, walls);
-				var realArea = calculateArea(realCoords.inside);
-				var outsideArea = calculateArea(realCoords.outside);
-				var coords = [];
-				for (var rr = 0; rr < tempSurface.length; rr++) {
+				const realCoords = polygonIntoWalls(vertex, tempSurface, walls);
+				const realArea = calculateArea(realCoords.inside);
+				const outsideArea = calculateArea(realCoords.outside);
+				const coords = [];
+				for (let rr = 0; rr < tempSurface.length; rr++) {
 					coords.push({
 						x: vertex[tempSurface[rr]].x,
-						y: vertex[tempSurface[rr]].y,
+						y: vertex[tempSurface[rr]].y
 					});
 				}
 				// WARNING -> FAKE
@@ -1731,7 +1610,7 @@ export const polygonize = (walls: WallMetaData[]) => {
 						coordsInside: realCoords.inside,
 						area: realArea as number,
 						outsideArea: outsideArea as number,
-						realArea: bestArea,
+						realArea: bestArea
 					});
 				} else {
 					// REAL INSIDE POLYGONE -> ROOM
@@ -1741,13 +1620,13 @@ export const polygonize = (walls: WallMetaData[]) => {
 						coordsOutside: realCoords.outside ?? [],
 						area: realArea as number,
 						outsideArea: outsideArea as number,
-						realArea: bestArea,
+						realArea: bestArea
 					});
 				}
 
 				// REMOVE FIRST POINT OF WAY ON CHILDS FIRST VERTEX
 				const bestVertexChild = bestVertex.child ?? [];
-				for (var aa = 0; aa < bestVertexChild.length; aa++) {
+				for (let aa = 0; aa < bestVertexChild.length; aa++) {
 					if (bestVertexChild[aa].id == tempSurface[1]) {
 						bestVertexChild.splice(aa, 1);
 					}
@@ -1755,25 +1634,26 @@ export const polygonize = (walls: WallMetaData[]) => {
 
 				// REMOVE FIRST VERTEX OF WAY ON CHILDS SECOND VERTEX
 				const tempSurfaceVertChild = vertex[tempSurface[1]].child ?? [];
-				for (var aa = 0; aa < tempSurfaceVertChild.length; aa++) {
+				for (let aa = 0; aa < tempSurfaceVertChild.length; aa++) {
 					if (tempSurfaceVertChild[aa].id == bestVertexIndex) {
 						tempSurfaceVertChild.splice(aa, 1);
 					}
 				}
 				//REMOVE FILAMENTS ?????
 
+				let found: boolean;
 				do {
-					var looping = 0;
-					for (var aa = 0; aa < vertex.length; aa++) {
+					found = false;
+					for (let aa = 0; aa < vertex.length; aa++) {
 						const vertChild = vertex[aa].child ?? [];
 						if (vertChild.length == 1) {
-							looping = 1;
+							found = true;
 							vertex[aa].child = [];
-							for (var ab = 0; ab < vertex.length; ab++) {
+							for (let ab = 0; ab < vertex.length; ab++) {
 								// OR MAKE ONLY ON THE WAY tempSurface ?? BETTER ??
 
 								const vertChild2 = vertex[aa].child ?? [];
-								for (var ac = 0; ac < vertChild2.length; ac++) {
+								for (let ac = 0; ac < vertChild2.length; ac++) {
 									if (vertChild2[ac].id == aa) {
 										vertChild2.splice(ac, 1);
 									}
@@ -1781,19 +1661,19 @@ export const polygonize = (walls: WallMetaData[]) => {
 							}
 						}
 					}
-				} while (looping == 1);
+				} while (found);
 			}
 		}
 	}
 	//SUB AREA(s) ON POLYGON CONTAINS OTHERS FREE POLYGONS (polygon without commonSideEdge)
-	for (var pp = 0; pp < polygons.length; pp++) {
-		var inside = [];
-		for (var free = 0; free < polygons.length; free++) {
+	for (let pp = 0; pp < polygons.length; pp++) {
+		const inside = [];
+		for (let free = 0; free < polygons.length; free++) {
 			if (pp != free) {
-				var polygonFree = polygons[free].coords;
-				var countCoords = polygonFree.length;
-				var found = true;
-				for (var pf = 0; pf < countCoords; pf++) {
+				const polygonFree = polygons[free].coords;
+				const countCoords = polygonFree.length;
+				let found = true;
+				for (let pf = 0; pf < countCoords; pf++) {
 					found = pointInPolygon(
 						{ x: polygonFree[pf]?.x, y: polygonFree[pf]?.y },
 						polygons[pp].coords.map((c) => ({ x: c?.x, y: c?.y }))
@@ -1805,8 +1685,7 @@ export const polygonize = (walls: WallMetaData[]) => {
 				if (found) {
 					inside.push(free);
 					polygons[pp].area =
-						(polygons[pp].area as number) -
-						(polygons[free].outsideArea as number);
+						(polygons[pp].area as number) - (polygons[free].outsideArea as number);
 				}
 			}
 		}
@@ -1818,63 +1697,51 @@ export const polygonize = (walls: WallMetaData[]) => {
 const segmentTree = (VERTEX_NUMBER: number, vertex: WallVertex[]) => {
 	const treeList: string[] = [VERTEX_NUMBER.toString()];
 	const waypoints: string[] = [];
-	let vertexCount = vertex.length;
+	const vertexCount = vertex.length;
 	const origin = VERTEX_NUMBER;
 	tree(treeList, origin, vertexCount);
 	return waypoints;
 
 	function tree(treeList: string[], origin: number, vertexCount: number) {
 		if (treeList.length == 0) return;
-		var treeTemp = [];
+		const treeTemp = [];
 		vertexCount--;
-		for (var k = 0; k < treeList.length; k++) {
-			var found = true;
-			var wro = treeList[k];
-			var wroList = wro
+		for (let k = 0; k < treeList.length; k++) {
+			let found = true;
+			const wro = treeList[k];
+			const wroList = wro
 				.toString()
-				.split("-")
+				.split('-')
 				.map((s) => +s);
-			var wr = wroList[wroList.length - 1];
+			const wr = wroList[wroList.length - 1];
 			const vertexChild = vertex[wr].child;
 			if (!vertexChild) continue;
 
-			for (var v = 0; v < vertexChild.length; v++) {
-				if (
-					vertexChild[v].id == origin &&
-					vertexCount < vertex.length - 1 &&
-					wroList.length > 2
-				) {
-					waypoints.push(wro + "-" + origin);
+			for (let v = 0; v < vertexChild.length; v++) {
+				if (vertexChild[v].id == origin && vertexCount < vertex.length - 1 && wroList.length > 2) {
+					waypoints.push(wro + '-' + origin);
 					found = false;
 					break;
 				}
 			}
 
 			if (found) {
-				var nextVertex = -1;
-				var nextDeterValue = Infinity;
-				var nextDeterVal = 0;
-				var nextFlag = 0;
+				let nextVertex = -1;
+				let nextDeterValue = Infinity;
+				let nextDeterVal = 0;
+				let nextFlag = 0;
 				if (vertexChild.length == 1) {
 					if (wr == origin && vertexCount == vertex.length - 1) {
-						treeTemp.push(wro + "-" + vertexChild[0].id);
+						treeTemp.push(wro + '-' + vertexChild[0].id);
 					}
 					if (wr != origin && vertexCount < vertex.length - 1) {
-						treeTemp.push(wro + "-" + vertexChild[0].id);
+						treeTemp.push(wro + '-' + vertexChild[0].id);
 					}
 				} else {
-					for (
-						var v = 0;
-						v < vertexChild.length && vertexChild.length > 0;
-						v++
-					) {
+					for (let v = 0; v < vertexChild.length && vertexChild.length > 0; v++) {
 						if (wr == origin && vertexCount == vertex.length - 1) {
 							// TO INIT FUNCTION -> // CLOCKWISE Research
-							var vDet = vectorVertex(
-								{ x: 0, y: -1 },
-								vertex[wr],
-								vertex[vertexChild[v].id]
-							);
+							const vDet = vectorVertex({ x: 0, y: -1 }, vertex[wr], vertex[vertexChild[v].id]);
 							if (vDet >= nextDeterVal) {
 								nextFlag = 1;
 								nextDeterVal = vDet;
@@ -1897,7 +1764,7 @@ const segmentTree = (VERTEX_NUMBER: number, vertex: WallVertex[]) => {
 							vertexCount < vertex.length - 1
 						) {
 							// COUNTERCLOCKWISE Research
-							var vDet = vectorVertex(
+							const vDet = vectorVertex(
 								vertex[wroList[wroList.length - 2]],
 								vertex[wr],
 								vertex[vertexChild[v].id]
@@ -1915,7 +1782,7 @@ const segmentTree = (VERTEX_NUMBER: number, vertex: WallVertex[]) => {
 							}
 						}
 					}
-					if (nextVertex != -1) treeTemp.push(wro + "-" + nextVertex);
+					if (nextVertex != -1) treeTemp.push(wro + '-' + nextVertex);
 				}
 			}
 		}
@@ -1928,20 +1795,20 @@ export const polygonIntoWalls = (
 	surface: number[],
 	walls: WallMetaData[]
 ) => {
-	var vertexArray = surface;
-	var wall: {
+	const vertexArray = surface;
+	const wall: {
 		x1: number;
 		y1: number;
 		x2: number;
 		y2: number;
 		segment: number;
 	}[] = [];
-	var polygon: Point2D[] = vertexArray.map((v) => ({
+	const polygon: Point2D[] = vertexArray.map((v) => ({
 		x: vertex[v].x,
-		y: vertex[v].y,
+		y: vertex[v].y
 	}));
 	// FIND EDGE (WALLS HERE) OF THESE TWO VERTEX
-	for (var i = 0; i < vertexArray.length - 1; i++) {
+	for (let i = 0; i < vertexArray.length - 1; i++) {
 		const current = vertex[vertexArray[i]];
 		const next = vertex[vertexArray[i + 1]];
 		next.segment.forEach((nextSegment) => {
@@ -1952,7 +1819,7 @@ export const polygonIntoWalls = (
 					y1: current.y,
 					x2: next.x,
 					y2: next.y,
-					segment: nextSegment,
+					segment: nextSegment
 				});
 			});
 		});
@@ -1971,43 +1838,39 @@ export const polygonIntoWalls = (
 		// }
 	}
 	// CALC INTERSECS OF EQ PATHS OF THESE TWO WALLS.
-	var inside: Point2D[] = [];
-	var outside: Point2D[] = [];
-	for (var i = 0; i < wall.length; i++) {
-		var inter = [];
-		var edge = wall[i];
-		if (i < wall.length - 1) var nextEdge = wall[i + 1];
-		else var nextEdge = wall[0];
-		var angleEdge = Math.atan2(edge.y2 - edge.y1, edge.x2 - edge.x1);
-		var angleNextEdge = Math.atan2(
-			nextEdge.y2 - nextEdge.y1,
-			nextEdge.x2 - nextEdge.x1
-		);
-		var edgeThicknessX = (walls[edge.segment].thick / 2) * Math.sin(angleEdge);
-		var edgeThicknessY = (walls[edge.segment].thick / 2) * Math.cos(angleEdge);
-		var nextEdgeThicknessX =
-			(walls[nextEdge.segment].thick / 2) * Math.sin(angleNextEdge);
-		var nextEdgeThicknessY =
-			(walls[nextEdge.segment].thick / 2) * Math.cos(angleNextEdge);
-		var eqEdgeUp = createEquation(
+	const inside: Point2D[] = [];
+	const outside: Point2D[] = [];
+	for (let i = 0; i < wall.length; i++) {
+		const inter = [];
+		const edge = wall[i];
+		let nextEdge: { x1: number; x2: number; y1: number; y2: number; segment: number };
+		if (i < wall.length - 1) nextEdge = wall[i + 1];
+		else nextEdge = wall[0];
+		let angleEdge = Math.atan2(edge.y2 - edge.y1, edge.x2 - edge.x1);
+		let angleNextEdge = Math.atan2(nextEdge.y2 - nextEdge.y1, nextEdge.x2 - nextEdge.x1);
+		const edgeThicknessX = (walls[edge.segment].thick / 2) * Math.sin(angleEdge);
+		const edgeThicknessY = (walls[edge.segment].thick / 2) * Math.cos(angleEdge);
+		const nextEdgeThicknessX = (walls[nextEdge.segment].thick / 2) * Math.sin(angleNextEdge);
+		const nextEdgeThicknessY = (walls[nextEdge.segment].thick / 2) * Math.cos(angleNextEdge);
+		const eqEdgeUp = createEquation(
 			edge.x1 + edgeThicknessX,
 			edge.y1 - edgeThicknessY,
 			edge.x2 + edgeThicknessX,
 			edge.y2 - edgeThicknessY
 		);
-		var eqEdgeDw = createEquation(
+		const eqEdgeDw = createEquation(
 			edge.x1 - edgeThicknessX,
 			edge.y1 + edgeThicknessY,
 			edge.x2 - edgeThicknessX,
 			edge.y2 + edgeThicknessY
 		);
-		var eqNextEdgeUp = createEquation(
+		const eqNextEdgeUp = createEquation(
 			nextEdge.x1 + nextEdgeThicknessX,
 			nextEdge.y1 - nextEdgeThicknessY,
 			nextEdge.x2 + nextEdgeThicknessX,
 			nextEdge.y2 - nextEdgeThicknessY
 		);
-		var eqNextEdgeDw = createEquation(
+		const eqNextEdgeDw = createEquation(
 			nextEdge.x1 - nextEdgeThicknessX,
 			nextEdge.y1 + nextEdgeThicknessY,
 			nextEdge.x2 - nextEdgeThicknessX,
@@ -2023,11 +1886,11 @@ export const polygonIntoWalls = (
 		} else {
 			inter.push({
 				x: edge.x2 + edgeThicknessX,
-				y: edge.y2 - edgeThicknessY,
+				y: edge.y2 - edgeThicknessY
 			});
 			inter.push({
 				x: edge.x2 - edgeThicknessX,
-				y: edge.y2 + edgeThicknessY,
+				y: edge.y2 + edgeThicknessY
 			});
 		}
 
@@ -2073,7 +1936,7 @@ export const findNearestWallInRange = (
 	let result;
 	if (wallMeta.length == 0) return null;
 	wallMeta.forEach((wall) => {
-		var eq = createEquation(wall.start.x, wall.start.y, wall.end.x, wall.end.y);
+		const eq = createEquation(wall.start.x, wall.start.y, wall.end.x, wall.end.y);
 		result = nearPointOnEquation(eq, fromPoint);
 		if (result.distance < wallDistance && wall.pointInsideWall(result, false)) {
 			wallDistance = result.distance;
@@ -2081,7 +1944,7 @@ export const findNearestWallInRange = (
 				wall: wall,
 				x: result.x,
 				y: result.y,
-				distance: result.distance,
+				distance: result.distance
 			};
 		}
 	});
@@ -2093,7 +1956,7 @@ export const findNearestWallInRange = (
 				wall: vertexData.wall,
 				x: vertexData.x,
 				y: vertexData.y,
-				distance: vertexData.distance,
+				distance: vertexData.distance
 			};
 		}
 	}
@@ -2120,11 +1983,11 @@ export const nearVertice = (
 		const end = wall.end;
 		const distance1 = distanceBetween(snap, {
 			x: start.x,
-			y: start.y,
+			y: start.y
 		});
 		const distance2 = distanceBetween(snap, {
 			x: end.x,
-			y: end.y,
+			y: end.y
 		});
 		if (distance1 < distance2 && distance1 < range) {
 			bestDistance = distance1;
@@ -2132,7 +1995,7 @@ export const nearVertice = (
 				wall,
 				x: start.x,
 				y: start.y,
-				distance: bestDistance,
+				distance: bestDistance
 			};
 		} else if (distance2 < distance1 && distance2 < range) {
 			bestDistance = distance2;
@@ -2140,7 +2003,7 @@ export const nearVertice = (
 				wall,
 				x: end.x,
 				y: end.y,
-				distance: bestDistance,
+				distance: bestDistance
 			};
 		}
 	});
@@ -2159,10 +2022,7 @@ export const applyPolygonDataToRooms = (
 		let foundRoom = false;
 		roomMeta.forEach((room) => {
 			let countCoords = roomPoly.coords.length;
-			const diffCoords = getNumObjectArrayDifferences(
-				roomPoly.coords,
-				room.coords
-			);
+			const diffCoords = getNumObjectArrayDifferences(roomPoly.coords, room.coords);
 			const differences = getArrayDifferences(roomPoly.way, room.way);
 			if (roomPoly.way.length == room.way.length) {
 				if (differences.length == 0 || diffCoords == 0) {
@@ -2189,8 +2049,8 @@ export const applyPolygonDataToRooms = (
 						coords: roomPoly.coords,
 						coordsOutside: roomPoly.coordsOutside,
 						way: roomPoly.way,
-						coordsInside: roomPoly.coordsInside ?? [],
-					},
+						coordsInside: roomPoly.coordsInside ?? []
+					}
 				];
 				return;
 			}
@@ -2206,25 +2066,22 @@ export const applyPolygonDataToRooms = (
 					inside: roomPoly.inside ?? [],
 					way: roomPoly.way,
 					area: roomPoly.area,
-					surface: "",
-					name: "",
-					color: "gradientWhite",
+					surface: '',
+					name: '',
+					color: 'gradientWhite',
 					showSurface: true,
-					action: "add",
-				},
+					action: 'add'
+				}
 			];
 		}
 	});
 
 	const toSplice: number[] = [];
 	roomMeta.forEach((room, idx) => {
-		var found = true;
+		let found = true;
 		roomPolygonData.polygons.forEach((roomPoly) => {
-			var countRoom = room.coords.length;
-			var numDifferentCoords = getNumObjectArrayDifferences(
-				roomPoly.coords,
-				room.coords
-			);
+			let countRoom = room.coords.length;
+			const numDifferentCoords = getNumObjectArrayDifferences(roomPoly.coords, room.coords);
 			const numDifferences = getArrayDifferences(roomPoly.way, room.way).length;
 			if (roomPoly.way.length == room.way.length) {
 				if (numDifferences == 0 || numDifferentCoords == 0) {
@@ -2252,7 +2109,7 @@ export const applyPolygonDataToRooms = (
 		return b - a;
 	});
 
-	for (var ss = 0; ss < toSplice.length; ss++) {
+	for (let ss = 0; ss < toSplice.length; ss++) {
 		roomMeta.splice(toSplice[ss], 1);
 	}
 	setRoomMeta(roomMeta);
@@ -2271,16 +2128,13 @@ export const renderRooms = (
 	if (roomPolygonData.polygons.length == 0) {
 		roomMeta = [];
 	}
-	for (var pp = 0; pp < roomPolygonData.polygons.length; pp++) {
+	for (let pp = 0; pp < roomPolygonData.polygons.length; pp++) {
 		let foundRoom = false;
-		let roomPoly = roomPolygonData.polygons[pp];
+		const roomPoly = roomPolygonData.polygons[pp];
 		// for (let rr = 0; rr < roomMeta.length; rr++) {
 		roomMeta.forEach((room) => {
 			let countCoords = roomPoly.coords.length;
-			const numDifferentCoords = getNumObjectArrayDifferences(
-				roomPoly.coords,
-				room.coords
-			);
+			const numDifferentCoords = getNumObjectArrayDifferences(roomPoly.coords, room.coords);
 			const numDifferences = getArrayDifferences(roomPoly.way, room.way).length;
 			if (roomPoly.way.length == room.way.length) {
 				if (numDifferences == 0 || numDifferentCoords == 0) {
@@ -2307,8 +2161,8 @@ export const renderRooms = (
 						coords: roomPoly.coords,
 						coordsOutside: roomPoly.coordsOutside,
 						way: roomPoly.way,
-						coordsInside: roomPoly.coordsInside ?? [],
-					},
+						coordsInside: roomPoly.coordsInside ?? []
+					}
 				];
 				return;
 			}
@@ -2324,31 +2178,25 @@ export const renderRooms = (
 					inside: roomPoly.inside ?? [],
 					way: roomPoly.way,
 					area: roomPoly.area,
-					surface: "",
-					name: "",
-					color: "gradientWhite",
+					surface: '',
+					name: '',
+					color: 'gradientWhite',
 					showSurface: true,
-					action: "add",
-				},
+					action: 'add'
+				}
 			];
 		}
 	}
 
-	var toSplice = [];
-	for (var rr = 0; rr < roomMeta.length; rr++) {
-		var found = true;
+	const toSplice = [];
+	for (let rr = 0; rr < roomMeta.length; rr++) {
+		let found = true;
 		const roomData = roomMeta[rr];
-		for (var pp = 0; pp < roomPolygonData.polygons.length; pp++) {
-			var countRoom = roomData.coords.length;
-			let roomPoly = roomPolygonData.polygons[pp];
-			var numDifferentCoords = getNumObjectArrayDifferences(
-				roomPoly.coords,
-				roomData.coords
-			);
-			const numDifferences = getArrayDifferences(
-				roomPoly.way,
-				roomData.way
-			).length;
+		for (let pp = 0; pp < roomPolygonData.polygons.length; pp++) {
+			let countRoom = roomData.coords.length;
+			const roomPoly = roomPolygonData.polygons[pp];
+			const numDifferentCoords = getNumObjectArrayDifferences(roomPoly.coords, roomData.coords);
+			const numDifferences = getArrayDifferences(roomPoly.way, roomData.way).length;
 			if (roomPoly.way.length == roomData.way.length) {
 				if (numDifferences == 0 || numDifferentCoords == 0) {
 					countRoom = 0;
@@ -2376,16 +2224,13 @@ export const renderRooms = (
 		return b - a;
 	});
 
-	for (var ss = 0; ss < toSplice.length; ss++) {
+	for (let ss = 0; ss < toSplice.length; ss++) {
 		roomMeta.splice(toSplice[ss], 1);
 	}
 	setRoomMeta([...roomMeta]);
 };
 
-export const getPolygonVisualCenter = (
-	room: RoomMetaData,
-	allRooms: RoomMetaData[]
-) => {
+export const getPolygonVisualCenter = (room: RoomMetaData, allRooms: RoomMetaData[]) => {
 	const polygon = room.coords;
 	const insideArray = room.inside;
 	const sample = 80;
@@ -2395,31 +2240,26 @@ export const getPolygonVisualCenter = (
 	let minY = 0;
 	let maxX = 0;
 	let maxY = 0;
-	for (var i = 0; i < polygon.length; i++) {
-		var p = polygon[i];
+	for (let i = 0; i < polygon.length; i++) {
+		const p = polygon[i];
 		if (!i || p.x < minX) minX = p.x;
 		if (!i || p.y < minY) minY = p.y;
 		if (!i || p.x > maxX) maxX = p.x;
 		if (!i || p.y > maxY) maxY = p.y;
 	}
-	var width = maxX - minX;
-	var height = maxY - minY;
+	const width = maxX - minX;
+	const height = maxY - minY;
 	//INIT GRID
-	var sampleWidth = Math.floor(width / sample);
-	var sampleHeight = Math.floor(height / sample);
-	for (var hh = 0; hh < sample; hh++) {
-		for (var ww = 0; ww < sample; ww++) {
-			var posX = minX + ww * sampleWidth;
-			var posY = minY + hh * sampleHeight;
+	const sampleWidth = Math.floor(width / sample);
+	const sampleHeight = Math.floor(height / sample);
+	for (let hh = 0; hh < sample; hh++) {
+		for (let ww = 0; ww < sample; ww++) {
+			const posX = minX + ww * sampleWidth;
+			const posY = minY + hh * sampleHeight;
 			if (pointInPolygon({ x: posX, y: posY }, polygon)) {
-				var found = true;
-				for (var ii = 0; ii < insideArray.length; ii++) {
-					if (
-						pointInPolygon(
-							{ x: posX, y: posY },
-							allRooms[insideArray[ii]].coordsOutside
-						)
-					) {
+				let found = true;
+				for (let ii = 0; ii < insideArray.length; ii++) {
+					if (pointInPolygon({ x: posX, y: posY }, allRooms[insideArray[ii]].coordsOutside)) {
 						found = false;
 						break;
 					}
@@ -2433,10 +2273,10 @@ export const getPolygonVisualCenter = (
 	let bestRange = 0;
 	let bestMatrix = 0;
 
-	for (var matrix = 0; matrix < grid.length; matrix++) {
-		var minDistance = Infinity;
-		for (var pp = 0; pp < polygon.length - 1; pp++) {
-			var scanDistance = pDistance(grid[matrix], polygon[pp], polygon[pp + 1]);
+	for (let matrix = 0; matrix < grid.length; matrix++) {
+		let minDistance = Infinity;
+		for (let pp = 0; pp < polygon.length - 1; pp++) {
+			const scanDistance = pDistance(grid[matrix], polygon[pp], polygon[pp + 1]);
 
 			if (scanDistance.distance < minDistance) {
 				minDistance = scanDistance.distance;

@@ -1,14 +1,8 @@
-import {
-	Mode,
-	ObjectMetaData,
-	Point2D,
-	ViewboxData,
-	WallMetaData,
-} from "../../models/models";
-import { calculateSnap } from "../../utils/utils";
-import { CanvasState } from "../CanvasState";
-import { handleSelectModeNodeClicked } from "./SelectModeNodeClickHandler";
-import { handleSelectModeSegmentClicked } from "./SelectModeSegmentClickHandler";
+import { Mode, ObjectMetaData, Point2D, ViewboxData, WallMetaData } from '../../models/models';
+import { calculateSnap } from '../../utils/utils';
+import { CanvasState } from '../CanvasState';
+import { handleSelectModeNodeClicked } from './SelectModeNodeClickHandler';
+import { handleSelectModeSegmentClicked } from './SelectModeSegmentClickHandler';
 
 interface Props {
 	event: React.TouchEvent | React.MouseEvent;
@@ -33,25 +27,25 @@ export const handleSelectModeClick = ({
 		setWallEquations,
 		setDrag,
 		setCurrentNodeWallObjects,
-		setCurrentNodeWalls,
+		setCurrentNodeWalls
 	},
 	viewbox,
 	objectMetaData,
 	wallMetaData,
 	setWallMetaData,
 	setSelectedWallData,
-	setPoint,
+	setPoint
 }: Props) => {
 	switch (binder?.type) {
-		case "segment": {
+		case 'segment': {
 			setMode(Mode.Bind);
 			setAction(true);
-			$("#boxScale").hide(100);
+			$('#boxScale').hide(100);
 			const {
 				selectedWallData,
 				wallMeta: wallMetaResult,
 				objectEquationData: objectEquationsResult,
-				wallEquations: wallEquationsResult,
+				wallEquations: wallEquationsResult
 			} = handleSelectModeSegmentClicked(
 				binder,
 				wallMetaData,
@@ -65,26 +59,26 @@ export const handleSelectModeClick = ({
 			setWallEquations(wallEquationsResult);
 			break;
 		}
-		case "node": {
+		case 'node': {
 			setMode(Mode.Bind);
 			setAction(true);
-			$("#boxScale").hide(100);
-			var node = binder.data;
+			$('#boxScale').hide(100);
+			const node = binder.data;
 			setPoint({ x: node.x, y: node.y });
 
 			const { nodeWalls, nodeWallObjects } = handleSelectModeNodeClicked({
 				x: node.x,
 				y: node.y,
 				wallMeta: wallMetaData,
-				objectMeta: objectMetaData,
+				objectMeta: objectMetaData
 			});
 
 			setCurrentNodeWallObjects(nodeWallObjects);
 			setCurrentNodeWalls(nodeWalls);
 			break;
 		}
-		case "obj":
-		case "boundingBox": {
+		case 'obj':
+		case 'boundingBox': {
 			setMode(Mode.Bind);
 			setAction(true);
 			break;
