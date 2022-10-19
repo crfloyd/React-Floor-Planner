@@ -20,6 +20,7 @@
 	"devDependencies": {
 		"@types/bootstrap": "^5.2.3",
 		"@types/jquery": "^3.5.14",
+		"@types/node": "^18.11.2",
 		"@types/react": "^18.0.17",
 		"@types/react-dom": "^18.0.6",
 		"@types/uuid": "^8.3.4",
