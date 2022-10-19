@@ -1,6 +1,5 @@
 import { v4 as uuid } from 'uuid';
 
-import { CanvasState } from '../engine/CanvasState';
 import {
 	HistorySnapshot,
 	ObjectMetaData,

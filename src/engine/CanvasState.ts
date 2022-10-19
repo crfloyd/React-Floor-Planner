@@ -22,7 +22,7 @@ const useRoomState = () => {
 	return { roomPolygonData, setRoomPolygonData, roomMetaData, setRoomMetaData };
 };
 
-export class CanvasState {
+export default class CanvasState {
 	binder: any;
 	setBinder = (val: any) => {
 		this.binder = val;

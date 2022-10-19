@@ -7,7 +7,7 @@ import DoorWindowTools from './components/DoorWindowTools';
 import FloorPlannerCanvas from './components/FloorPlannerCanvas/FloorPlannerCanvas';
 import ObjectTools from './components/ObjectTools';
 import WallTools from './components/WallTools';
-import { CanvasState } from './engine/CanvasState';
+import { CanvasState } from './engine';
 import { useCameraTools } from './hooks/useCameraTools';
 import { useHistory } from './hooks/useHistory';
 import { useKeybindings } from './hooks/useKeybindings';
