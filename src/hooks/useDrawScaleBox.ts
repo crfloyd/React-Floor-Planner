@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+
 import { constants } from '../../constants';
 import { Point2D, WallMetaData } from '../models/models';
 

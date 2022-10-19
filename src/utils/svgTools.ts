@@ -1,18 +1,18 @@
 import { constants } from '../../constants';
 import {
+	ObjectMetaData,
 	Point2D,
+	Polygon,
+	RoomMetaData,
+	RoomPolygonData,
 	SVGCreationData,
 	SVGData,
-	ObjectMetaData,
-	WallMetaData,
-	WallEquationGroup,
-	WallEquation,
 	SvgPathMetaData,
+	WallEquation,
+	WallEquationGroup,
 	WallJunction,
-	WallVertex,
-	Polygon,
-	RoomPolygonData,
-	RoomMetaData
+	WallMetaData,
+	WallVertex
 } from '../models/models';
 import {
 	arraysAreEqual,

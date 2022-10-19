@@ -1,7 +1,7 @@
 import { constants } from '../../../constants';
 import { Point2D, ViewboxData, WallMetaData } from '../../models/models';
 import { Object2D } from '../../models/Object2D';
-import { getAngle, findNearestWallInRange } from '../../utils/svgTools';
+import { findNearestWallInRange, getAngle } from '../../utils/svgTools';
 import { computeLimit, getMidPoint, vectorDeter, vectorXY } from '../../utils/utils';
 import { CanvasState } from '../CanvasState';
 

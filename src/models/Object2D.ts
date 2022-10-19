@@ -1,7 +1,8 @@
-import { BoundingBox, ObjectMetaData, Point2D, SVGCreationData, ViewboxData } from './models';
 import { v4 as uuid } from 'uuid';
+
 import { constants } from '../../constants';
 import { carpentryCalc, createSvgElement } from '../utils/svgTools';
+import { BoundingBox, ObjectMetaData, Point2D, SVGCreationData, ViewboxData } from './models';
 
 // export enum ObjectType {
 // 	Unknown,

@@ -1,13 +1,5 @@
-import {
-	ObjectMetaData,
-	Point2D,
-	WallEquationGroup,
-	WallMetaData,
-	WallSideEquations,
-	WallJunction
-} from './models';
 import { v4 as uuid } from 'uuid';
-import { findById, intersectionOfEquations, pointIsBetween, pointsAreEqual } from '../utils/utils';
+
 import { constants } from '../../constants';
 import {
 	angleBetweenEquations,
@@ -17,6 +9,15 @@ import {
 	getWallNodes,
 	nearPointOnEquation
 } from '../utils/svgTools';
+import { findById, intersectionOfEquations, pointIsBetween, pointsAreEqual } from '../utils/utils';
+import {
+	ObjectMetaData,
+	Point2D,
+	WallEquationGroup,
+	WallJunction,
+	WallMetaData,
+	WallSideEquations
+} from './models';
 
 export class Wall implements WallMetaData {
 	id: string;

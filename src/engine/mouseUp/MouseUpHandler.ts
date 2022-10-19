@@ -1,19 +1,19 @@
 import { constants } from '../../../constants';
 import {
-	ObjectMetaData,
-	Mode,
-	RoomDisplayData,
 	CursorType,
-	RoomMetaData,
-	WallMetaData,
+	Mode,
+	ObjectMetaData,
 	Point2D,
-	SnapData
+	RoomDisplayData,
+	RoomMetaData,
+	SnapData,
+	WallMetaData
 } from '../../models/models';
-import { updateMeasurementText } from '../../utils/svgTools';
 import { Wall } from '../../models/Wall';
+import { updateMeasurementText } from '../../utils/svgTools';
+import { distanceBetween } from '../../utils/utils';
 import { CanvasState } from '../CanvasState';
 import { handleMouseUpBindMode } from './BindModeMouseUpHandler';
-import { distanceBetween } from '../../utils/utils';
 
 export const handleMouseUp = (
 	snap: SnapData,

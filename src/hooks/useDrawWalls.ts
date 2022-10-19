@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
+
 import { constants } from '../../constants';
-import { distanceBetween, getMidPoint, getNearestWall } from '../utils/utils';
 import {
 	CursorType,
 	Mode,
@@ -9,7 +9,8 @@ import {
 	SvgPathMetaData,
 	WallMetaData
 } from '../models/models';
-import { createWallGuideLine, angleBetweenPoints, findNearestWallInRange } from '../utils/svgTools';
+import { angleBetweenPoints, createWallGuideLine, findNearestWallInRange } from '../utils/svgTools';
+import { distanceBetween, getMidPoint, getNearestWall } from '../utils/utils';
 
 interface WallHelperPathData {
 	x1: number;

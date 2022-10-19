@@ -1,5 +1,29 @@
+import './App.scss';
+
 import { useEffect, useState } from 'react';
 
+import { constants } from '../constants';
+import DoorWindowTools from './components/DoorWindowTools';
+import FloorPlannerCanvas from './components/FloorPlannerCanvas/FloorPlannerCanvas';
+import ObjectTools from './components/ObjectTools';
+import WallTools from './components/WallTools';
+import { CanvasState } from './engine/CanvasState';
+import { useCameraTools } from './hooks/useCameraTools';
+import { useHistory } from './hooks/useHistory';
+import { useKeybindings } from './hooks/useKeybindings';
+import {
+	CursorType,
+	LayerSettings,
+	Mode,
+	ObjectMetaData,
+	Point2D,
+	RoomDisplayData,
+	RoomMetaData,
+	RoomPolygonData,
+	WallMetaData
+} from './models/models';
+import { Wall } from './models/Wall';
+import { renderRooms, setInWallMeasurementText, updateMeasurementText } from './utils/svgTools';
 import {
 	computeLimit,
 	distanceBetween,
@@ -7,30 +31,6 @@ import {
 	getWallsOnPoint,
 	intersectionOfEquations
 } from './utils/utils';
-
-import './App.scss';
-import {
-	Mode,
-	ObjectMetaData,
-	Point2D,
-	RoomMetaData,
-	WallMetaData,
-	RoomDisplayData,
-	LayerSettings,
-	CursorType,
-	RoomPolygonData
-} from './models/models';
-import { constants } from '../constants';
-import { renderRooms, setInWallMeasurementText, updateMeasurementText } from './utils/svgTools';
-import { Wall } from './models/Wall';
-import { useHistory } from './hooks/useHistory';
-import WallTools from './components/WallTools';
-import ObjectTools from './components/ObjectTools';
-import DoorWindowTools from './components/DoorWindowTools';
-import { CanvasState } from './engine/CanvasState';
-import FloorPlannerCanvas from './components/FloorPlannerCanvas/FloorPlannerCanvas';
-import { useCameraTools } from './hooks/useCameraTools';
-import { useKeybindings } from './hooks/useKeybindings';
 
 const canvasState = new CanvasState();
 

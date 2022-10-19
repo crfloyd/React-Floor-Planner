@@ -1,13 +1,4 @@
 import { constants } from '../../../constants';
-import { Object2D } from '../../models/Object2D';
-import {
-	createSvgElement,
-	nearPointOnEquation,
-	pointInPolygon,
-	setInWallMeasurementText,
-	updateMeasurementText
-} from '../../utils/svgTools';
-import { CanvasState } from '../CanvasState';
 import {
 	CursorType,
 	ObjectMetaData,
@@ -16,7 +7,16 @@ import {
 	ViewboxData,
 	WallMetaData
 } from '../../models/models';
+import { Object2D } from '../../models/Object2D';
+import {
+	createSvgElement,
+	nearPointOnEquation,
+	pointInPolygon,
+	setInWallMeasurementText,
+	updateMeasurementText
+} from '../../utils/svgTools';
 import { distanceBetween, getMidPoint, getNearestWall, getWallsOnPoint } from '../../utils/utils';
+import { CanvasState } from '../CanvasState';
 
 export const handleMouseMoveSelectMode = (
 	target: EventTarget,

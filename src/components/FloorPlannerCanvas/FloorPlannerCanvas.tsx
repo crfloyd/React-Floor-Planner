@@ -1,23 +1,25 @@
 import React, { createRef, useEffect, useMemo, useState } from 'react';
+
 import { constants } from '../../../constants';
-import { calculateSnap } from '../../utils/utils';
 import { CanvasState } from '../../engine/CanvasState';
 import { handleMouseDown } from '../../engine/mouseDown/MouseDownHandler';
 import { handleMouseMove } from '../../engine/mouseMove/MouseMoveHandler';
 import { handleMouseUp } from '../../engine/mouseUp/MouseUpHandler';
+import { useDrawScaleBox } from '../../hooks/useDrawScaleBox';
+import { useDrawWalls } from '../../hooks/useDrawWalls';
 import { useHistory } from '../../hooks/useHistory';
 import {
-	Mode,
-	LayerSettings,
-	RoomDisplayData,
 	CursorType,
-	ViewboxData,
-	RoomPolygonData,
-	RoomMetaData,
+	LayerSettings,
+	Mode,
 	ObjectMetaData,
-	WallMetaData,
 	Point2D,
-	SnapData
+	RoomDisplayData,
+	RoomMetaData,
+	RoomPolygonData,
+	SnapData,
+	ViewboxData,
+	WallMetaData
 } from '../../models/models';
 import {
 	getPolygonVisualCenter,
@@ -25,11 +27,10 @@ import {
 	refreshWalls,
 	renderRooms
 } from '../../utils/svgTools';
+import { calculateSnap } from '../../utils/utils';
 import { GradientData } from './GradientData';
 import LinearGradient from './LinearGradient';
 import Patterns from './Patterns';
-import { useDrawWalls } from '../../hooks/useDrawWalls';
-import { useDrawScaleBox } from '../../hooks/useDrawScaleBox';
 
 let shouldUpdateMouseMove = true;
 

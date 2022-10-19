@@ -15,8 +15,20 @@
 		"ecmaVersion": "latest",
 		"sourceType": "module"
 	},
-	"plugins": ["react", "@typescript-eslint", "simple-import-sort"],
+	"plugins": ["react", "@typescript-eslint", "import", "simple-import-sort"],
 	"rules": {
-		"react/react-in-jsx-scope": "off"
+		"import/first": "warn",
+		"import/newline-after-import": "warn",
+		"import/no-duplicates": "error",
+		"import/no-named-as-default-member": "off",
+		"simple-import-sort/imports": "warn",
+		"simple-import-sort/exports": "warn",
+		"react/react-in-jsx-scope": "off",
+		"prettier/prettier": [
+			"error",
+			{
+				"endOfLine": "auto"
+			}
+		]
 	}
 }

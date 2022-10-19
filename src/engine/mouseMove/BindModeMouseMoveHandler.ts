@@ -7,8 +7,8 @@ import {
 } from '../../models/models';
 import {
 	createWallGuideLine,
-	getAngle,
 	findNearestWallInRange,
+	getAngle,
 	pointInPolygon,
 	setInWallMeasurementText,
 	updateMeasurementText

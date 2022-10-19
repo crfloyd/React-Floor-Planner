@@ -1,3 +1,6 @@
+import { v4 as uuid } from 'uuid';
+
+import { CanvasState } from '../engine/CanvasState';
 import {
 	HistorySnapshot,
 	ObjectMetaData,
@@ -5,10 +8,8 @@ import {
 	ViewboxData,
 	WallMetaData
 } from '../models/models';
-import { Wall } from '../models/Wall';
-import { v4 as uuid } from 'uuid';
 import { Object2D } from '../models/Object2D';
-import { CanvasState } from '../engine/CanvasState';
+import { Wall } from '../models/Wall';
 
 export const useHistory = () => {
 	// const [history, setHistory] = useState<HistorySnapshot[]>([]);

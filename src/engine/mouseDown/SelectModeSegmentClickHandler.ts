@@ -5,6 +5,7 @@ import {
 	WallEquationGroup,
 	WallMetaData
 } from '../../models/models';
+import { Wall } from '../../models/Wall';
 import { angleBetweenEquations, pointInPolygon } from '../../utils/svgTools';
 import {
 	findById,
@@ -13,7 +14,6 @@ import {
 	pointArraysAreEqual,
 	pointsAreEqual
 } from '../../utils/utils';
-import { Wall } from '../../models/Wall';
 
 export const handleSelectModeSegmentClicked = (
 	selectedWallData: { wall: WallMetaData; before: Point2D },
