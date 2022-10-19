@@ -1,16 +1,7 @@
-import {
-	ObjectMetaData,
-	Point2D,
-	PointDistance,
-	SVGCreationData,
-	SVGData,
-	ViewboxData,
-} from "./models";
-import { v4 as uuid } from "uuid";
-import { qSVG } from "../qSVG";
-import { constants } from "../constants";
-import { getCanvasOffset } from "../func";
-import { carpentryCalc, createSvgElement } from "./svgTools";
+import { BoundingBox, ObjectMetaData, Point2D, SVGCreationData, ViewboxData } from './models';
+import { v4 as uuid } from 'uuid';
+import { constants } from '../../constants';
+import { carpentryCalc, createSvgElement } from '../utils/svgTools';
 
 // export enum ObjectType {
 // 	Unknown,
@@ -31,19 +22,19 @@ import { carpentryCalc, createSvgElement } from "./svgTools";
 
 export class Object2D implements ObjectMetaData {
 	id = uuid();
-	graph = qSVG.create("none", "g");
+	graph: SVGElement = createSvgElement('none', 'g');
 	scale = { x: 1, y: 1 };
 	height: number;
 	width: number;
-	bbox: any;
+	bbox: BoundingBox;
 	realBbox;
 	x: number;
 	y: number;
 	params: SVGCreationData;
 	limit: Point2D[];
 	class: string;
-	up: PointDistance[] = [];
-	down: PointDistance[] = [];
+	// up: PointDistance[] = [];
+	// down: PointDistance[] = [];
 
 	constructor(
 		public readonly family: string,
@@ -53,7 +44,7 @@ export class Object2D implements ObjectMetaData {
 		public angle: number,
 		public angleSign: boolean,
 		public size: number,
-		public hinge = "normal",
+		public hinge = 'normal',
 		public thick: number,
 		public value: any,
 		private viewbox: ViewboxData
@@ -67,55 +58,58 @@ export class Object2D implements ObjectMetaData {
 
 		const svgData = carpentryCalc(classe, type, size, thick, value);
 		const cc = svgData.construc;
-		var blank;
-		for (var i = 0; i < cc.length; i++) {
+		this.family = svgData.family ?? this.family;
+		this.width = svgData.width ?? this.width;
+		this.height = svgData.height ?? this.height;
+		for (let i = 0; i < cc.length; i++) {
 			const item = cc[i];
 			if (item.path) {
 				// const s: SVGPathElement = document.createElementNS(
 				// 	"http://www.w3.org/2000/svg",
 				// 	"path"
 				// );
-				blank = createSvgElement("none", "path", {
+				const blank = createSvgElement('none', 'path', {
 					d: item.path,
-					"stroke-width": 1,
+					'stroke-width': 1,
 					fill: item.fill,
 					stroke: item.stroke,
-					"stroke-dasharray": item.strokeDashArray,
+					'stroke-dasharray': item.strokeDashArray
 				});
+				this.graph.appendChild(blank);
 			} else if (item.text) {
-				blank = qSVG.create("none", "text", {
+				const blank = createSvgElement('none', 'text', {
 					x: item.x,
 					y: item.y,
-					"font-size": item.fontSize,
+					'font-size': item.fontSize,
 					stroke: item.stroke,
-					"stroke-width": item.strokeWidth,
-					"font-family": "roboto",
-					"text-anchor": "middle",
-					fill: item.fill,
+					'stroke-width': item.strokeWidth,
+					'font-family': 'roboto',
+					'text-anchor': 'middle',
+					fill: item.fill
 				});
-				blank.context.textContent = item.text;
+				blank.textContent = item.text;
+				this.graph.appendChild(blank);
 			}
-			this.graph.append(blank);
 		}
 
-		const bbox = this.graph.get(0).getBoundingClientRect();
-		const offset = getCanvasOffset() ?? { left: 0, top: 0 };
+		const bbox = this.graph.getBoundingClientRect();
+		const offset = $('#lin').offset() ?? { left: 0, top: 0 };
 
-		bbox.x =
-			bbox.x * viewbox.zoomFactor -
-			offset.left * viewbox.zoomFactor +
-			viewbox.originX;
-		bbox.y =
-			bbox.y * viewbox.zoomFactor -
-			offset.top * viewbox.zoomFactor +
-			viewbox.originY;
-		bbox.origin = { x: this.x, y: this.y };
-		this.bbox = bbox;
+		bbox.x = bbox.x * viewbox.zoomFactor - offset.left * viewbox.zoomFactor + viewbox.originX;
+		bbox.y = bbox.y * viewbox.zoomFactor - offset.top * viewbox.zoomFactor + viewbox.originY;
+
+		// bbox.x = this.x;
+		// bbox.y = this.y;
+		this.bbox = {
+			...bbox,
+			id: '',
+			origin: { x: this.x, y: this.y }
+		};
 		this.realBbox = [
 			{ x: -this.size / 2, y: -this.thick / 2 },
 			{ x: this.size / 2, y: -this.thick / 2 },
 			{ x: this.size / 2, y: this.thick / 2 },
-			{ x: -this.size / 2, y: this.thick / 2 },
+			{ x: -this.size / 2, y: this.thick / 2 }
 		];
 		// if (family == "byObject") this.family = cc.family;
 		// this.params = cc.params; // (bindBox, move, resize, rotate)
@@ -127,76 +121,92 @@ export class Object2D implements ObjectMetaData {
 	update = () => {
 		this.width = this.size / constants.METER_SIZE;
 		this.height = this.thick / constants.METER_SIZE;
-		const cc = carpentryCalc(
-			this.class,
-			this.type,
-			this.size,
-			this.thick,
-			this.value
-		);
+		const cc = carpentryCalc(this.class, this.type, this.size, this.thick, this.value);
 		// setConstructs(cc);
-		for (var tt = 0; tt < cc.construc.length; tt++) {
-			if (cc.construc[tt].path) {
-				this.graph.find("path")[tt].setAttribute("d", cc.construc[tt].path);
-			} else {
-				// this.graph.find('text').context.textContent = cc[tt].text;
+		const graphChildren = this.graph.childNodes.entries();
+		for (const [idx, node] of graphChildren) {
+			// if (node.nodeName === "path") {
+			// 	paths.push(node as SVGElement);
+			// }
+			if (node.nodeName !== 'path') continue;
+			const svgPathElement = node as SVGPathElement;
+			const constructPath = cc.construc[idx]?.path;
+			if (constructPath) {
+				svgPathElement.setAttribute('d', constructPath);
 			}
 		}
-		var hingeStatus = this.hinge; // normal - reverse
-		var hingeUpdate;
-		if (hingeStatus == "normal") hingeUpdate = 1;
+		// for (var tt = 0; tt < cc.construc.length; tt++) {
+		// 	if (cc.construc[tt].path) {
+		// 		this.graph.find("path")[tt].setAttribute("d", cc.construc[tt].path);
+		// 	} else {
+		// 		// this.graph.find('text').context.textContent = cc[tt].text;
+		// 	}
+		// }
+		const hingeStatus = this.hinge; // normal - reverse
+		let hingeUpdate;
+		if (hingeStatus == 'normal') hingeUpdate = 1;
 		else hingeUpdate = -1;
-		this.graph.attr({
-			transform:
-				"translate(" +
+		this.graph.setAttribute(
+			'transform',
+			'translate(' +
 				this.x +
-				"," +
+				',' +
 				this.y +
-				") rotate(" +
+				') rotate(' +
 				this.angle +
-				",0,0) scale(" +
+				',0,0) scale(' +
 				hingeUpdate +
-				", 1)",
-		});
-		var bbox = this.graph.get(0).getBoundingClientRect();
-		const offset = getCanvasOffset() ?? { left: 0, top: 0 };
-		bbox.x =
-			bbox.x * this.viewbox.zoomFactor -
-			offset.left * this.viewbox.zoomFactor +
-			this.viewbox.originX;
-		bbox.y =
-			bbox.y * this.viewbox.zoomFactor -
-			offset.top * this.viewbox.zoomFactor +
-			this.viewbox.originY;
-		bbox.origin = { x: this.x, y: this.y };
-		this.bbox = bbox;
+				', 1)'
+		);
 
-		if (this.class == "text" && this.angle == 0) {
+		const child = this.graph.firstChild as SVGElement;
+		if (child) {
+			const bbox = child.getBoundingClientRect();
+			const offset = $('#lin').offset() ?? { left: 0, top: 0 };
+			bbox.x =
+				bbox.x * this.viewbox.zoomFactor -
+				offset.left * this.viewbox.zoomFactor +
+				this.viewbox.originX;
+			bbox.y =
+				bbox.y * this.viewbox.zoomFactor -
+				offset.top * this.viewbox.zoomFactor +
+				this.viewbox.originY;
+
+			// bbox.x = this.x;
+			// bbox.y = this.y;
+			this.bbox = {
+				...bbox,
+				id: '',
+				origin: { x: this.x, y: this.y }
+			};
+		}
+
+		if (this.class == 'text' && this.angle == 0) {
 			this.realBbox = [
 				{ x: this.bbox.x, y: this.bbox.y },
 				{ x: this.bbox.x + this.bbox.width, y: this.bbox.y },
 				{
 					x: this.bbox.x + this.bbox.width,
-					y: this.bbox.y + this.bbox.height,
+					y: this.bbox.y + this.bbox.height
 				},
-				{ x: this.bbox.x, y: this.bbox.y + this.bbox.height },
+				{ x: this.bbox.x, y: this.bbox.y + this.bbox.height }
 			];
 			this.size = this.bbox.width;
 			this.thick = this.bbox.height;
 		}
 
-		var angleRadian = -this.angle * (Math.PI / 180);
+		const angleRadian = -this.angle * (Math.PI / 180);
 		this.realBbox = [
 			{ x: -this.size / 2, y: -this.thick / 2 },
 			{ x: this.size / 2, y: -this.thick / 2 },
 			{ x: this.size / 2, y: this.thick / 2 },
-			{ x: -this.size / 2, y: this.thick / 2 },
+			{ x: -this.size / 2, y: this.thick / 2 }
 		];
-		var newRealBbox = [
+		const newRealBbox = [
 			{ x: 0, y: 0 },
 			{ x: 0, y: 0 },
 			{ x: 0, y: 0 },
-			{ x: 0, y: 0 },
+			{ x: 0, y: 0 }
 		];
 		newRealBbox[0].x =
 			this.realBbox[0].y * Math.sin(angleRadian) +

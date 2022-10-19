@@ -1,79 +1,84 @@
-import { Mode, ViewboxData } from "../../models";
-import { calculateSnap } from "../../utils";
-import { CanvasState } from "../CanvasState";
-import { handleNodeClicked } from "./NodeClickHandler";
-import { handleSegmentClicked } from "./SegmentClickHandler";
+import { Mode, ObjectMetaData, Point2D, ViewboxData, WallMetaData } from '../../models/models';
+import { calculateSnap } from '../../utils/utils';
+import { CanvasState } from '../CanvasState';
+import { handleSelectModeNodeClicked } from './SelectModeNodeClickHandler';
+import { handleSelectModeSegmentClicked } from './SelectModeSegmentClickHandler';
 
 interface Props {
 	event: React.TouchEvent | React.MouseEvent;
+	setPoint: (p: Point2D) => void;
 	canvasState: CanvasState;
 	viewbox: ViewboxData;
+	objectMetaData: ObjectMetaData[];
+	wallMetaData: WallMetaData[];
+	setWallMetaData: (w: WallMetaData[]) => void;
+	setSelectedWallData: (data: { wall: WallMetaData; before: Point2D }) => void;
 }
 
 export const handleSelectModeClick = ({
 	event,
 	canvasState: {
 		binder,
-		setBinder,
 		setMode,
 		setAction,
-		wallMeta,
-		setWallMeta,
-		objectMeta,
 		wallEquations,
 		followerData,
 		setObjectEquationData,
 		setWallEquations,
-		setPoint,
 		setDrag,
 		setCurrentNodeWallObjects,
-		setCurrentNodeWalls,
+		setCurrentNodeWalls
 	},
 	viewbox,
+	objectMetaData,
+	wallMetaData,
+	setWallMetaData,
+	setSelectedWallData,
+	setPoint
 }: Props) => {
 	switch (binder?.type) {
-		case "segment": {
+		case 'segment': {
 			setMode(Mode.Bind);
 			setAction(true);
-			$("#boxScale").hide(100);
+			$('#boxScale').hide(100);
 			const {
-				binder: binderResult,
+				selectedWallData,
 				wallMeta: wallMetaResult,
 				objectEquationData: objectEquationsResult,
-				wallEquations: wallEquationsResult,
-			} = handleSegmentClicked(
+				wallEquations: wallEquationsResult
+			} = handleSelectModeSegmentClicked(
 				binder,
-				wallMeta,
-				objectMeta,
+				wallMetaData,
+				objectMetaData,
 				wallEquations,
 				followerData
 			);
-			setBinder(binderResult);
-			setWallMeta(wallMetaResult);
+			setSelectedWallData(selectedWallData);
+			setWallMetaData(wallMetaResult);
 			setObjectEquationData(objectEquationsResult);
 			setWallEquations(wallEquationsResult);
 			break;
 		}
-		case "node": {
+		case 'node': {
 			setMode(Mode.Bind);
 			setAction(true);
-			$("#boxScale").hide(100);
-			var node = binder.data;
+			$('#boxScale').hide(100);
+			const node = binder.data;
 			setPoint({ x: node.x, y: node.y });
 
-			const { nodeWalls, nodeWallObjects } = handleNodeClicked({
+			const { nodeWalls, nodeWallObjects } = handleSelectModeNodeClicked({
 				x: node.x,
 				y: node.y,
-				wallMeta,
-				objectMeta,
+				wallMeta: wallMetaData,
+				objectMeta: objectMetaData
 			});
 
 			setCurrentNodeWallObjects(nodeWallObjects);
 			setCurrentNodeWalls(nodeWalls);
 			break;
 		}
-		case "obj":
-		case "boundingBox": {
+		case 'obj':
+		case 'boundingBox': {
 			setMode(Mode.Bind);
 			setAction(true);
 			break;

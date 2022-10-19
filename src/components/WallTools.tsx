@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
+import { WallMetaData } from '../models/models';
 
 interface Props {
-	binder: any;
+	wall?: WallMetaData | null;
 	onWallWidthChanged: (value: number) => void;
-	showSeparationSlider: boolean;
 	onSplitClicked: () => void;
 	onSeparationClicked: () => void;
 	onTransformToWallClicked: () => void;
@@ -12,37 +12,27 @@ interface Props {
 }
 
 const WallTools = ({
-	binder,
+	wall,
 	onWallWidthChanged,
-	showSeparationSlider,
 	onSplitClicked,
 	onSeparationClicked,
 	onTransformToWallClicked,
 	onWallTrashClicked,
-	onGoBackClicked,
+	onGoBackClicked
 }: Props) => {
-	const [wallToolsSeparation, setWallToolsSeparation] = useState(false);
 	const [wallWidth, setWallWidth] = useState(7);
 
-	useEffect(() => {
-		if (binder?.wall?.type === "separate") {
-			setWallToolsSeparation(true);
-		} else {
-			setWallToolsSeparation(false);
-		}
-	}, [binder]);
+	const isSeparationWall = wall?.type === 'separate';
 
 	return (
 		<div id="wallTools" className="leftBox">
-			<h2 id="titleWallTools">{`Modify the ${
-				wallToolsSeparation ? "separation" : "wall"
-			}`}</h2>
+			<h2 id="titleWallTools">{`Modify the ${isSeparationWall ? 'separation' : 'wall'}`}</h2>
 			<hr />
-			{!wallToolsSeparation && (
+			{!isSeparationWall && (
 				<section id="rangeThick">
 					<p>
-						Width [<span id="wallWidthScale">7-50</span>]
-						<span id="wallWidthVal">{wallWidth}</span> cm
+						Width [<span id="wallWidthScale">7-50</span>]<span id="wallWidthVal">{wallWidth}</span>{' '}
+						cm
 					</p>
 					<input
 						type="range"
@@ -60,7 +50,7 @@ const WallTools = ({
 				</section>
 			)}
 			<ul className="list-unstyled">
-				{!wallToolsSeparation && (
+				{!isSeparationWall && (
 					<section id="cutWall">
 						<p>
 							Cut the wall :<br />
@@ -71,15 +61,15 @@ const WallTools = ({
 								className="btn btn-default fully"
 								onClick={() => {
 									onSplitClicked();
-								}}
-							>
+								}}>
 								<i className="fa fa-2x fa-scissors" aria-hidden="true"></i>
 							</button>
 						</li>
 					</section>
 				)}
 				<br />
-				{showSeparationSlider && (
+
+				{!isSeparationWall && (
 					<section id="separate">
 						<p>
 							Separation wall :<br />
@@ -91,14 +81,14 @@ const WallTools = ({
 								onClick={() => {
 									onSeparationClicked();
 								}}
-								id="wallInvisible"
-							>
+								id="wallInvisible">
 								<i className="fa fa-2x fa-crop" aria-hidden="true"></i>
 							</button>
 						</li>
 					</section>
 				)}
-				{wallToolsSeparation && (
+
+				{isSeparationWall && (
 					<section id="recombine">
 						<p>
 							Transform to wall :<br />
@@ -110,8 +100,7 @@ const WallTools = ({
 								onClick={() => {
 									onTransformToWallClicked();
 								}}
-								id="wallVisible"
-							>
+								id="wallVisible">
 								<i className="fa fa-2x fa-crop" aria-hidden="true"></i>
 							</button>
 						</li>
@@ -124,19 +113,17 @@ const WallTools = ({
 						id="wallTrash"
 						onClick={() => {
 							onWallTrashClicked();
-						}}
-					>
+						}}>
 						<i className="fa fa-2x fa-trash-o" aria-hidden="true"></i>
 					</button>
 				</li>
 				<li>
 					<button
 						className="btn btn-info fully"
-						style={{ marginTop: "50px" }}
+						style={{ marginTop: '50px' }}
 						onClick={() => {
 							onGoBackClicked();
-						}}
-					>
+						}}>
 						<i className="fa fa-2x fa-backward" aria-hidden="true"></i>
 					</button>
 				</li>

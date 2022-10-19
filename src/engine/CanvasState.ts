@@ -1,16 +1,25 @@
+import { useState } from 'react';
 import {
 	Mode,
 	NodeWallObjectData,
 	ObjectEquationData,
-	ObjectMetaData,
 	Point2D,
 	RoomMetaData,
 	RoomPolygonData,
-	ViewboxData,
 	WallEquation,
 	WallEquationGroup,
-	WallMetaData,
-} from "../models";
+	WallMetaData
+} from '../models/models';
+
+const useRoomState = () => {
+	const [roomPolygonData, setRoomPolygonData] = useState<RoomPolygonData>({
+		polygons: [],
+		vertex: []
+	});
+	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
+
+	return { roomPolygonData, setRoomPolygonData, roomMetaData, setRoomMetaData };
+};
 
 export class CanvasState {
 	binder: any;
@@ -25,48 +34,10 @@ export class CanvasState {
 		return this.mode;
 	};
 
-	modeOption = "";
+	modeOption = '';
 	setModeOption = (val: string) => {
 		this.modeOption = val;
 		return this.modeOption;
-	};
-
-	wallMeta: WallMetaData[] = [];
-	setWallMeta = (w: WallMetaData[]) => {
-		this.wallMeta = w;
-		return this.wallMeta;
-	};
-
-	roomPolygonData: RoomPolygonData = { polygons: [], vertex: [] };
-	setRoomPolygonData = (val: RoomPolygonData) => {
-		// console.log("Rooms set to: ", val);
-		this.roomPolygonData = val;
-		return this.roomPolygonData;
-	};
-
-	roomMeta: RoomMetaData[] = [];
-	setRoomMeta = (r: RoomMetaData[]) => {
-		// console.log("setting roomMeta: ", r);
-		this.roomMeta = r;
-		return this.roomMeta;
-	};
-
-	objectMeta: ObjectMetaData[] = [];
-	setObjectMeta = (o: ObjectMetaData[]) => {
-		this.objectMeta = o;
-		return this.objectMeta;
-	};
-
-	point: Point2D = { x: 0, y: 0 };
-	setPoint = (p: Point2D) => {
-		this.point = p;
-		return this.point;
-	};
-
-	wallDrawPoint: Point2D = { x: 0, y: 0 };
-	setWallDrawPoint = (p: Point2D) => {
-		this.wallDrawPoint = p;
-		return this.wallDrawPoint;
 	};
 
 	action = false;
@@ -113,7 +84,7 @@ export class CanvasState {
 	wallEquations: WallEquationGroup = {
 		equation1: null,
 		equation2: null,
-		equation3: null,
+		equation3: null
 	};
 	setWallEquations = (newEquations: WallEquationGroup) => {
 		this.wallEquations = newEquations;

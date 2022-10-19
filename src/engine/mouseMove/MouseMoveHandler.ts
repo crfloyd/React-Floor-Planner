@@ -1,32 +1,38 @@
-import React from "react";
 import {
 	CursorType,
 	Mode,
 	ObjectEquationData,
-	SvgPathMetaData,
+	ObjectMetaData,
+	Point2D,
+	RoomMetaData,
+	RoomPolygonData,
+	SnapData,
 	ViewboxData,
-} from "../../models";
-import { calculateSnap } from "../../utils";
-import { CanvasState } from "../CanvasState";
-import { handleMouseMoveBindMode } from "./BindModeMouseMoveHandler";
-import { handleMouseMoveLineMode } from "./LineModeMouseMoveHandler";
-import { handleMouseMoveOverObject } from "./ObjectMouseMoveHandler";
-import { handleMouseMoveOpeningMode } from "./OpeningMouseMoveHandler";
-import { handleMouseMoveRoomMode } from "./RoomModeMoveHandler";
-import { handleMouseMoveSelectMode } from "./SelectModeMouseMoveHandler";
+	WallMetaData
+} from '../../models/models';
+import { CanvasState } from '../CanvasState';
+import { handleMouseMoveBindMode } from './BindModeMouseMoveHandler';
+import { handleMouseMoveOverObject } from './ObjectModeMouseMoveHandler';
+import { handleMouseMoveOpeningMode } from './OpeningMouseMoveHandler';
+import { handleMouseMoveRoomMode } from './RoomModeMoveHandler';
+import { handleMouseMoveSelectMode } from './SelectModeMouseMoveHandler';
 
 export const handleMouseMove = (
-	event: React.TouchEvent | React.MouseEvent,
+	snap: SnapData,
+	point: Point2D,
+	target: EventTarget,
 	canvasState: CanvasState,
-	continuousWallMode: boolean,
 	viewbox: ViewboxData,
+	wallMetaData: WallMetaData[],
+	setWallMetaData: (w: WallMetaData[]) => void,
+	roomMetaData: RoomMetaData[],
+	roomPolygonData: RoomPolygonData,
+	objectMetaData: ObjectMetaData[],
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void,
 	resetObjectEquationData: () => ObjectEquationData[],
-	setHelperLineSvgData: (l: SvgPathMetaData | null) => void,
-	setCursor: (crsr: CursorType) => void
+	setCursor: (crsr: CursorType) => void,
+	setWallUnderCursor: (wall: WallMetaData | null) => void
 ) => {
-	event.preventDefault();
-
 	if (
 		![
 			Mode.Object,
@@ -35,50 +41,46 @@ export const handleMouseMove = (
 			Mode.Select,
 			Mode.Line,
 			Mode.Partition,
-			Mode.Bind,
+			Mode.Bind
 		].includes(canvasState.mode)
 	)
 		return;
-
-	const snap = calculateSnap(event, viewbox);
-
 	switch (canvasState.mode) {
 		case Mode.Object:
-			handleMouseMoveOverObject(snap, canvasState, viewbox);
+			handleMouseMoveOverObject(snap, canvasState, viewbox, wallMetaData);
 			break;
 		case Mode.Room:
-			handleMouseMoveRoomMode(snap, canvasState);
+			handleMouseMoveRoomMode(snap, canvasState, roomMetaData, roomPolygonData);
 			break;
 		case Mode.Opening:
-			handleMouseMoveOpeningMode(snap, canvasState, viewbox);
+			handleMouseMoveOpeningMode(snap, canvasState, viewbox, wallMetaData);
 			break;
 		case Mode.Select:
 			handleMouseMoveSelectMode(
-				event,
+				target,
 				snap,
 				canvasState,
 				viewbox,
 				setCursor,
-				handleCameraChange
+				handleCameraChange,
+				wallMetaData,
+				objectMetaData,
+				setWallUnderCursor,
+				point
 			);
 			break;
 		case Mode.Line:
 		case Mode.Partition:
-			handleMouseMoveLineMode(
-				snap,
-				setHelperLineSvgData,
-				continuousWallMode,
-				setCursor,
-				canvasState
-			);
 			break;
 		case Mode.Bind:
 			handleMouseMoveBindMode(
 				snap,
 				resetObjectEquationData,
-				setHelperLineSvgData,
 				setCursor,
-				canvasState
+				canvasState,
+				wallMetaData,
+				objectMetaData,
+				setWallMetaData
 			);
 			break;
 		default:

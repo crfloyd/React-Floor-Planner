@@ -1,17 +1,22 @@
-import { qSVG } from "../../../qSVG";
 import {
 	ObjectMetaData,
 	Point2D,
 	WallEquation,
 	WallEquationGroup,
-	WallMetaData,
-} from "../../models";
-import { pointInPolygon } from "../../svgTools";
-import { findById, isObjectsEquals, perpendicularEquation } from "../../utils";
-import { Wall } from "../../wall";
+	WallMetaData
+} from '../../models/models';
+import { angleBetweenEquations, pointInPolygon } from '../../utils/svgTools';
+import {
+	findById,
+	isObjectsEquals,
+	perpendicularEquation,
+	pointArraysAreEqual,
+	pointsAreEqual
+} from '../../utils/utils';
+import { Wall } from '../../models/Wall';
 
-export const handleSegmentClicked = (
-	binder: any,
+export const handleSelectModeSegmentClicked = (
+	selectedWallData: { wall: WallMetaData; before: Point2D },
 	wallMeta: WallMetaData[],
 	objectMeta: ObjectMetaData[],
 	wallEquations: WallEquationGroup,
@@ -20,32 +25,34 @@ export const handleSegmentClicked = (
 		intersection: Point2D | null;
 	}
 ) => {
-	const wall = Wall.fromWall(binder.wall);
-	binder.before = binder.wall.start;
+	const wall = Wall.fromWall(selectedWallData.wall);
+	selectedWallData = {
+		...selectedWallData,
+		before: selectedWallData.wall.start
+	};
 	wallEquations.equation2 = wall.getEquation();
 	if (wall.parent != null) {
 		const parent = findById(wall.parent, wallMeta);
 		wallEquations.equation1 = parent?.getEquation() ?? null;
-		var angle12 = qSVG.angleBetweenEquations(
-			wallEquations.equation1?.A,
+		const angle12 = angleBetweenEquations(
+			wallEquations.equation1?.A ?? 0,
 			wallEquations.equation2?.A
 		);
 		if (angle12 < 20 || angle12 > 160) {
 			let found = false;
 			wallMeta.forEach((comparisonWall) => {
-				console.log("bruh");
 				if (
 					comparisonWall.id !== parent?.id &&
 					pointInPolygon(wall.start, comparisonWall.coords) &&
 					// !isObjectsEquals(comparisonWall, wall.parent) &&
 					!isObjectsEquals(comparisonWall, wall)
 				) {
-					const parentOfParent = findById(parent?.parent ?? "", wallMeta);
+					const parentOfParent = findById(parent?.parent ?? '', wallMeta);
 					if (parent && parentOfParent && parentOfParent.id === wall.id) {
 						parent.parent = null;
 					}
 
-					const childOfParent = findById(parent?.child ?? "", wallMeta);
+					const childOfParent = findById(parent?.child ?? '', wallMeta);
 					if (
 						parent &&
 						childOfParent &&
@@ -56,20 +63,15 @@ export const handleSegmentClicked = (
 					}
 					wall.parent = null;
 					found = true;
-					binder = { ...binder, wall: wall };
+					selectedWallData = { ...selectedWallData, wall: wall };
 					return;
 				}
 			});
 			if (!found) {
-				const parent = findById(wall.parent ?? "", wallMeta);
+				const parent = findById(wall.parent ?? '', wallMeta);
 				if (parent && parent.end === wall.start) {
 					// if (isObjectsEquals(wall.parent.end, wall.start, "1")) {
-					const newWall = new Wall(
-						parent.end,
-						wall.start,
-						"normal",
-						wall.thick
-					);
+					const newWall = new Wall(parent.end, wall.start, 'normal', wall.thick);
 					newWall.parent = wall.parent;
 					newWall.child = wall.id;
 					// WALLS.push(newWall);
@@ -78,20 +80,11 @@ export const handleSegmentClicked = (
 					wall.parent = newWall.id;
 					if (wallEquations.equation2) {
 						wallEquations.equation1 =
-							perpendicularEquation(
-								wallEquations.equation2,
-								wall.start.x,
-								wall.start.y
-							) ?? null;
+							perpendicularEquation(wallEquations.equation2, wall.start.x, wall.start.y) ?? null;
 					}
 				} else if (parent && parent.start === wall.start) {
 					// } else if (isObjectsEquals(parent.start, wall.start, "2")) {
-					const newWall = new Wall(
-						parent.start,
-						wall.start,
-						"normal",
-						wall.thick
-					);
+					const newWall = new Wall(parent.start, wall.start, 'normal', wall.thick);
 					newWall.parent = wall.parent;
 					newWall.child = wall.id;
 					wallMeta = [...wallMeta, newWall];
@@ -111,14 +104,14 @@ export const handleSegmentClicked = (
 	}
 
 	if (wall.parent == null) {
-		var foundEq = false;
-		for (var k in wallMeta) {
+		let foundEq = false;
+		for (const k in wallMeta) {
 			if (
 				wallEquations.equation2 &&
 				pointInPolygon(wall.start, wallMeta[k].coords) &&
-				!isObjectsEquals(wallMeta[k].coords, wall.coords)
+				!pointArraysAreEqual(wallMeta[k].coords, wall.coords)
 			) {
-				var angleFollow = qSVG.angleBetweenEquations(
+				const angleFollow = angleBetweenEquations(
 					wallMeta[k].equations.base.A,
 					wallEquations.equation2.A
 				);
@@ -141,13 +134,13 @@ export const handleSegmentClicked = (
 	if (wall.child != null) {
 		const child = findById(wall.child, wallMeta);
 		wallEquations.equation3 = child?.getEquation() ?? null;
-		var angle23 = qSVG.angleBetweenEquations(
-			wallEquations?.equation3?.A,
+		const angle23 = angleBetweenEquations(
+			wallEquations?.equation3?.A ?? 0,
 			wallEquations?.equation2?.A
 		);
 		if (angle23 < 20 || angle23 > 160) {
-			var found = true;
-			for (var k in wallMeta) {
+			let found = true;
+			for (const k in wallMeta) {
 				if (
 					pointInPolygon(wall.end, wallMeta[k].coords) &&
 					wallMeta[k].id !== wall.child &&
@@ -158,7 +151,7 @@ export const handleSegmentClicked = (
 						child.parent = null;
 					}
 
-					const childOfChild = findById(child?.child ?? "", wallMeta);
+					const childOfChild = findById(child?.child ?? '', wallMeta);
 					if (
 						child &&
 						childOfChild &&
@@ -175,9 +168,9 @@ export const handleSegmentClicked = (
 				}
 			}
 			if (found) {
-				const child = findById(wall.child ?? "", wallMeta);
-				if (child && isObjectsEquals(child.start, wall.end)) {
-					var newWall = new Wall(wall.end, child.start, "new", wall.thick);
+				const child = findById(wall.child ?? '', wallMeta);
+				if (child && pointsAreEqual(child.start, wall.end)) {
+					const newWall = new Wall(wall.end, child.start, 'new', wall.thick);
 					newWall.parent = wall.id;
 					newWall.child = wall.child;
 					wallMeta = [...wallMeta, newWall];
@@ -191,8 +184,8 @@ export const handleSegmentClicked = (
 							wall.end.y
 						);
 					}
-				} else if (child && isObjectsEquals(child.end, wall.end)) {
-					var newWall = new Wall(wall.end, child.end, "normal", wall.thick);
+				} else if (child && pointsAreEqual(child.end, wall.end)) {
+					const newWall = new Wall(wall.end, child.end, 'normal', wall.thick);
 					newWall.parent = wall.id;
 					newWall.child = child.id;
 					wallMeta = [...wallMeta, newWall];
@@ -211,14 +204,14 @@ export const handleSegmentClicked = (
 		}
 	}
 	if (wall.child == null) {
-		var foundEq = false;
-		for (var k in wallMeta) {
+		let foundEq = false;
+		for (const k in wallMeta) {
 			if (
 				wallEquations.equation2 &&
 				pointInPolygon(wall.end, wallMeta[k].coords) &&
-				!isObjectsEquals(wallMeta[k].coords, wall.coords)
+				!pointArraysAreEqual(wallMeta[k].coords, wall.coords)
 			) {
-				var angleFollow = qSVG.angleBetweenEquations(
+				const angleFollow = angleBetweenEquations(
 					wallMeta[k].equations.base.A,
 					wallEquations.equation2.A
 				);
@@ -240,7 +233,7 @@ export const handleSegmentClicked = (
 	}
 
 	followerData.equations = [];
-	for (var k in wallMeta) {
+	for (const k in wallMeta) {
 		if (
 			wallMeta[k].child == null &&
 			pointInPolygon(wallMeta[k].end, wall.coords) &&
@@ -249,7 +242,7 @@ export const handleSegmentClicked = (
 			followerData.equations.push({
 				wall: wallMeta[k],
 				eq: wallMeta[k].getEquation(),
-				type: "end",
+				type: 'end'
 			});
 		}
 		if (
@@ -260,7 +253,7 @@ export const handleSegmentClicked = (
 			followerData.equations.push({
 				wall: wallMeta[k],
 				eq: wallMeta[k].getEquation(),
-				type: "start",
+				type: 'start'
 			});
 		}
 	}
@@ -269,12 +262,8 @@ export const handleSegmentClicked = (
 	const objectEquationData = objectsOnWall.map((objTarget) => ({
 		obj: objTarget,
 		wall: wall,
-		eq: perpendicularEquation(
-			wallEquations.equation2 ?? { A: 0, B: 0 },
-			objTarget.x,
-			objTarget.y
-		),
+		eq: perpendicularEquation(wallEquations.equation2 ?? { A: 0, B: 0 }, objTarget.x, objTarget.y)
 	}));
 
-	return { binder, wallMeta, objectEquationData, wallEquations };
+	return { selectedWallData, wallMeta, objectEquationData, wallEquations };
 };

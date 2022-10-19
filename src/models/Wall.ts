@@ -1,23 +1,22 @@
 import {
 	ObjectMetaData,
 	Point2D,
-	WallEquation,
 	WallEquationGroup,
 	WallMetaData,
 	WallSideEquations,
-	WallJunction,
-} from "./models";
-import { v4 as uuid } from "uuid";
-import { editor } from "../editor";
-import { qSVG } from "../qSVG";
-import { findById, intersectionOfEquations, isObjectsEquals } from "./utils";
-import { constants } from "../constants";
+	WallJunction
+} from './models';
+import { v4 as uuid } from 'uuid';
+import { findById, intersectionOfEquations, pointIsBetween, pointsAreEqual } from '../utils/utils';
+import { constants } from '../../constants';
 import {
+	angleBetweenEquations,
 	calculateDPath,
 	createEquation,
+	createSvgElement,
 	getWallNodes,
-	nearPointOnEquation,
-} from "./svgTools";
+	nearPointOnEquation
+} from '../utils/svgTools';
 
 export class Wall implements WallMetaData {
 	id: string;
@@ -43,13 +42,13 @@ export class Wall implements WallMetaData {
 		this.equations = {
 			up: { A: 0, B: 0 },
 			down: { A: 0, B: 0 },
-			base: { A: 0, B: 0 },
+			base: { A: 0, B: 0 }
 		};
 		this.graph = {};
 		Object.assign(this, init);
 	}
 
-	static fromWall = (from: Wall): Wall => {
+	static fromWall = (from: WallMetaData): Wall => {
 		const newWall = new Wall(from.start, from.end, from.type, from.thick);
 		newWall.id = from.id;
 		newWall.parent = from.parent;
@@ -63,30 +62,26 @@ export class Wall implements WallMetaData {
 		return newWall;
 	};
 
-	update = (
-		allWalls: WallMetaData[],
-		wallEquations: WallEquationGroup,
-		moveAction: boolean
-	) => {
+	update = (allWalls: WallMetaData[], wallEquations: WallEquationGroup, moveAction: boolean) => {
 		let previousWall = null;
 		let previousWallStart: Point2D = { x: 0, y: 0 };
 		let previousWallEnd: Point2D = { x: 0, y: 0 };
 		if (this.parent != null) {
 			const parent = findById(this.parent, allWalls);
 			if (parent) {
-				if (isObjectsEquals(parent.start, this.start)) {
+				if (pointsAreEqual(parent.start, this.start)) {
 					previousWall = parent;
 					previousWallStart = previousWall.end;
 					previousWallEnd = previousWall.start;
-				} else if (isObjectsEquals(parent.end, this.start)) {
+				} else if (pointsAreEqual(parent.end, this.start)) {
 					previousWall = parent;
 					previousWallStart = previousWall.start;
 					previousWallEnd = previousWall.end;
 				}
 			}
 		} else {
-			var nearestNodesToStart = getWallNodes(this.start, allWalls, this);
-			for (var k in nearestNodesToStart) {
+			const nearestNodesToStart = getWallNodes(this.start, allWalls, this);
+			for (const k in nearestNodesToStart) {
 				const nearest = nearestNodesToStart[k];
 				const eqInter = createEquation(
 					nearest.wall.start.x,
@@ -95,10 +90,10 @@ export class Wall implements WallMetaData {
 					nearest.wall.end.y
 				);
 				const angleInter = moveAction
-					? qSVG.angleBetweenEquations(eqInter.A, wallEquations.equation2?.A)
+					? angleBetweenEquations(eqInter.A, wallEquations.equation2?.A ?? 0)
 					: 90;
 				if (
-					nearest.type == "start" &&
+					nearest.type == 'start' &&
 					nearest.wall.parent == null &&
 					angleInter > 20 &&
 					angleInter < 160
@@ -113,7 +108,7 @@ export class Wall implements WallMetaData {
 					}
 				}
 				if (
-					nearest.type == "end" &&
+					nearest.type == 'end' &&
 					nearest.wall.child == null &&
 					angleInter > 20 &&
 					angleInter < 160
@@ -137,7 +132,7 @@ export class Wall implements WallMetaData {
 			const child = findById(this.child, allWalls);
 			if (child) {
 				thickness = child.thick;
-				if (isObjectsEquals(child.end, this.end)) {
+				if (pointsAreEqual(child.end, this.end)) {
 					nextWallStart = child.end;
 					nextWallEnd = child.start;
 				} else {
@@ -146,23 +141,24 @@ export class Wall implements WallMetaData {
 				}
 			}
 		} else {
-			var nearestNodesToEnd = getWallNodes(this.end, allWalls, this);
+			const nearestNodesToEnd = getWallNodes(this.end, allWalls, this);
+
 			nearestNodesToEnd.forEach((nearest) => {
-				var eqInter = createEquation(
+				const eqInter = createEquation(
 					nearest.wall.start.x,
 					nearest.wall.start.y,
 					nearest.wall.end.x,
 					nearest.wall.end.y
 				);
-				var angleInter = moveAction
-					? qSVG.angleBetweenEquations(eqInter.A, wallEquations.equation2?.A)
+				const angleInter = moveAction
+					? angleBetweenEquations(eqInter.A, wallEquations.equation2?.A ?? 0)
 					: 90;
 
 				if (angleInter <= 20 || angleInter >= 160) {
 					return;
 				}
 
-				if (nearest.type == "end" && nearest.wall.child == null) {
+				if (nearest.type == 'end' && nearest.wall.child == null) {
 					this.child = nearest.wall.id;
 					nearest.wall.child = this.id;
 					const nextWall = findById(this.child, allWalls);
@@ -172,7 +168,7 @@ export class Wall implements WallMetaData {
 						thickness = nextWall.thick;
 					}
 				}
-				if (nearest.type == "start" && nearest.wall.parent == null) {
+				if (nearest.type == 'start' && nearest.wall.parent == null) {
 					this.child = nearest.wall.id;
 					nearest.wall.parent = this.id;
 					const nextWall = findById(this.child, allWalls);
@@ -185,10 +181,7 @@ export class Wall implements WallMetaData {
 			});
 		}
 
-		const angleWall = Math.atan2(
-			this.end.y - this.start.y,
-			this.end.x - this.start.x
-		);
+		const angleWall = Math.atan2(this.end.y - this.start.y, this.end.x - this.start.x);
 
 		this.angle = angleWall;
 		const wallThickX = (this.thick / 2) * Math.sin(angleWall);
@@ -205,19 +198,28 @@ export class Wall implements WallMetaData {
 			this.end.x - wallThickX,
 			this.end.y + wallThickY
 		);
-		const eqWallBase = createEquation(
-			this.start.x,
-			this.start.y,
-			this.end.x,
-			this.end.y
-		);
+		const eqWallBase = createEquation(this.start.x, this.start.y, this.end.x, this.end.y);
 		this.equations = {
 			up: eqWallUp,
 			down: eqWallDw,
-			base: eqWallBase,
+			base: eqWallBase
 		};
+		// console.log(
+		// 	"id:",
+		// 	this.id,
+		// 	"2 - prevStart:",
+		// 	previousWallStart,
+		// 	"start:",
+		// 	this.start,
+		// 	"end:",
+		// 	this.end,
+		// 	"parent",
+		// 	this.parent,
+		// 	"child",
+		// 	this.child
+		// );
 
-		let dWay = calculateDPath(
+		const dWay = calculateDPath(
 			this,
 			angleWall,
 			previousWallStart,
@@ -226,7 +228,7 @@ export class Wall implements WallMetaData {
 			eqWallUp,
 			eqWallDw,
 			previousWall?.thick ?? 0,
-			""
+			''
 		);
 
 		this.dPath =
@@ -239,12 +241,12 @@ export class Wall implements WallMetaData {
 				eqWallUp,
 				eqWallDw,
 				thickness,
-				dWay ?? ""
+				dWay ?? ''
 			) ?? null;
 	};
 
 	makeVisible = () => {
-		this.type = "normal";
+		this.type = 'normal';
 		this.thick = this.backUp;
 		this.backUp = false;
 	};
@@ -253,47 +255,28 @@ export class Wall implements WallMetaData {
 		return createEquation(this.start.x, this.start.y, this.end.x, this.end.y);
 	};
 
-	addToScene = () => {
-		this.graph = qSVG.create("none", "path", {
-			d: this.dPath,
-			stroke: "none",
-			fill: constants.COLOR_WALL,
-			"stroke-width": 1,
-			"stroke-linecap": "butt",
-			"stroke-linejoin": "miter",
-			"stroke-miterlimit": 4,
-			"fill-rule": "nonzero",
-		});
-		$("#boxwall").append(this.graph);
-	};
-
-	pointInsideWall = (point: Point2D, round = false) => {
-		let p = { ...point };
-		let start = { ...this.start };
-		let end = { ...this.end };
-		return this.isBetween(p, start, end, round);
+	pointInsideWall = (point: Point2D, round: boolean) => {
+		const p = { ...point };
+		const start = { ...this.start };
+		const end = { ...this.end };
+		return pointIsBetween(p, start, end, round);
 	};
 
 	pointBetweenCoords(point: Point2D, coordSet: 1 | 2, round = false) {
-		let p = { ...point };
-		let start = coordSet == 1 ? this.coords[0] : this.coords[1];
-		let end = coordSet == 1 ? this.coords[3] : this.coords[2];
+		const p = { ...point };
+		const start = coordSet == 1 ? this.coords[0] : this.coords[1];
+		const end = coordSet == 1 ? this.coords[3] : this.coords[2];
 
-		return this.isBetween(p, start, end, round);
+		return pointIsBetween(p, start, end, round);
 	}
 
 	getObjects(allObjects: ObjectMetaData[]): ObjectMetaData[] {
 		const objectsOnWall: ObjectMetaData[] = [];
 		allObjects.forEach((obj) => {
-			if (obj.family == "inWall") {
-				var eq = createEquation(
-					this.start.x,
-					this.start.y,
-					this.end.x,
-					this.end.y
-				);
+			if (obj.family == 'inWall') {
+				const eq = createEquation(this.start.x, this.start.y, this.end.x, this.end.y);
 				const searchResult = nearPointOnEquation(eq, obj);
-				if (searchResult.distance < 0.01 && this.pointInsideWall(obj)) {
+				if (searchResult.distance < 0.01 && this.pointInsideWall(obj, false)) {
 					objectsOnWall.push(obj);
 				}
 			}
@@ -303,115 +286,77 @@ export class Wall implements WallMetaData {
 
 	getJunctions(allWalls: WallMetaData[]): WallJunction[] {
 		const junctions: WallJunction[] = [];
-		var thisWallEquation = createEquation(
-			this.start.x,
-			this.start.y,
-			this.end.x,
-			this.end.y
-		);
+		const thisWallEquation = createEquation(this.start.x, this.start.y, this.end.x, this.end.y);
 		allWalls
 			.filter((w) => w != this)
 			.forEach((otherWall, idx) => {
 				// if (otherWall == this) return;
 
-				var otherWallEquation = createEquation(
+				const otherWallEquation = createEquation(
 					otherWall.start.x,
 					otherWall.start.y,
 					otherWall.end.x,
 					otherWall.end.y
 				);
-				var intersec = intersectionOfEquations(
-					thisWallEquation,
-					otherWallEquation
-				);
+				const intersec = intersectionOfEquations(thisWallEquation, otherWallEquation);
 				if (intersec) {
 					if (
-						(this.end.x == otherWall.start.x &&
-							this.end.y == otherWall.start.y) ||
+						(this.end.x == otherWall.start.x && this.end.y == otherWall.start.y) ||
 						(this.start.x == otherWall.end.x && this.start.y == otherWall.end.y)
 					) {
-						if (
-							this.end.x == otherWall.start.x &&
-							this.end.y == otherWall.start.y
-						) {
+						if (this.end.x == otherWall.start.x && this.end.y == otherWall.start.y) {
 							junctions.push({
 								segment: 0,
 								child: idx,
 								values: [otherWall.start.x, otherWall.start.y],
-								type: "natural",
+								type: 'natural'
 							});
 						}
-						if (
-							this.start.x == otherWall.end.x &&
-							this.start.y == otherWall.end.y
-						) {
+						if (this.start.x == otherWall.end.x && this.start.y == otherWall.end.y) {
 							junctions.push({
 								segment: 0,
 								child: idx,
 								values: [this.start.x, this.start.y],
-								type: "natural",
+								type: 'natural'
 							});
 						}
 					} else {
-						if (
-							this.pointInsideWall(intersec, true) &&
-							otherWall.pointInsideWall(intersec, true)
-						) {
+						if (this.pointInsideWall(intersec, true) && otherWall.pointInsideWall(intersec, true)) {
 							// intersec[0] = intersec[0];
 							// intersec[1] = intersec[1];
 							junctions.push({
 								segment: 0,
 								child: idx,
 								values: [intersec.x, intersec.y],
-								type: "intersection",
+								type: 'intersection'
 							});
 						}
 					}
 				}
 				// IF EQ1 == EQ 2 FIND IF START OF SECOND SEG == END OF FIRST seg (eq.A maybe values H ou V)
 				if (
-					(Math.abs(thisWallEquation.A as number) ==
-						Math.abs(otherWallEquation.A as number) ||
+					(Math.abs(thisWallEquation.A as number) == Math.abs(otherWallEquation.A as number) ||
 						thisWallEquation.A == otherWallEquation.A) &&
 					thisWallEquation.B == otherWallEquation.B
 				) {
-					if (
-						this.end.x == otherWall.start.x &&
-						this.end.y == otherWall.start.y
-					) {
+					if (this.end.x == otherWall.start.x && this.end.y == otherWall.start.y) {
 						junctions.push({
 							segment: 0,
 							child: idx,
 							values: [otherWall.start.x, otherWall.start.y],
-							type: "natural",
+							type: 'natural'
 						});
 					}
-					if (
-						this.start.x == otherWall.end.x &&
-						this.start.y == otherWall.end.y
-					) {
+					if (this.start.x == otherWall.end.x && this.start.y == otherWall.end.y) {
 						junctions.push({
 							segment: 0,
 							child: idx,
 							values: [this.start.x, this.start.y],
-							type: "natural",
+							type: 'natural'
 						});
 					}
 				}
 			});
 		return junctions;
-	}
-
-	private isBetween(p: Point2D, start: Point2D, end: Point2D, round = false) {
-		if (round) {
-			p = { x: Math.round(p.x), y: Math.round(p.y) };
-			start = { x: Math.round(start.x), y: Math.round(start.y) };
-			end = { x: Math.round(end.x), y: Math.round(end.y) };
-		}
-
-		return (
-			((p.x >= start.x && p.x <= end.x) || (p.x >= end.x && p.x <= start.x)) &&
-			((p.y >= start.y && p.y <= end.y) || (p.y >= end.y && p.y <= start.y))
-		);
 	}
 }

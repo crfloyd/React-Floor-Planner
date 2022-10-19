@@ -1,12 +1,7 @@
 const Patterns = () => {
 	return (
 		<>
-			<pattern
-				id="grass"
-				patternUnits="userSpaceOnUse"
-				width="256"
-				height="256"
-			>
+			<pattern id="grass" patternUnits="userSpaceOnUse" width="256" height="256">
 				<image
 					xlinkHref="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRWh5nEP_Trwo96CJjev6lnKe0_dRdA63RJFaoc3-msedgxveJd"
 					x="0"
@@ -33,12 +28,7 @@ const Patterns = () => {
 					height="256"
 				/>
 			</pattern>
-			<pattern
-				id="granite"
-				patternUnits="userSpaceOnUse"
-				width="256"
-				height="256"
-			>
+			<pattern id="granite" patternUnits="userSpaceOnUse" width="256" height="256">
 				<image
 					xlinkHref="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9_nEMhnWVV47lxEn5T_HWxvFwkujFTuw6Ff26dRTl4rDaE8AdEQ"
 					x="0"
@@ -47,18 +37,8 @@ const Patterns = () => {
 					height="256"
 				/>
 			</pattern>
-			<pattern
-				id="smallGrid"
-				width="60"
-				height="60"
-				patternUnits="userSpaceOnUse"
-			>
-				<path
-					d="M 60 0 L 0 0 0 60"
-					fill="none"
-					stroke="#777"
-					strokeWidth="0.25"
-				/>
+			<pattern id="smallGrid" width="60" height="60" patternUnits="userSpaceOnUse">
+				<path d="M 60 0 L 0 0 0 60" fill="none" stroke="#777" strokeWidth="0.25" />
 			</pattern>
 			<pattern id="grid" width="180" height="180" patternUnits="userSpaceOnUse">
 				<rect width="180" height="180" fill="url(#smallGrid)" />
@@ -74,12 +54,8 @@ const Patterns = () => {
 				width="5"
 				height="5"
 				patternTransform="rotate(50 0 0)"
-				patternUnits="userSpaceOnUse"
-			>
-				<path
-					d="M 0 0 L 0 5 M 10 0 L 10 10 Z"
-					style={{ stroke: "#666", strokeWidth: 5 }}
-				/>
+				patternUnits="userSpaceOnUse">
+				<path d="M 0 0 L 0 5 M 10 0 L 10 10 Z" style={{ stroke: '#666', strokeWidth: 5 }} />
 			</pattern>
 		</>
 	);
