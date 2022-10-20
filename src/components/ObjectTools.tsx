@@ -38,7 +38,7 @@ const ObjectTools = ({
 		setBoundObjectHeight(data.height);
 		setBoundObjectWidth(data.width);
 		setBoundObjectRotation(data.rotation);
-	}, []);
+	}, [data.height, data.width, data.rotation]);
 
 	return (
 		<div id="objBoundingBox" className="leftBox">

@@ -24,7 +24,7 @@ import {
 	vectorDeter,
 	vectorXY
 } from '../../utils/utils';
-import { CanvasState } from '../CanvasState';
+import { CanvasState } from '../';
 
 export const handleMouseMoveBindMode = (
 	snap: SnapData,

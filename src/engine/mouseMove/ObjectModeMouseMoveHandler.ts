@@ -3,7 +3,7 @@ import { BoundingBox, SnapData, ViewboxData, WallMetaData } from '../../models/m
 import { Object2D } from '../../models/Object2D';
 import { createEquation, getAngle, nearPointOnEquation, nearVertice } from '../../utils/svgTools';
 import { getWallsOnPoint, pointIsBetween, vectorDeter, vectorXY } from '../../utils/utils';
-import { CanvasState } from '../CanvasState';
+import { CanvasState } from '../';
 
 export const handleMouseMoveOverObject = (
 	snap: SnapData,

@@ -1,7 +1,6 @@
-import { qSVG } from '../../../qSVG';
 import { Point2D, RoomMetaData, RoomPolygonData } from '../../models/models';
 import { createSvgElement, pointInPolygon } from '../../utils/svgTools';
-import { CanvasState } from '../CanvasState';
+import { CanvasState } from '../';
 
 export const handleMouseMoveRoomMode = (
 	snap: Point2D,

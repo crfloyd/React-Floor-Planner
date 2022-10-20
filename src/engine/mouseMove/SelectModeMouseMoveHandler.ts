@@ -16,7 +16,7 @@ import {
 	updateMeasurementText
 } from '../../utils/svgTools';
 import { distanceBetween, getMidPoint, getNearestWall, getWallsOnPoint } from '../../utils/utils';
-import { CanvasState } from '../CanvasState';
+import { CanvasState } from '../';
 
 export const handleMouseMoveSelectMode = (
 	target: EventTarget,

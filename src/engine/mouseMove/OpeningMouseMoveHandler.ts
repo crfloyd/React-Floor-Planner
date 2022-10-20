@@ -3,7 +3,7 @@ import { Point2D, ViewboxData, WallMetaData } from '../../models/models';
 import { Object2D } from '../../models/Object2D';
 import { findNearestWallInRange, getAngle } from '../../utils/svgTools';
 import { computeLimit, getMidPoint, vectorDeter, vectorXY } from '../../utils/utils';
-import { CanvasState } from '../CanvasState';
+import { CanvasState } from '../';
 
 export const handleMouseMoveOpeningMode = (
 	snap: Point2D,

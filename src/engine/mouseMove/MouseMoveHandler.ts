@@ -10,7 +10,7 @@ import {
 	ViewboxData,
 	WallMetaData
 } from '../../models/models';
-import { CanvasState } from '../CanvasState';
+import { CanvasState } from '../';
 import { handleMouseMoveBindMode } from './BindModeMouseMoveHandler';
 import { handleMouseMoveOverObject } from './ObjectModeMouseMoveHandler';
 import { handleMouseMoveOpeningMode } from './OpeningMouseMoveHandler';

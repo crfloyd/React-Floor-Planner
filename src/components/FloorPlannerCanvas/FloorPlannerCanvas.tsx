@@ -1,7 +1,7 @@
-import React, { createRef, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { constants } from '../../../constants';
-import { CanvasState } from '../../engine/CanvasState';
+import { CanvasState } from '../../engine';
 import { handleMouseDown } from '../../engine/mouseDown/MouseDownHandler';
 import { handleMouseMove } from '../../engine/mouseMove/MouseMoveHandler';
 import { handleMouseUp } from '../../engine/mouseUp/MouseUpHandler';
@@ -48,7 +48,8 @@ interface Props {
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void;
 	cursor: CursorType;
 	setCursor: (crsr: CursorType) => void;
-	onCanvasDimensionsChanged: (width: number, height: number) => void;
+	setCanvasDimensions: (d: { width: number; height: number }) => void;
+	canvasDimensions: { width: number; height: number };
 	viewbox: ViewboxData;
 	roomPolygonData: RoomPolygonData;
 	setRoomPolygonData: (r: RoomPolygonData) => void;
@@ -80,7 +81,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	onMouseMove,
 	cursor,
 	setCursor,
-	onCanvasDimensionsChanged,
+	setCanvasDimensions,
 	viewbox,
 	roomPolygonData,
 	setRoomPolygonData,
@@ -112,7 +113,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		[]
 	);
 
-	const canvasRef = createRef<SVGSVGElement>();
+	const canvasRef = useRef<SVGSVGElement>(null);
 
 	const {
 		startWallDrawing,
@@ -235,24 +236,20 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	}, [roomMetaData]);
 
 	useEffect(() => {
-		const { width, height } = getCanvasDimensions();
-		onCanvasDimensionsChanged(width, height);
-	}, [canvasRef.current?.width, canvasRef.current?.height]);
+		const width = canvasRef.current?.width.baseVal.value ?? 0;
+		const height = canvasRef.current?.height.baseVal.value ?? 0;
+
+		setCanvasDimensions({ width, height });
+	}, [
+		canvasRef.current?.width.baseVal.value,
+		canvasRef.current?.height.baseVal.value,
+		setCanvasDimensions
+	]);
 
 	// useEffect(() => {
 	// 	const snap = calculateSnap(e, viewbox);
 	// 	setSnapPosition(snap);
 	// }, []);
-
-	const getCanvasDimensions = (): { width: number; height: number } => {
-		let width = 0;
-		let height = 0;
-		if (canvasRef.current) {
-			width = canvasRef.current.width.baseVal.value;
-			height = canvasRef.current.height.baseVal.value;
-		}
-		return { width, height };
-	};
 
 	const onMouseWheel = (deltaY: number) => {
 		// e.preventDefault();
@@ -265,16 +262,29 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 
 	return (
 		<svg
+			ref={canvasRef}
 			id="lin"
 			// viewBox="0 0 1100 700"
 			viewBox={`${viewbox.originX} ${viewbox.originY} ${viewbox.width} ${viewbox.height}`}
 			preserveAspectRatio="xMidYMin slice"
 			xmlns="http://www.w3.org/2000/svg"
+			style={{
+				zIndex: 2,
+				margin: 0,
+				padding: 0,
+				width: '100vw',
+				height: '100vh',
+				position: 'absolute',
+				top: 0,
+				left: 0,
+				right: 0,
+				bottom: 0
+			}}
+			cursor={cursorImg}
 			onWheel={(e) => {
 				e.preventDefault();
 				onMouseWheel(e.deltaY);
 			}}
-			ref={canvasRef}
 			onClick={(e) => e.preventDefault()}
 			onMouseDown={(e) =>
 				handleMouseDown({
@@ -355,20 +365,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					setCursor,
 					setWallUnderCursor
 				);
-			}}
-			style={{
-				zIndex: 2,
-				margin: 0,
-				padding: 0,
-				width: '100vw',
-				height: '100vh',
-				position: 'absolute',
-				top: 0,
-				left: 0,
-				right: 0,
-				bottom: 0
-			}}
-			cursor={cursorImg}>
+			}}>
 			<defs>
 				{gradientData.map((data) => (
 					<LinearGradient key={data.id} id={data.id} color1={data.color1} color2={data.color2} />

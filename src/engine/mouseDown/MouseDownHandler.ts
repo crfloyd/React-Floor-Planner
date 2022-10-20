@@ -8,7 +8,7 @@ import {
 } from '../../models/models';
 import { findNearestWallInRange } from '../../utils/svgTools';
 import { calculateSnap } from '../../utils/utils';
-import { CanvasState } from '../CanvasState';
+import { CanvasState } from '../';
 import { handleSelectModeClick } from './SelectModeClickHandler';
 
 interface Props {

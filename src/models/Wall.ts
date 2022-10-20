@@ -1,11 +1,9 @@
 import { v4 as uuid } from 'uuid';
 
-import { constants } from '../../constants';
 import {
 	angleBetweenEquations,
 	calculateDPath,
 	createEquation,
-	createSvgElement,
 	getWallNodes,
 	nearPointOnEquation
 } from '../utils/svgTools';

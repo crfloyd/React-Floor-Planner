@@ -12,7 +12,7 @@ import {
 import { Wall } from '../../models/Wall';
 import { updateMeasurementText } from '../../utils/svgTools';
 import { distanceBetween } from '../../utils/utils';
-import { CanvasState } from '../CanvasState';
+import { CanvasState } from '../';
 import { handleMouseUpBindMode } from './BindModeMouseUpHandler';
 
 export const handleMouseUp = (

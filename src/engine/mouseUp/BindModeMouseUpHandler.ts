@@ -25,7 +25,7 @@ export const handleMouseUpBindMode = (
 	if (selectedWallData) {
 		if (selectedWallData.wall.start == selectedWallData.before) {
 			wallClicked(selectedWallData.wall);
-			mode = Mode.EditWall;
+			// mode = Mode.EditWall;
 		}
 
 		resetEquationData();

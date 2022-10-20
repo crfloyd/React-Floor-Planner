@@ -1,6 +1,6 @@
 import { Mode, ObjectMetaData, Point2D, ViewboxData, WallMetaData } from '../../models/models';
 import { calculateSnap } from '../../utils/utils';
-import { CanvasState } from '../CanvasState';
+import { CanvasState } from '../';
 import { handleSelectModeNodeClicked } from './SelectModeNodeClickHandler';
 import { handleSelectModeSegmentClicked } from './SelectModeSegmentClickHandler';
 

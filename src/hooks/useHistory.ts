@@ -6,7 +6,7 @@ import {
 	RoomMetaData,
 	ViewboxData,
 	WallMetaData
-} from '../models/models';
+} from '../models';
 import { Object2D } from '../models/Object2D';
 import { Wall } from '../models/Wall';
 

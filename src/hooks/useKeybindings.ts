@@ -7,23 +7,23 @@ interface Props {
 
 export const useKeybindings = ({ onSelectMode, onWallMode }: Props) => {
 	useEffect(() => {
+		const onKeyPress = (e: KeyboardEvent) => {
+			switch (e.key) {
+				case 'Escape':
+				case 's':
+					onSelectMode();
+					break;
+				case 'w':
+					onWallMode();
+					break;
+
+				default:
+					break;
+			}
+		};
 		document.addEventListener('keydown', onKeyPress);
 		return () => {
 			document.removeEventListener('keydown', onKeyPress);
 		};
-	}, []);
-	const onKeyPress = (e: KeyboardEvent) => {
-		switch (e.key) {
-			case 'Escape':
-			case 's':
-				onSelectMode();
-				break;
-			case 'w':
-				onWallMode();
-				break;
-
-			default:
-				break;
-		}
-	};
+	}, [onSelectMode, onWallMode]);
 };

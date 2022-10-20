@@ -570,12 +570,10 @@ function App() {
 				showOpeningTools={showOpeningTools}
 				wallClicked={handleWallCliked}
 				updateRoomDisplayData={updateRoomDisplayData}
-				onMouseMove={() => setShowSubMenu(false)}
 				cursor={cursor}
 				setCursor={setCursor}
-				onCanvasDimensionsChanged={(w: number, h: number) =>
-					setCanvasDimenions({ width: w, height: h })
-				}
+				canvasDimensions={canvasDimensions}
+				setCanvasDimensions={setCanvasDimenions}
 				viewbox={viewbox}
 				roomMetaData={roomMetaData}
 				setRoomMetaData={setRoomMetaData}
@@ -585,6 +583,7 @@ function App() {
 				setObjectMetaData={setObjectMetaData}
 				wallMetaData={wallMetaData}
 				setWallMetaData={setWallMetaData}
+				onMouseMove={() => setShowSubMenu(false)}
 			/>
 
 			<div id="areaValue"></div>
