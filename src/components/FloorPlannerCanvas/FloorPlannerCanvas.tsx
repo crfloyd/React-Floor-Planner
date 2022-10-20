@@ -38,7 +38,6 @@ interface Props {
 	layerSettings: LayerSettings;
 	canvasState: CanvasState;
 	continuousWallMode: boolean;
-	showBoxScale: boolean;
 	applyMode: (mode: string, option: string) => void;
 	updateRoomDisplayData: (roomData: RoomDisplayData) => void;
 	onMouseMove: () => void;
@@ -71,7 +70,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	layerSettings,
 	canvasState,
 	continuousWallMode,
-	showBoxScale,
 	applyMode,
 	updateRoomDisplayData,
 	showObjectTools,
@@ -498,8 +496,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 						))}
 			</g>
 			<g id="boxRib" visibility={layerSettings.showMeasurements ? 'visible' : 'hidden'}></g>
-			<g id="boxScale" visibility={showBoxScale ? 'visible' : 'hidden'}>
-				{showBoxScale && scaleBoxDisplayData && wallMetaData.length > 2 && (
+			<g id="boxScale" visibility={layerSettings.showMeasurements ? 'visible' : 'hidden'}>
+				{layerSettings.showMeasurements && scaleBoxDisplayData && wallMetaData.length > 2 && (
 					<path
 						d={scaleBoxDisplayData.path}
 						stroke="#555"
@@ -510,7 +508,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 						strokeMiterlimit={4}
 						fillRule="nonzero"></path>
 				)}
-				{showBoxScale &&
+				{layerSettings.showMeasurements &&
+					wallMetaData.length > 2 &&
 					scaleBoxDisplayData?.textItems.map((displayData) => (
 						<text
 							key={`${displayData.position.x}-${displayData.position.y}-scale-text`}

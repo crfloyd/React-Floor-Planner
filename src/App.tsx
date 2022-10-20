@@ -65,7 +65,6 @@ function App() {
 	const [enableRedo, setEnableRedo] = useState(false);
 
 	const [showMainPanel, setShowMainPanel] = useState(true);
-	const [showBoxScale, setShowBoxScale] = useState(true);
 	const [wallToolsSeparation, setWallToolsSeparation] = useState(false);
 	const [showConfigureDoorWindowPanel, setShowConfigureDoorWindowPanel] = useState(false);
 	const [showObjectTools, setShowObjectTools] = useState(false);
@@ -565,7 +564,6 @@ function App() {
 				applyMode={applyMode}
 				continuousWallMode={continuousWallMode}
 				handleCameraChange={handleCameraChange}
-				showBoxScale={showBoxScale}
 				showObjectTools={updateObjectTools}
 				showOpeningTools={showOpeningTools}
 				wallClicked={handleWallCliked}
@@ -1490,12 +1488,10 @@ function App() {
 											checked={layerSettings.showMeasurements}
 											onChange={() => {
 												const nextVal = !layerSettings.showMeasurements;
-												setLayerSettings((prev: any) => ({
+												setLayerSettings((prev: LayerSettings) => ({
 													...prev,
 													showMeasurements: nextVal
 												}));
-												setShowBoxScale(nextVal);
-												// onShowRibClicked();
 											}}
 										/>
 										<label htmlFor="showRib">Measurement</label>
