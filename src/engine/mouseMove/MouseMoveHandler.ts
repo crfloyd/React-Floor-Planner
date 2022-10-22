@@ -12,7 +12,7 @@ import {
 } from '../../models/models';
 import { CanvasState } from '../';
 import { handleMouseMoveBindMode } from './BindModeMouseMoveHandler';
-import { handleMouseMoveOverObject } from './ObjectModeMouseMoveHandler';
+import { handleMouseMoveObjectMode } from './ObjectModeMouseMoveHandler';
 import { handleMouseMoveOpeningMode } from './OpeningMouseMoveHandler';
 import { handleMouseMoveRoomMode } from './RoomModeMoveHandler';
 import { handleMouseMoveSelectMode } from './SelectModeMouseMoveHandler';
@@ -28,10 +28,13 @@ export const handleMouseMove = (
 	roomMetaData: RoomMetaData[],
 	roomPolygonData: RoomPolygonData,
 	objectMetaData: ObjectMetaData[],
+	setObjectMetaData: (o: ObjectMetaData[]) => void,
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void,
 	resetObjectEquationData: () => ObjectEquationData[],
 	setCursor: (crsr: CursorType) => void,
-	setWallUnderCursor: (wall: WallMetaData | null) => void
+	setWallUnderCursor: (wall: WallMetaData | null) => void,
+	objectBeingMoved: ObjectMetaData | null,
+	setObjectBeingMoved: (o: ObjectMetaData | null) => void
 ) => {
 	if (
 		![
@@ -46,16 +49,32 @@ export const handleMouseMove = (
 	)
 		return;
 	switch (canvasState.mode) {
-		case Mode.Object:
-			handleMouseMoveOverObject(snap, canvasState, viewbox, wallMetaData);
+		case Mode.Object: {
+			handleMouseMoveObjectMode(
+				snap,
+				canvasState,
+				viewbox,
+				wallMetaData,
+				objectBeingMoved,
+				setObjectBeingMoved
+			);
 			break;
+		}
 		case Mode.Room:
 			handleMouseMoveRoomMode(snap, canvasState, roomMetaData, roomPolygonData);
 			break;
-		case Mode.Opening:
-			handleMouseMoveOpeningMode(snap, canvasState, viewbox, wallMetaData);
+		case Mode.Opening: {
+			handleMouseMoveOpeningMode(
+				snap,
+				canvasState,
+				viewbox,
+				wallMetaData,
+				objectBeingMoved,
+				setObjectBeingMoved
+			);
 			break;
-		case Mode.Select:
+		}
+		case Mode.Select: {
 			handleMouseMoveSelectMode(
 				target,
 				snap,
@@ -66,13 +85,16 @@ export const handleMouseMove = (
 				wallMetaData,
 				objectMetaData,
 				setWallUnderCursor,
-				point
+				point,
+				objectBeingMoved,
+				setObjectBeingMoved
 			);
 			break;
+		}
 		case Mode.Line:
 		case Mode.Partition:
 			break;
-		case Mode.Bind:
+		case Mode.Bind: {
 			handleMouseMoveBindMode(
 				snap,
 				resetObjectEquationData,
@@ -80,9 +102,13 @@ export const handleMouseMove = (
 				canvasState,
 				wallMetaData,
 				objectMetaData,
-				setWallMetaData
+				setObjectMetaData,
+				setWallMetaData,
+				objectBeingMoved,
+				setObjectBeingMoved
 			);
 			break;
+		}
 		default:
 			break;
 	}

@@ -13,6 +13,7 @@ interface Props {
 	wallMetaData: WallMetaData[];
 	setWallMetaData: (w: WallMetaData[]) => void;
 	setSelectedWallData: (data: { wall: WallMetaData; before: Point2D }) => void;
+	objectBeingMoved: ObjectMetaData | null;
 }
 
 export const handleSelectModeClick = ({
@@ -34,7 +35,8 @@ export const handleSelectModeClick = ({
 	wallMetaData,
 	setWallMetaData,
 	setSelectedWallData,
-	setPoint
+	setPoint,
+	objectBeingMoved
 }: Props) => {
 	switch (binder?.type) {
 		case 'segment': {
@@ -90,5 +92,11 @@ export const handleSelectModeClick = ({
 			setPoint({ x: snap.xMouse, y: snap.yMouse });
 			break;
 		}
+	}
+	if (objectBeingMoved) {
+		setMode(Mode.Bind);
+		setAction(true);
+	} else {
+		console.error('MOUSE DOWN NO ACTION PERFORMED');
 	}
 };

@@ -5,10 +5,13 @@ import {
 	SnapData,
 	WallMetaData
 } from '../../models/models';
+import { Object2D } from '../../models/Object2D';
 import {
+	calculateObjectRenderData,
 	createWallGuideLine,
 	findNearestWallInRange,
 	getAngle,
+	getUpdatedObject,
 	pointInPolygon,
 	setInWallMeasurementText,
 	updateMeasurementText
@@ -19,6 +22,7 @@ import {
 	findById,
 	getNearestWall,
 	intersectionOfEquations,
+	isObjectsEquals,
 	perpendicularEquation,
 	pointsAreEqual,
 	vectorDeter,
@@ -33,7 +37,10 @@ export const handleMouseMoveBindMode = (
 	canvasState: CanvasState,
 	wallMeta: WallMetaData[],
 	objectMeta: ObjectMetaData[],
-	setWallMeta: (w: WallMetaData[]) => void
+	setObjectMeta: (o: ObjectMetaData[]) => void,
+	setWallMeta: (w: WallMetaData[]) => void,
+	objectBeingMoved: ObjectMetaData | null,
+	setObjectBeingMoved: (o: ObjectMetaData | null) => void
 ) => {
 	const {
 		binder,
@@ -44,7 +51,139 @@ export const handleMouseMoveBindMode = (
 		followerData,
 		objectEquationData
 	} = canvasState;
-	if (binder.type == 'node') {
+
+	const objTarget = objectMeta.find((o) => o.id === objectBeingMoved?.targetId);
+	if (objectBeingMoved?.type == 'boundingBox' && action && objTarget?.params.move) {
+		objectBeingMoved.x = snap.x;
+		objectBeingMoved.y = snap.y;
+
+		objTarget.x = snap.x;
+		objTarget.y = snap.y;
+		// objectBeingMoved.update();
+		// const {
+		// 	newWidth,
+		// 	newHeight,
+		// 	newRenderData,
+		// 	newRealBbox: newBbox
+		// } = calculateObjectRenderData(
+		// 	objectBeingMoved.size,
+		// 	objectBeingMoved.thick,
+		// 	objectBeingMoved.angle,
+		// 	objectBeingMoved.class,
+		// 	objectBeingMoved.type,
+		// 	{ x: objectBeingMoved.x, y: objectBeingMoved.y }
+		// );
+		// objTarget.update();
+		// setObjectBeingMoved({
+		// 	...objectBeingMoved,
+		// 	width: newWidth,
+		// 	height: newHeight,
+		// 	renderData: newRenderData,
+		// 	realBbox: newBbox
+		// });
+		setObjectBeingMoved(getUpdatedObject(objectBeingMoved));
+	} else if (objectBeingMoved && action) {
+		const nearestWallData = findNearestWallInRange(snap, wallMeta, Infinity, false);
+		if (nearestWallData && nearestWallData.wall.type !== 'separate') {
+			// wallSelect.wall.inWallRib(objectMeta);
+			setInWallMeasurementText(nearestWallData.wall, objectMeta);
+			const objTarget = objectMeta.find((o) => o.id === objectBeingMoved.targetId);
+			const wall = nearestWallData.wall;
+			let angleWall = getAngle(wall.start, wall.end, 'both').deg;
+			const v1 = vectorXY({ x: wall.start.x, y: wall.start.y }, { x: wall.end.x, y: wall.end.y });
+			const v2 = vectorXY({ x: wall.end.x, y: wall.end.y }, snap);
+			const newAngle = vectorDeter(v1, v2);
+			objectBeingMoved.angleSign = false;
+			if (objTarget) objTarget.angleSign = false;
+			if (Math.sign(newAngle) == 1) {
+				angleWall += 180;
+				objectBeingMoved.angleSign = true;
+				if (objTarget) objTarget.angleSign = true;
+			}
+			const limits = computeLimit(wall.equations.base, objectBeingMoved.size, nearestWallData);
+			if (wall.pointInsideWall(limits[0], false) && wall.pointInsideWall(limits[1], false)) {
+				objectBeingMoved.x = nearestWallData.x;
+				objectBeingMoved.y = nearestWallData.y;
+				objectBeingMoved.angle = angleWall;
+				objectBeingMoved.thick = wall.thick;
+				if (objTarget) {
+					objTarget.x = nearestWallData.x;
+					objTarget.y = nearestWallData.y;
+					objTarget.angle = angleWall;
+					objTarget.thick = wall.thick;
+					objTarget.limit = limits;
+					// objTarget.update();
+				}
+				// objectBeingMoved.update();
+			}
+
+			if (
+				(nearestWallData.x == wall.start.x && nearestWallData.y == wall.start.y) ||
+				(nearestWallData.x == wall.end.x && nearestWallData.y == wall.end.y)
+			) {
+				if (wall.pointInsideWall(limits[0], false)) {
+					objectBeingMoved.x = limits[0].x;
+					objectBeingMoved.y = limits[0].y;
+					if (objTarget) {
+						objTarget.x = limits[0].x;
+						objTarget.y = limits[0].y;
+						objTarget.limit = limits;
+					}
+				}
+				if (wall.pointInsideWall(limits[1], false)) {
+					objectBeingMoved.x = limits[1].x;
+					objectBeingMoved.y = limits[1].y;
+					if (objTarget) {
+						objTarget.x = limits[1].x;
+						objTarget.y = limits[1].y;
+						objTarget.limit = limits;
+					}
+				}
+				objectBeingMoved.angle = angleWall;
+				objectBeingMoved.thick = wall.thick;
+				if (objTarget) {
+					objTarget.angle = angleWall;
+					objTarget.thick = wall.thick;
+					// objTarget.update();
+				}
+				// binder.update();
+			}
+			if (objTarget) {
+				const updatedTargetObject = getUpdatedObject(objTarget);
+				if (
+					updatedTargetObject.width !== objTarget.width ||
+					updatedTargetObject.height !== objTarget.height ||
+					!isObjectsEquals(updatedTargetObject.renderData, objTarget.renderData) ||
+					!isObjectsEquals(updatedTargetObject.realBbox, objTarget.realBbox)
+				) {
+					// objTarget.width = newWidth;
+					// objTarget.height = newHeight;
+					// objTarget.renderData = newRenderData;
+					// objTarget.realBbox = newRealBbox;
+
+					// const updatedTarget = new Object2D(
+					// 	objTarget.family,
+					// 	objTarget.class,
+					// 	objTarget.type,
+					// 	{ x: objTarget.x, y: objTarget.y },
+					// 	objTarget.angle,
+					// 	objTarget.angleSign,
+					// 	objTarget.size,
+					// 	objTarget.hinge,
+					// 	objTarget.thick,
+					// 	objTarget.value,
+					// 	objTarget.viewbox,
+					// 	objTarget
+					// );
+					// updatedTarget.id = objTarget.id;
+					// objectMeta = [...objectMeta.filter((o) => o.id !== objTarget.id), objTarget];
+					objectMeta = [...objectMeta.filter((o) => o.id !== objTarget.id), updatedTargetObject];
+				}
+				// console.log('target bbox - after:', objTarget?.realBbox);
+			}
+			setObjectBeingMoved(objectBeingMoved);
+		}
+	} else if (binder?.type == 'node') {
 		const coords = snap;
 		let magnetic: string | null = null;
 		for (const k in currentNodeWalls) {
@@ -124,7 +263,7 @@ export const handleMouseMoveBindMode = (
 
 		// $("#boxRoom").empty();
 		// $("#boxSurface").empty();
-		setWallMeta([...wallMeta]);
+		// setWallMeta([...wallMeta]);
 
 		for (const k in currentNodeWallObjectData) {
 			const wall = currentNodeWallObjectData[k].wall;
@@ -148,7 +287,7 @@ export const handleMouseMoveBindMode = (
 
 			if (wall.pointInsideWall(limitBtwn[0], false) && wall.pointInsideWall(limitBtwn[1], false)) {
 				objTarget.limit = limitBtwn;
-				objTarget.update();
+				// objTarget.update();
 			} else {
 				const objMetaIndex = objectMeta.indexOf(objTarget);
 				objTarget.graph.remove();
@@ -163,12 +302,8 @@ export const handleMouseMoveBindMode = (
 		// const polygonData = polygonize(wallMeta);
 		// setRoomPolygonData(polygonData);
 		// renderRooms(polygonData, roomMeta, setRoomMeta);
-	}
-
-	// WALL MOVING ----BINDER TYPE SEGMENT-------- FUNCTION FOR H,V and Calculate Vectorial Translation
-
-	if (
-		binder.type == 'segment' &&
+	} else if (
+		binder?.type == 'segment' &&
 		action &&
 		wallEquations.equation1 &&
 		wallEquations.equation2 &&
@@ -300,7 +435,6 @@ export const handleMouseMoveBindMode = (
 
 		// $("#boxRoom").empty();
 		// $("#boxSurface").empty();
-		setWallMeta([...wallMeta]);
 		// setRoomPolygonData(polygonize(wallMeta));
 
 		// OBJDATA(s) FOLLOW 90° EDGE SELECTED
@@ -352,85 +486,10 @@ export const handleMouseMoveBindMode = (
 		// $("#boxSurface").empty();
 		// renderRooms(roomPolygonData, roomMeta, setRoomMeta);
 		setCursor('pointer');
-	}
-
-	// **********************************************************************
-	// ----------------------  BOUNDING BOX ------------------------------
-	// **********************************************************************
-	// binder.obj.params.move ---> FOR MEASURE DONT MOVE
-	if (binder.type == 'boundingBox' && action && binder.obj.params.move) {
-		binder.x = snap.x;
-		binder.y = snap.y;
-		binder.obj.x = snap.x;
-		binder.obj.y = snap.y;
-		binder.obj.update();
-		binder.update();
-	}
-
-	// **********************************************************************
-	// OBJ MOVING
-	// **********************************************************************
-	if (binder.type == 'obj' && action) {
-		const nearestWallData = findNearestWallInRange(snap, wallMeta, Infinity, false);
-		if (nearestWallData && nearestWallData.wall.type !== 'separate') {
-			// wallSelect.wall.inWallRib(objectMeta);
-			setInWallMeasurementText(nearestWallData.wall, objectMeta);
-			const objTarget = binder.obj;
-			const wall = nearestWallData.wall;
-			let angleWall = getAngle(wall.start, wall.end, 'both').deg;
-			const v1 = vectorXY({ x: wall.start.x, y: wall.start.y }, { x: wall.end.x, y: wall.end.y });
-			const v2 = vectorXY({ x: wall.end.x, y: wall.end.y }, snap);
-			const newAngle = vectorDeter(v1, v2);
-			binder.angleSign = 0;
-			objTarget.angleSign = 0;
-			if (Math.sign(newAngle) == 1) {
-				angleWall += 180;
-				binder.angleSign = 1;
-				objTarget.angleSign = 1;
-			}
-			const limits = computeLimit(wall.equations.base, binder.size, nearestWallData);
-			if (wall.pointInsideWall(limits[0], false) && wall.pointInsideWall(limits[1], false)) {
-				binder.x = nearestWallData.x;
-				binder.y = nearestWallData.y;
-				binder.angle = angleWall;
-				binder.thick = wall.thick;
-				objTarget.x = nearestWallData.x;
-				objTarget.y = nearestWallData.y;
-				objTarget.angle = angleWall;
-				objTarget.thick = wall.thick;
-				objTarget.limit = limits;
-				binder.update();
-				objTarget.update();
-			}
-
-			if (
-				(nearestWallData.x == wall.start.x && nearestWallData.y == wall.start.y) ||
-				(nearestWallData.x == wall.end.x && nearestWallData.y == wall.end.y)
-			) {
-				if (wall.pointInsideWall(limits[0], false)) {
-					binder.x = limits[0].x;
-					binder.y = limits[0].y;
-					objTarget.x = limits[0].x;
-					objTarget.y = limits[0].y;
-					objTarget.limit = limits;
-				}
-				if (wall.pointInsideWall(limits[1], false)) {
-					binder.x = limits[1].x;
-					binder.y = limits[1].y;
-					objTarget.x = limits[1].x;
-					objTarget.y = limits[1].y;
-					objTarget.limit = limits;
-				}
-				binder.angle = angleWall;
-				binder.thick = wall.thick;
-				objTarget.angle = angleWall;
-				objTarget.thick = wall.thick;
-				binder.update();
-				objTarget.update();
-			}
-		}
-	} // END OBJ MOVE
-	if (binder.type != 'obj' && binder.type != 'segment') {
+	} else if (binder && binder.type != 'obj' && binder.type != 'segment') {
 		updateMeasurementText(wallMeta);
 	}
+
+	setObjectMeta([...objectMeta]);
+	setWallMeta([...wallMeta]);
 };

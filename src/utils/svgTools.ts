@@ -14,6 +14,7 @@ import {
 	WallMetaData,
 	WallVertex
 } from '../models/models';
+import { Object2D } from '../models/Object2D';
 import {
 	arraysAreEqual,
 	distanceBetween,
@@ -2288,4 +2289,95 @@ export const getPolygonVisualCenter = (room: RoomMetaData, allRooms: RoomMetaDat
 		}
 	}
 	return grid[bestMatrix];
+};
+
+export const getUpdatedObject = (
+	original: ObjectMetaData,
+	targetId?: string | null
+): ObjectMetaData => {
+	const {
+		newWidth,
+		newHeight,
+		newRenderData,
+		newRealBbox: newBbox
+	} = calculateObjectRenderData(
+		original.size,
+		original.thick,
+		original.angle,
+		original.class,
+		original.type,
+		{ x: original.x, y: original.y }
+	);
+	const updatedMeta = {
+		...original,
+		width: newWidth,
+		height: newHeight,
+		renderData: newRenderData,
+		realBbox: newBbox,
+		targetId: targetId ?? original.targetId
+	};
+	return new Object2D(
+		updatedMeta.family,
+		updatedMeta.class,
+		updatedMeta.type,
+		{
+			x: updatedMeta.x,
+			y: updatedMeta.y
+		},
+		updatedMeta.angle,
+		updatedMeta.angleSign,
+		updatedMeta.size,
+		updatedMeta.hinge,
+		updatedMeta.thick,
+		updatedMeta.value,
+		updatedMeta.viewbox,
+		updatedMeta
+	);
+};
+
+export const calculateObjectRenderData = (
+	size: number,
+	thickness: number,
+	angle: number,
+	className: string,
+	type: string,
+	position: Point2D
+): {
+	newWidth: number;
+	newHeight: number;
+	newRenderData: SVGCreationData;
+	newRealBbox: Point2D[];
+} => {
+	const newWidth = size / constants.METER_SIZE;
+	const newHeight = thickness / constants.METER_SIZE;
+	const cc = carpentryCalc(className, type, size, thickness);
+	const newRenderData = cc;
+
+	const angleRadian = -angle * (Math.PI / 180);
+	const newBbox = [
+		{ x: -size / 2, y: -thickness / 2 },
+		{ x: size / 2, y: -thickness / 2 },
+		{ x: size / 2, y: thickness / 2 },
+		{ x: -size / 2, y: thickness / 2 }
+	];
+	const sinCos = (p: Point2D) =>
+		p.y * Math.sin(angleRadian) + p.x * Math.cos(angleRadian) + position.x;
+
+	const cosSin = (p: Point2D) =>
+		p.y * Math.cos(angleRadian) + p.x * Math.sin(angleRadian) + position.y;
+
+	const newRealBbox = [
+		{ x: sinCos(newBbox[0]), y: cosSin(newBbox[0]) },
+		{ x: sinCos(newBbox[1]), y: cosSin(newBbox[1]) },
+		{ x: sinCos(newBbox[2]), y: cosSin(newBbox[2]) },
+		{ x: sinCos(newBbox[3]), y: cosSin(newBbox[3]) }
+	];
+
+	// console.log('2 - Updated object realBbox', newRealBbox[0], newRealBbox[3], className);
+	return {
+		newWidth,
+		newHeight,
+		newRealBbox,
+		newRenderData
+	};
 };

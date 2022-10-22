@@ -97,6 +97,8 @@ function App() {
 	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
 	const [wallMetaData, setWallMetaData] = useState<WallMetaData[]>([]);
 	const [objectMetaData, setObjectMetaData] = useState<ObjectMetaData[]>([]);
+	const [openingWidth, setOpeningWidth] = useState<number | null>(null);
+	const [openingIdBeingEdited, setOpeningIdBeingEdited] = useState<string | null>(null);
 
 	const [selectedWall, setSelectedWall] = useState<WallMetaData | null>(null);
 
@@ -265,9 +267,9 @@ function App() {
 		roomData: RoomMetaData[]
 	) => {
 		setObjectMetaData(objectData);
-		if (objectData.length > 0) {
-			$('#boxcarpentry').append(objectData[objectData.length - 1].graph);
-		}
+		// if (objectData.length > 0) {
+		// 	$('#boxcarpentry').append(objectData[objectData.length - 1].graph);
+		// }
 
 		setWallMetaData(wallData);
 		setRoomMetaData(roomData);
@@ -366,7 +368,7 @@ function App() {
 		setBoxInfoText('Mode selection');
 		setShowObjectTools(false);
 		setShowMainPanel(true);
-		$(canvasState.binder.graph).remove();
+		// $(canvasState.binder.graph).remove();
 		canvasState.setBinder(null);
 	};
 
@@ -397,10 +399,8 @@ function App() {
 		setShowMainPanel(true);
 		applyMode(Mode.Select);
 
-		const obj = canvasState.binder.obj;
-		obj.graph.remove();
-		setObjectMetaData([...objectMetaData.filter((o) => o != obj)]);
-		$(canvasState.binder.graph).remove();
+		setObjectMetaData([...objectMetaData.filter((o) => o != canvasState.binder.targetId)]);
+		// $(canvasState.binder.graph).remove();
 		canvasState.setBinder(null);
 		updateMeasurementText(wallMetaData);
 	};
@@ -414,23 +414,26 @@ function App() {
 	};
 
 	const onOpeningWidthChanged = (val: number) => {
-		const objTarget = canvasState.binder.obj as ObjectMetaData;
-		const wallBind = getWallsOnPoint({ x: objTarget.x, y: objTarget.y }, wallMetaData);
-		const wallUnderOpening = wallBind[wallBind.length - 1];
-		const limits = computeLimit(wallUnderOpening.equations.base, val, objTarget);
-		if (
-			wallUnderOpening.pointInsideWall(limits[0], false) &&
-			wallUnderOpening.pointInsideWall(limits[1], false)
-		) {
-			objTarget.size = val;
-			objTarget.limit = limits;
-			objTarget.update();
-			canvasState.binder.size = val;
-			canvasState.binder.limit = limits;
-			canvasState.binder.update();
-		}
-		// wallUnderOpening.inWallRib(objectMeta);
-		setInWallMeasurementText(wallUnderOpening, objectMetaData);
+		setOpeningWidth(val);
+		// const objTarget = objectMetaData.find((o) => o.id === canvasState.binder.targetId);
+		// if (!objTarget) return;
+		// const wallBind = getWallsOnPoint({ x: objTarget.x, y: objTarget.y }, wallMetaData);
+		// const wallUnderOpening = wallBind[wallBind.length - 1];
+		// const limits = computeLimit(wallUnderOpening.equations.base, val, objTarget);
+		// if (
+		// 	wallUnderOpening.pointInsideWall(limits[0], false) &&
+		// 	wallUnderOpening.pointInsideWall(limits[1], false)
+		// ) {
+		// 	objTarget.size = val;
+		// 	objTarget.limit = limits;
+		// 	objTarget.update();
+		// 	canvasState.binder.size = val;
+		// 	canvasState.binder.limit = limits;
+		// 	canvasState.binder.update();
+		// 	setObjectMetaData([...objectMetaData]);
+		// }
+		// // wallUnderOpening.inWallRib(objectMeta);
+		// setInWallMeasurementText(wallUnderOpening, objectMetaData);
 	};
 
 	const onWallModeClicked = () => {
@@ -515,12 +518,15 @@ function App() {
 		setBoxInfoText('Configure the room');
 	};
 
-	const showOpeningTools = (min: number, max: number, value: number) => {
+	const showOpeningTools = (opening: ObjectMetaData) => {
+		const min = opening.params.resizeLimit.width.min;
+		const max = opening.params.resizeLimit.width.max;
 		setSelectedOpening({
 			minWidth: min,
 			maxWidth: max,
-			width: value
+			width: opening.size
 		});
+		setOpeningIdBeingEdited(opening.id);
 		setCursor('default');
 		setBoxInfoText('Configure the door/window');
 		setShowMainPanel(false);
@@ -565,7 +571,7 @@ function App() {
 				continuousWallMode={continuousWallMode}
 				handleCameraChange={handleCameraChange}
 				showObjectTools={updateObjectTools}
-				showOpeningTools={showOpeningTools}
+				startModifyingOpening={showOpeningTools}
 				wallClicked={handleWallCliked}
 				updateRoomDisplayData={updateRoomDisplayData}
 				cursor={cursor}
@@ -582,6 +588,8 @@ function App() {
 				wallMetaData={wallMetaData}
 				setWallMetaData={setWallMetaData}
 				onMouseMove={() => setShowSubMenu(false)}
+				openingWidth={openingWidth}
+				openingIdBeingEdited={openingIdBeingEdited}
 			/>
 
 			<div id="areaValue"></div>
@@ -628,8 +636,8 @@ function App() {
 							setShowObjectTools(false);
 							setShowMainPanel(true);
 							setShowConfigureDoorWindowPanel(false);
-
-							$(canvasState.binder.graph).remove();
+							setOpeningIdBeingEdited(null);
+							// $(canvasState.binder.graph).remove();
 							updateMeasurementText(wallMetaData);
 						}}
 					/>

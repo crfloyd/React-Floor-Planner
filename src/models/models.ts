@@ -132,11 +132,13 @@ export interface BoundingBox {
 }
 
 export interface ObjectMetaData {
+	id: string;
 	family: string;
 	class: string;
 	type: string;
 	x: number;
 	y: number;
+	oldXY: Point2D;
 	angle: number;
 	angleSign: boolean;
 	limit: Point2D[];
@@ -150,9 +152,12 @@ export interface ObjectMetaData {
 	height: number;
 	bbox: BoundingBox;
 	realBbox: Point2D[];
+	renderData: SVGCreationData;
 	// up: PointDistance[];
 	// down: PointDistance[];
 	params: SVGCreationData;
+	targetId: string | null;
+	viewbox: ViewboxData;
 
 	update: () => void;
 }

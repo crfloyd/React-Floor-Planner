@@ -1,97 +1,170 @@
 import { constants } from '../../../constants';
-import { BoundingBox, SnapData, ViewboxData, WallMetaData } from '../../models/models';
+import {
+	BoundingBox,
+	ObjectMetaData,
+	Point2D,
+	SnapData,
+	ViewboxData,
+	WallMetaData
+} from '../../models/models';
 import { Object2D } from '../../models/Object2D';
-import { createEquation, getAngle, nearPointOnEquation, nearVertice } from '../../utils/svgTools';
+import {
+	createEquation,
+	getAngle,
+	getUpdatedObject,
+	nearPointOnEquation,
+	nearVertice
+} from '../../utils/svgTools';
 import { getWallsOnPoint, pointIsBetween, vectorDeter, vectorXY } from '../../utils/utils';
 import { CanvasState } from '../';
 
-export const handleMouseMoveOverObject = (
+export const handleMouseMoveObjectMode = (
 	snap: SnapData,
-	{ binder, setBinder, modeOption }: CanvasState,
+	{ modeOption }: CanvasState,
 	viewbox: ViewboxData,
-	wallMetaData: WallMetaData[]
+	wallMetaData: WallMetaData[],
+	objectBeingMoved: ObjectMetaData | null,
+	setObjectBeingMoved: (o: ObjectMetaData) => void
 ) => {
-	if (binder == null) {
+	if (objectBeingMoved == null) {
 		$('#object_list').hide(200);
 		if (modeOption == 'simpleStair') {
-			binder = setBinder(
-				new Object2D(
-					'free',
-					constants.OBJECT_CLASSES.STAIR,
-					'simpleStair',
-					snap,
-					0,
-					false,
-					0,
-					'normal',
-					0,
-					15,
-					viewbox
-				)
+			const stairs = new Object2D(
+				'free',
+				constants.OBJECT_CLASSES.STAIR,
+				'simpleStair',
+				snap,
+				0,
+				false,
+				0,
+				'normal',
+				0,
+				15,
+				viewbox
 			);
+			// const {
+			// 	newWidth,
+			// 	newHeight,
+			// 	newRenderData,
+			// 	newRealBbox: newBbox
+			// } = calculateObjectRenderData(
+			// 	stairs.size,
+			// 	stairs.thick,
+			// 	stairs.angle,
+			// 	stairs.class,
+			// 	stairs.type,
+			// 	stairs.pos
+			// );
+			// setObjectBeingMoved({
+			// 	...stairs,
+			// 	width: newWidth,
+			// 	height: newHeight,
+			// 	renderData: newRenderData,
+			// 	realBbox: newBbox
+			// });
+			setObjectBeingMoved(getUpdatedObject(stairs));
 		} else {
-			const typeObj = modeOption;
-			binder = setBinder(
-				new Object2D(
-					'free',
-					constants.OBJECT_CLASSES.ENERGY,
-					typeObj,
-					snap,
-					0,
-					false,
-					0,
-					'normal',
-					0,
-					0,
-					viewbox
-				)
+			const device = new Object2D(
+				'free',
+				constants.OBJECT_CLASSES.ENERGY,
+				modeOption,
+				snap,
+				0,
+				false,
+				0,
+				'normal',
+				0,
+				0,
+				viewbox
 			);
+			// const {
+			// 	newWidth,
+			// 	newHeight,
+			// 	newRenderData,
+			// 	newRealBbox: newBbox
+			// } = calculateObjectRenderData(
+			// 	device.size,
+			// 	device.thick,
+			// 	device.angle,
+			// 	device.class,
+			// 	device.type,
+			// 	device.pos
+			// );
+			// setObjectBeingMoved({
+			// 	...device,
+			// 	width: newWidth,
+			// 	height: newHeight,
+			// 	renderData: newRenderData,
+			// 	realBbox: newBbox
+			// });
+			setObjectBeingMoved(getUpdatedObject(device));
 		}
-		$('#boxbind').append(binder.graph);
-	} else {
-		if ((binder.family != 'stick' && binder.family != 'collision') || wallMetaData.length == 0) {
-			binder.x = snap.x;
-			binder.y = snap.y;
-			binder.oldX = binder.x;
-			binder.oldY = binder.y;
-			binder.update();
-		}
-		if (binder.family == 'collision') {
-			const found = pointsWithBoundingBox(binder.bbox, wallMetaData);
-
-			if (!found) {
-				binder.x = snap.x;
-				binder.y = snap.y;
-				binder.oldX = binder.x;
-				binder.oldY = binder.y;
-				binder.update();
-			} else {
-				binder.x = binder.oldX;
-				binder.y = binder.oldY;
-				binder.update();
-			}
-		} else if (binder.family == 'stick') {
-			const pos: any = stickOnWall(snap, wallMetaData);
-			binder.oldX = pos.x;
-			binder.oldY = pos.y;
-			let angleWall = getAngle(pos.wall.start, pos.wall.end, 'deg').deg;
-			const v1 = vectorXY(
-				{ x: pos.wall.start.x, y: pos.wall.start.y },
-				{ x: pos.wall.end.x, y: pos.wall.end.y }
-			);
-			const v2 = vectorXY({ x: pos.wall.end.x, y: pos.wall.end.y }, snap);
-			binder.x = pos.x - (Math.sin(pos.wall.angle * ((360 / 2) * Math.PI)) * binder.thick) / 2;
-			binder.y = pos.y - (Math.cos(pos.wall.angle * ((360 / 2) * Math.PI)) * binder.thick) / 2;
-			const newAngle = vectorDeter(v1, v2);
-			if (Math.sign(newAngle) == 1) {
-				angleWall += 180;
-				binder.x = pos.x + (Math.sin(pos.wall.angle * ((360 / 2) * Math.PI)) * binder.thick) / 2;
-				binder.y = pos.y + (Math.cos(pos.wall.angle * ((360 / 2) * Math.PI)) * binder.thick) / 2;
-			}
-			binder.angle = angleWall;
-			binder.update();
-		}
+		return;
 	}
+
+	const updatedObject = objectBeingMoved;
+
+	if (
+		(updatedObject.family !== 'stick' && updatedObject.family !== 'collision') ||
+		wallMetaData.length == 0
+	) {
+		updatedObject.x = snap.x;
+		updatedObject.y = snap.y;
+		updatedObject.oldXY = { x: updatedObject.x, y: updatedObject.y };
+	} else if (updatedObject.family === 'collision') {
+		const found = pointsWithBoundingBox(updatedObject.bbox, wallMetaData);
+
+		if (!found) {
+			updatedObject.x = snap.x;
+			updatedObject.y = snap.y;
+			updatedObject.oldXY = { x: updatedObject.x, y: updatedObject.y };
+		} else {
+			updatedObject.x = updatedObject.oldXY.x;
+			updatedObject.y = updatedObject.oldXY.y;
+		}
+	} else if (updatedObject.family === 'stick') {
+		const stickData = stickOnWall(snap, wallMetaData);
+		if (!stickData) return { newObject: null };
+		const { wall, point } = stickData;
+		updatedObject.oldXY = point;
+		let angleWall = getAngle(wall.start, wall.end, 'deg').deg;
+		const v1 = vectorXY({ x: wall.start.x, y: wall.start.y }, { x: wall.end.x, y: wall.end.y });
+		const v2 = vectorXY({ x: wall.end.x, y: wall.end.y }, snap);
+		updatedObject.x =
+			point.x - (Math.sin(wall.angle * ((360 / 2) * Math.PI)) * updatedObject.thick) / 2;
+		updatedObject.y =
+			point.y - (Math.cos(wall.angle * ((360 / 2) * Math.PI)) * updatedObject.thick) / 2;
+		const newAngle = vectorDeter(v1, v2);
+		if (Math.sign(newAngle) == 1) {
+			angleWall += 180;
+			updatedObject.x =
+				point.x + (Math.sin(wall.angle * ((360 / 2) * Math.PI)) * updatedObject.thick) / 2;
+			updatedObject.y =
+				point.y + (Math.cos(wall.angle * ((360 / 2) * Math.PI)) * updatedObject.thick) / 2;
+		}
+		updatedObject.angle = angleWall;
+	}
+	// const {
+	// 	newWidth,
+	// 	newHeight,
+	// 	newRenderData,
+	// 	newRealBbox: newBbox
+	// } = calculateObjectRenderData(
+	// 	updatedObject.size,
+	// 	updatedObject.thick,
+	// 	updatedObject.angle,
+	// 	updatedObject.class,
+	// 	updatedObject.type,
+	// 	{ x: updatedObject.x, y: updatedObject.y }
+	// );
+	// setObjectBeingMoved({
+	// 	...updatedObject,
+	// 	width: newWidth,
+	// 	height: newHeight,
+	// 	renderData: newRenderData,
+	// 	realBbox: newBbox
+	// });
+	setObjectBeingMoved(getUpdatedObject(updatedObject));
 };
 
 const pointsWithBoundingBox = (bbox: BoundingBox, wallMetaData: WallMetaData[]): boolean => {
@@ -111,11 +184,13 @@ const pointsWithBoundingBox = (bbox: BoundingBox, wallMetaData: WallMetaData[]):
 	return found;
 };
 
-const stickOnWall = (snap: SnapData, wallMeta: WallMetaData[]) => {
-	if (wallMeta.length == 0) return false;
+const stickOnWall = (
+	snap: SnapData,
+	wallMeta: WallMetaData[]
+): { wall: WallMetaData; point: Point2D; distance: number } | null => {
+	if (wallMeta.length == 0) return null;
 	let wallDistance = Infinity;
-	let wallSelected = {};
-	if (wallMeta.length == 0) return false;
+	let wallSelected: { wall: WallMetaData; point: Point2D; distance: number } | null = null;
 	wallMeta.forEach((wall) => {
 		const eq1 = createEquation(
 			wall.coords[0].x,
@@ -138,8 +213,7 @@ const stickOnWall = (snap: SnapData, wallMeta: WallMetaData[]) => {
 			wallDistance = nearPoint1.distance;
 			wallSelected = {
 				wall: wall,
-				x: nearPoint1.x,
-				y: nearPoint1.y,
+				point: nearPoint1,
 				distance: nearPoint1.distance
 			};
 		}
@@ -150,8 +224,7 @@ const stickOnWall = (snap: SnapData, wallMeta: WallMetaData[]) => {
 			wallDistance = nearPoint2.distance;
 			wallSelected = {
 				wall: wall,
-				x: nearPoint2.x,
-				y: nearPoint2.y,
+				point: nearPoint2,
 				distance: nearPoint2.distance
 			};
 		}
@@ -180,8 +253,7 @@ const stickOnWall = (snap: SnapData, wallMeta: WallMetaData[]) => {
 			wallDistance = nearestPoint1.distance;
 			wallSelected = {
 				wall: nearestWall,
-				x: nearestPoint1.x,
-				y: nearestPoint1.y,
+				point: nearestPoint1,
 				distance: nearestPoint1.distance
 			};
 		}
@@ -192,8 +264,7 @@ const stickOnWall = (snap: SnapData, wallMeta: WallMetaData[]) => {
 			wallDistance = nearestPoint2.distance;
 			wallSelected = {
 				wall: nearestWall,
-				x: nearestPoint2.x,
-				y: nearestPoint2.y,
+				point: nearestPoint2,
 				distance: nearestPoint2.distance
 			};
 		}

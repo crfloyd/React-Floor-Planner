@@ -22,6 +22,7 @@ interface Props {
 	objectMetaData: ObjectMetaData[];
 	startWallDrawing: (startPoint: Point2D) => void;
 	setSelectedWallData: (data: { wall: WallMetaData; before: Point2D }) => void;
+	objectBeingMoved: ObjectMetaData | null;
 }
 
 export const handleMouseDown = ({
@@ -34,7 +35,8 @@ export const handleMouseDown = ({
 	setWallMetaData,
 	objectMetaData,
 	startWallDrawing,
-	setSelectedWallData
+	setSelectedWallData,
+	objectBeingMoved
 }: Props) => {
 	event?.preventDefault();
 
@@ -72,7 +74,8 @@ export const handleMouseDown = ({
 				wallMetaData,
 				setWallMetaData,
 				setSelectedWallData,
-				setPoint
+				setPoint,
+				objectBeingMoved
 			});
 		}
 	}
