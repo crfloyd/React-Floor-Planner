@@ -244,33 +244,33 @@ export const handleMouseMoveSelectMode = (
 			binder = setBinder({ wall: wallUnderCursor, type: 'segment' });
 			// binder.wall.inWallRib(objectMeta);
 			setInWallMeasurementText(binder.wall, objectMeta);
-			const line = createSvgElement('none', 'line', {
-				x1: binder.wall.start.x,
-				y1: binder.wall.start.y,
-				x2: binder.wall.end.x,
-				y2: binder.wall.end.y,
-				'stroke-width': 5,
-				stroke: '#5cba79'
-			});
-			const ball1 = createSvgElement('none', 'circle', {
-				class: 'circle_css',
-				cx: binder.wall.start.x,
-				cy: binder.wall.start.y,
-				r: constants.CIRCLE_BINDER_RADIUS / 1.8
-			});
-			const ball2 = createSvgElement('none', 'circle', {
-				class: 'circle_css',
-				cx: binder.wall.end.x,
-				cy: binder.wall.end.y,
-				r: constants.CIRCLE_BINDER_RADIUS / 1.8
-			});
-			const graph = createSvgElement('none', 'g');
-			graph.appendChild(line);
-			graph.appendChild(ball1);
-			graph.appendChild(ball2);
-			binder.graph = graph;
-			$('#boxbind').append(binder.graph);
-			setCursor('pointer');
+			// const line = createSvgElement('none', 'line', {
+			// 	x1: binder.wall.start.x,
+			// 	y1: binder.wall.start.y,
+			// 	x2: binder.wall.end.x,
+			// 	y2: binder.wall.end.y,
+			// 	'stroke-width': 5,
+			// 	stroke: '#5cba79'
+			// });
+			// const ball1 = createSvgElement('none', 'circle', {
+			// 	class: 'circle_css',
+			// 	cx: binder.wall.start.x,
+			// 	cy: binder.wall.start.y,
+			// 	r: constants.CIRCLE_BINDER_RADIUS / 1.8
+			// });
+			// const ball2 = createSvgElement('none', 'circle', {
+			// 	class: 'circle_css',
+			// 	cx: binder.wall.end.x,
+			// 	cy: binder.wall.end.y,
+			// 	r: constants.CIRCLE_BINDER_RADIUS / 1.8
+			// });
+			// const graph = createSvgElement('none', 'g');
+			// graph.appendChild(line);
+			// graph.appendChild(ball1);
+			// graph.appendChild(ball2);
+			// binder.graph = graph;
+			// $('#boxbind').append(binder.graph);
+			// setCursor('pointer');
 		}
 	} else {
 		if (binder && binder.type == 'segment') {

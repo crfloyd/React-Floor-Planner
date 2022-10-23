@@ -365,6 +365,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		}
 	}, [openingWidth]);
 
+	const circleRadius = constants.CIRCLE_BINDER_RADIUS / 1.8;
+
 	return (
 		<svg
 			ref={canvasRef}
@@ -463,6 +465,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					canvasState,
 					viewbox,
 					wallMetaData,
+					wallUnderCursor,
 					setWallMetaData,
 					roomMetaData,
 					roomPolygonData,
@@ -571,6 +574,22 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			</g>
 			<g id="boxEnergy" visibility={layerSettings.showDevices ? 'visible' : 'hidden'}></g>
 			<g id="boxbind">
+				{wallUnderCursor && (
+					<g>
+						<line
+							x1={wallUnderCursor.start.x}
+							y1={wallUnderCursor.start.y}
+							x2={wallUnderCursor.end.x}
+							y2={wallUnderCursor.end.y}
+							strokeWidth={5}
+							stroke="#5cba79"></line>
+						<circle
+							cx={wallUnderCursor.start.x}
+							cy={wallUnderCursor.start.y}
+							r={circleRadius}></circle>
+						<circle cx={wallUnderCursor.end.x} cy={wallUnderCursor.end.y} r={circleRadius}></circle>
+					</g>
+				)}
 				{helperLineSvgData && (
 					<path
 						stroke={helperLineSvgData.stroke}

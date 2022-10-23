@@ -36,6 +36,7 @@ export const handleMouseMoveBindMode = (
 	setCursor: (crsr: CursorType) => void,
 	canvasState: CanvasState,
 	wallMeta: WallMetaData[],
+	wallUnderCursor: WallMetaData | null,
 	objectMeta: ObjectMetaData[],
 	setObjectMeta: (o: ObjectMetaData[]) => void,
 	setWallMeta: (w: WallMetaData[]) => void,
@@ -303,7 +304,7 @@ export const handleMouseMoveBindMode = (
 		// setRoomPolygonData(polygonData);
 		// renderRooms(polygonData, roomMeta, setRoomMeta);
 	} else if (
-		binder?.type == 'segment' &&
+		wallUnderCursor &&
 		action &&
 		wallEquations.equation1 &&
 		wallEquations.equation2 &&
@@ -326,40 +327,40 @@ export const handleMouseMoveBindMode = (
 		// 	wallEquations.equation3
 		// );
 
-		if (binder.wall.parent != null) {
-			const parent = findById(binder.wall.parent, wallMeta);
+		if (wallUnderCursor.parent != null) {
+			const parent = findById(wallUnderCursor.parent, wallMeta);
 			if (parent && intersection1) {
-				if (pointsAreEqual(parent.end, binder.wall.start)) parent.end = intersection1;
-				else if (pointsAreEqual(parent.start, binder.wall.start)) parent.start = intersection1;
+				if (pointsAreEqual(parent.end, wallUnderCursor.start)) parent.end = intersection1;
+				else if (pointsAreEqual(parent.start, wallUnderCursor.start)) parent.start = intersection1;
 				else parent.end = intersection1;
 			}
 		}
 
-		if (binder.wall.child != null) {
-			const child = findById(binder.wall.child, wallMeta);
+		if (wallUnderCursor.child != null) {
+			const child = findById(wallUnderCursor.child, wallMeta);
 			if (child && intersection2) {
-				if (pointsAreEqual(child.start, binder.wall.end)) child.start = intersection2;
-				else if (pointsAreEqual(child.end, binder.wall.end)) child.end = intersection2;
+				if (pointsAreEqual(child.start, wallUnderCursor.end)) child.start = intersection2;
+				else if (pointsAreEqual(child.end, wallUnderCursor.end)) child.end = intersection2;
 				else child.start = intersection2;
 			}
 		}
 
-		binder.wall.start = intersection1;
-		binder.wall.end = intersection2;
+		wallUnderCursor.start = intersection1 ?? wallUnderCursor.start;
+		wallUnderCursor.end = intersection2 ?? wallUnderCursor.end;
 
-		const graph = binder.graph as SVGElement;
-		const graphChildren = [...graph.childNodes].map((n) => {
-			return n as SVGElement;
-		});
+		// const graph = binder.graph as SVGElement;
+		// const graphChildren = [...graph.childNodes].map((n) => {
+		// 	return n as SVGElement;
+		// });
 
-		graphChildren[0].setAttribute('x1', intersection1?.x?.toString() ?? '');
-		graphChildren[0].setAttribute('x2', intersection2?.x?.toString() ?? '');
-		graphChildren[0].setAttribute('y1', intersection1?.y?.toString() ?? '');
-		graphChildren[0].setAttribute('y2', intersection2?.y?.toString() ?? '');
-		graphChildren[1].setAttribute('cx', intersection1?.x?.toString() ?? '');
-		graphChildren[1].setAttribute('cy', intersection1?.y?.toString() ?? '');
-		graphChildren[2].setAttribute('cx', intersection2?.x?.toString() ?? '');
-		graphChildren[2].setAttribute('cy', intersection2?.y?.toString() ?? '');
+		// graphChildren[0].setAttribute('x1', intersection1?.x?.toString() ?? '');
+		// graphChildren[0].setAttribute('x2', intersection2?.x?.toString() ?? '');
+		// graphChildren[0].setAttribute('y1', intersection1?.y?.toString() ?? '');
+		// graphChildren[0].setAttribute('y2', intersection2?.y?.toString() ?? '');
+		// graphChildren[1].setAttribute('cx', intersection1?.x?.toString() ?? '');
+		// graphChildren[1].setAttribute('cy', intersection1?.y?.toString() ?? '');
+		// graphChildren[2].setAttribute('cx', intersection2?.x?.toString() ?? '');
+		// graphChildren[2].setAttribute('cy', intersection2?.y?.toString() ?? '');
 
 		// THE EQ FOLLOWED BY eq (PARENT EQ1 --- CHILD EQ3)
 		if (wallEquations.equation1.follow != undefined) {
@@ -448,7 +449,10 @@ export const handleMouseMoveBindMode = (
 			objTarget.x = intersectionObj?.x ?? objTarget.x;
 			objTarget.y = intersectionObj?.y ?? objTarget.y;
 			const limits = computeLimit(wallEquations.equation2, objTarget.size, objTarget);
-			if (binder.wall.pointInsideWall(limits[0]) && binder.wall.pointInsideWall(limits[1])) {
+			if (
+				wallUnderCursor?.pointInsideWall(limits[0], false) &&
+				wallUnderCursor?.pointInsideWall(limits[1], false)
+			) {
 				objTarget.limit = limits;
 				objTarget.update();
 			}
