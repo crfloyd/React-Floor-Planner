@@ -1,6 +1,7 @@
 import {
 	CursorType,
 	Mode,
+	NodeMoveData,
 	ObjectMetaData,
 	Point2D,
 	ViewboxData,
@@ -23,6 +24,8 @@ interface Props {
 	startWallDrawing: (startPoint: Point2D) => void;
 	setSelectedWallData: (data: { wall: WallMetaData; before: Point2D }) => void;
 	objectBeingMoved: ObjectMetaData | null;
+	nodeUnderCursor: Point2D | undefined;
+	setNodeBeingMoved: (n: NodeMoveData | undefined) => void;
 }
 
 export const handleMouseDown = ({
@@ -36,7 +39,9 @@ export const handleMouseDown = ({
 	objectMetaData,
 	startWallDrawing,
 	setSelectedWallData,
-	objectBeingMoved
+	objectBeingMoved,
+	nodeUnderCursor,
+	setNodeBeingMoved
 }: Props) => {
 	event?.preventDefault();
 
@@ -75,7 +80,9 @@ export const handleMouseDown = ({
 				setWallMetaData,
 				setSelectedWallData,
 				setPoint,
-				objectBeingMoved
+				objectBeingMoved,
+				nodeUnderCursor,
+				setNodeBeingMoved
 			});
 		}
 	}

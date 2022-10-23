@@ -10,7 +10,7 @@ import {
 	WallMetaData
 } from '../models/models';
 import { angleBetweenPoints, createWallGuideLine, findNearestWallInRange } from '../utils/svgTools';
-import { distanceBetween, getMidPoint, getNearestWall } from '../utils/utils';
+import { distanceBetween, getMidPoint, getNearestWallNode } from '../utils/utils';
 
 interface WallHelperPathData {
 	x1: number;
@@ -96,7 +96,7 @@ export const useDrawWalls = (
 		if (mode !== Mode.Line && mode !== Mode.Partition) return;
 
 		// Find the node nearest the current mouse position;
-		const nearestWallData = getNearestWall(snapPosition, wallMetaData, 20);
+		const nearestWallData = getNearestWallNode(snapPosition, wallMetaData, 20);
 
 		// Guide positional data for nearest wall guide line
 		const wallGuideLine = createWallGuideLine(snapPosition, wallMetaData, 10);

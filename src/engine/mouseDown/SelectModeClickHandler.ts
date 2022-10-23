@@ -1,4 +1,11 @@
-import { Mode, ObjectMetaData, Point2D, ViewboxData, WallMetaData } from '../../models/models';
+import {
+	Mode,
+	NodeMoveData,
+	ObjectMetaData,
+	Point2D,
+	ViewboxData,
+	WallMetaData
+} from '../../models/models';
 import { calculateSnap } from '../../utils/utils';
 import { CanvasState } from '../';
 import { handleSelectModeNodeClicked } from './SelectModeNodeClickHandler';
@@ -14,6 +21,8 @@ interface Props {
 	setWallMetaData: (w: WallMetaData[]) => void;
 	setSelectedWallData: (data: { wall: WallMetaData; before: Point2D }) => void;
 	objectBeingMoved: ObjectMetaData | null;
+	nodeUnderCursor: Point2D | undefined;
+	setNodeBeingMoved: (data: NodeMoveData | undefined) => void;
 }
 
 export const handleSelectModeClick = ({
@@ -26,9 +35,9 @@ export const handleSelectModeClick = ({
 		followerData,
 		setObjectEquationData,
 		setWallEquations,
-		setDrag,
-		setCurrentNodeWallObjects,
-		setCurrentNodeWalls
+		setDrag
+		// setCurrentNodeWallObjects
+		// setCurrentNodeWalls
 	},
 	viewbox,
 	objectMetaData,
@@ -36,8 +45,33 @@ export const handleSelectModeClick = ({
 	setWallMetaData,
 	setSelectedWallData,
 	setPoint,
-	objectBeingMoved
+	objectBeingMoved,
+	nodeUnderCursor,
+	setNodeBeingMoved
 }: Props) => {
+	if (nodeUnderCursor) {
+		setMode(Mode.Bind);
+		setAction(true);
+		$('#boxScale').hide(100);
+		setPoint({ ...nodeUnderCursor });
+
+		const { nodeWalls, nodeWallObjects } = handleSelectModeNodeClicked({
+			x: nodeUnderCursor.x,
+			y: nodeUnderCursor.y,
+			wallMeta: wallMetaData,
+			objectMeta: objectMetaData
+		});
+
+		setNodeBeingMoved({
+			node: nodeUnderCursor,
+			connectedWalls: nodeWalls,
+			connectedObjects: nodeWallObjects
+		});
+		// setCurrentNodeWallObjects(nodeWallObjects);
+		// setCurrentNodeWalls(nodeWalls);
+		return;
+	}
+
 	switch (binder?.type) {
 		case 'segment': {
 			setMode(Mode.Bind);
@@ -61,24 +95,24 @@ export const handleSelectModeClick = ({
 			setWallEquations(wallEquationsResult);
 			break;
 		}
-		case 'node': {
-			setMode(Mode.Bind);
-			setAction(true);
-			$('#boxScale').hide(100);
-			const node = binder.data;
-			setPoint({ x: node.x, y: node.y });
+		// case 'node': {
+		// 	setMode(Mode.Bind);
+		// 	setAction(true);
+		// 	$('#boxScale').hide(100);
+		// 	const node = binder.data;
+		// 	setPoint({ x: node.x, y: node.y });
 
-			const { nodeWalls, nodeWallObjects } = handleSelectModeNodeClicked({
-				x: node.x,
-				y: node.y,
-				wallMeta: wallMetaData,
-				objectMeta: objectMetaData
-			});
+		// 	const { nodeWalls, nodeWallObjects } = handleSelectModeNodeClicked({
+		// 		x: node.x,
+		// 		y: node.y,
+		// 		wallMeta: wallMetaData,
+		// 		objectMeta: objectMetaData
+		// 	});
 
-			setCurrentNodeWallObjects(nodeWallObjects);
-			setCurrentNodeWalls(nodeWalls);
-			break;
-		}
+		// 	setCurrentNodeWallObjects(nodeWallObjects);
+		// 	setCurrentNodeWalls(nodeWalls);
+		// 	break;
+		// }
 		case 'obj':
 		case 'boundingBox': {
 			setMode(Mode.Bind);
@@ -96,7 +130,5 @@ export const handleSelectModeClick = ({
 	if (objectBeingMoved) {
 		setMode(Mode.Bind);
 		setAction(true);
-	} else {
-		console.error('MOUSE DOWN NO ACTION PERFORMED');
 	}
 };

@@ -58,17 +58,17 @@ export default class CanvasState {
 		return this.wallEndConstruc;
 	};
 
-	currentNodeWallObjectData: NodeWallObjectData[] = [];
-	setCurrentNodeWallObjects = (newData: NodeWallObjectData[]) => {
-		this.currentNodeWallObjectData = newData;
-		return this.currentNodeWallObjectData;
-	};
+	// currentNodeWallObjectData: NodeWallObjectData[] = [];
+	// setCurrentNodeWallObjects = (newData: NodeWallObjectData[]) => {
+	// 	this.currentNodeWallObjectData = newData;
+	// 	return this.currentNodeWallObjectData;
+	// };
 
-	currentNodeWalls: WallMetaData[] = [];
-	setCurrentNodeWalls = (newWalls: WallMetaData[]) => {
-		this.currentNodeWalls = newWalls;
-		return this.currentNodeWalls;
-	};
+	// currentNodeWalls: WallMetaData[] = [];
+	// setCurrentNodeWalls = (newWalls: WallMetaData[]) => {
+	// 	this.currentNodeWalls = newWalls;
+	// 	return this.currentNodeWalls;
+	// };
 
 	lineIntersectionP: any = null;
 	setLineIntersectionP = (val: any) => {

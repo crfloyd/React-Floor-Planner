@@ -98,7 +98,7 @@ function App() {
 	const [wallMetaData, setWallMetaData] = useState<WallMetaData[]>([]);
 	const [objectMetaData, setObjectMetaData] = useState<ObjectMetaData[]>([]);
 	const [openingWidth, setOpeningWidth] = useState<number | null>(null);
-	const [openingIdBeingEdited, setOpeningIdBeingEdited] = useState<string | null>(null);
+	const [openingIdBeingEdited, setOpeningIdBeingEdited] = useState<string | undefined>();
 
 	const [selectedWall, setSelectedWall] = useState<WallMetaData | null>(null);
 
@@ -348,7 +348,7 @@ function App() {
 
 		setSelectedWall(null);
 		// wall.graph.remove();
-		$(canvasState.binder.graph).remove();
+		// $(canvasState.binder.graph).remove();
 		updateMeasurementText(wallMetaData);
 		canvasState.setMode(Mode.Select);
 		setShowMainPanel(true);
@@ -636,7 +636,7 @@ function App() {
 							setShowObjectTools(false);
 							setShowMainPanel(true);
 							setShowConfigureDoorWindowPanel(false);
-							setOpeningIdBeingEdited(null);
+							setOpeningIdBeingEdited(undefined);
 							// $(canvasState.binder.graph).remove();
 							updateMeasurementText(wallMetaData);
 						}}

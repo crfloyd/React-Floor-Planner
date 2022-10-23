@@ -110,6 +110,12 @@ export interface WallMetaData {
 	makeVisible(): void;
 }
 
+export interface NodeMoveData {
+	node: Point2D;
+	connectedObjects: NodeWallObjectData[];
+	connectedWalls: WallMetaData[];
+}
+
 export interface NodeWallObjectData {
 	wall: WallMetaData;
 	from: Point2D;

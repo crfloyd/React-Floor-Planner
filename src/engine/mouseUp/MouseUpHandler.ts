@@ -2,6 +2,7 @@ import { constants } from '../../../constants';
 import {
 	CursorType,
 	Mode,
+	NodeMoveData,
 	ObjectMetaData,
 	Point2D,
 	RoomDisplayData,
@@ -39,7 +40,8 @@ export const handleMouseUp = (
 	startWallDrawing: (startPoint: Point2D) => void,
 	selectedWallData: { wall: WallMetaData; before: Point2D } | null,
 	objectBeingMoved: ObjectMetaData | null,
-	setObjectBeingMoved: (o: ObjectMetaData | null) => void
+	setObjectBeingMoved: (o: ObjectMetaData | null) => void,
+	setNodeBeingMoved: (n: NodeMoveData | undefined) => void
 ) => {
 	if (showMeasurements) {
 		$('#boxScale').show(200);
@@ -225,9 +227,7 @@ export const handleMouseUp = (
 			setMode(updatedMode);
 			setBinder(updatedBinder);
 			setObjectMetaData(updatedObjectMeta);
-			// if (shouldShowObjectTools) {
-			// 	startModifyingOpening();
-			// }
+			setNodeBeingMoved(undefined);
 			save();
 			break;
 		}

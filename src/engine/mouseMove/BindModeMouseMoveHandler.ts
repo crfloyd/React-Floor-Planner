@@ -1,7 +1,9 @@
 import {
 	CursorType,
+	NodeMoveData,
 	ObjectEquationData,
 	ObjectMetaData,
+	Point2D,
 	SnapData,
 	WallMetaData
 } from '../../models/models';
@@ -20,7 +22,7 @@ import {
 	computeLimit,
 	distanceBetween,
 	findById,
-	getNearestWall,
+	getNearestWallNode,
 	intersectionOfEquations,
 	isObjectsEquals,
 	perpendicularEquation,
@@ -41,17 +43,11 @@ export const handleMouseMoveBindMode = (
 	setObjectMeta: (o: ObjectMetaData[]) => void,
 	setWallMeta: (w: WallMetaData[]) => void,
 	objectBeingMoved: ObjectMetaData | null,
-	setObjectBeingMoved: (o: ObjectMetaData | null) => void
+	setObjectBeingMoved: (o: ObjectMetaData | null) => void,
+	nodeBeingMoved: NodeMoveData | undefined,
+	setNodeBeingMoved: (n: NodeMoveData | undefined) => void
 ) => {
-	const {
-		binder,
-		action,
-		currentNodeWalls,
-		currentNodeWallObjectData,
-		wallEquations,
-		followerData,
-		objectEquationData
-	} = canvasState;
+	const { binder, action, wallEquations, followerData, objectEquationData } = canvasState;
 
 	const objTarget = objectMeta.find((o) => o.id === objectBeingMoved?.targetId);
 	if (objectBeingMoved?.type == 'boundingBox' && action && objTarget?.params.move) {
@@ -184,48 +180,48 @@ export const handleMouseMoveBindMode = (
 			}
 			setObjectBeingMoved(objectBeingMoved);
 		}
-	} else if (binder?.type == 'node') {
-		const coords = snap;
+	} else if (nodeBeingMoved) {
+		const { connectedWalls, connectedObjects, node } = nodeBeingMoved;
+		const coords: Point2D = snap;
 		let magnetic: string | null = null;
-		for (const k in currentNodeWalls) {
-			if (pointsAreEqual(currentNodeWalls[k].end, binder.data)) {
-				if (Math.abs(currentNodeWalls[k].start.x - snap.x) < 20) {
-					coords.x = currentNodeWalls[k].start.x;
+		connectedWalls.forEach((wall) => {
+			if (pointsAreEqual(wall.end, node)) {
+				if (Math.abs(wall.start.x - snap.x) < 20) {
+					coords.x = wall.start.x;
 					magnetic = 'H';
 				}
-				if (Math.abs(currentNodeWalls[k].start.y - snap.y) < 20) {
-					coords.y = currentNodeWalls[k].start.y;
+				if (Math.abs(wall.start.y - snap.y) < 20) {
+					coords.y = wall.start.y;
+					magnetic = 'V';
+				}
+			} else if (pointsAreEqual(wall.start, node)) {
+				if (Math.abs(wall.end.x - snap.x) < 20) {
+					coords.x = wall.end.x;
+					magnetic = 'H';
+				}
+				if (Math.abs(wall.end.y - snap.y) < 20) {
+					coords.y = wall.end.y;
 					magnetic = 'V';
 				}
 			}
-			if (pointsAreEqual(currentNodeWalls[k].start, binder.data)) {
-				if (Math.abs(currentNodeWalls[k].end.x - snap.x) < 20) {
-					coords.x = currentNodeWalls[k].end.x;
-					magnetic = 'H';
-				}
-				if (Math.abs(currentNodeWalls[k].end.y - snap.y) < 20) {
-					coords.y = currentNodeWalls[k].end.y;
-					magnetic = 'V';
-				}
-			}
-		}
+		});
 
-		const nearestWallData = getNearestWall(snap, wallMeta, 15, currentNodeWalls);
+		const nearestWallData = getNearestWallNode(snap, wallMeta, 15, connectedWalls);
 		if (nearestWallData) {
 			coords.x = nearestWallData.bestPoint.x;
 			coords.y = nearestWallData.bestPoint.y;
-			$('#circlebinder').attr({
-				class: 'circleGum',
-				cx: coords.x,
-				cy: coords.y
-			});
+			// $('#circlebinder').attr({
+			// 	class: 'circleGum',
+			// 	cx: coords.x,
+			// 	cy: coords.y
+			// });
 			setCursor('grab');
 		} else {
 			if (magnetic) {
 				if (magnetic == 'H') snap.x = coords.x;
 				else snap.y = coords.y;
 			}
-			const helpConstruc = createWallGuideLine(snap, wallMeta, 10, currentNodeWalls);
+			const helpConstruc = createWallGuideLine(snap, wallMeta, 10, connectedWalls);
 			if (helpConstruc) {
 				coords.x = helpConstruc.x;
 				coords.y = helpConstruc.y;
@@ -239,23 +235,23 @@ export const handleMouseMoveBindMode = (
 			} else {
 				setCursor('move');
 			}
-			$('#circlebinder').attr({
-				class: 'circle_css',
-				cx: coords.x,
-				cy: coords.y
-			});
+			// $('#circlebinder').attr({
+			// 	class: 'circle_css',
+			// 	cx: coords.x,
+			// 	cy: coords.y
+			// });
 		}
-		for (const k in currentNodeWalls) {
-			if (pointsAreEqual(currentNodeWalls[k].start, binder.data)) {
-				currentNodeWalls[k].start.x = coords.x;
-				currentNodeWalls[k].start.y = coords.y;
+		for (const k in connectedWalls) {
+			if (pointsAreEqual(connectedWalls[k].start, node)) {
+				connectedWalls[k].start.x = coords.x;
+				connectedWalls[k].start.y = coords.y;
 			}
-			if (pointsAreEqual(currentNodeWalls[k].end, binder.data)) {
-				currentNodeWalls[k].end.x = coords.x;
-				currentNodeWalls[k].end.y = coords.y;
+			if (pointsAreEqual(connectedWalls[k].end, node)) {
+				connectedWalls[k].end.x = coords.x;
+				connectedWalls[k].end.y = coords.y;
 			}
 		}
-		binder.data = coords;
+		// binder.data = coords;
 
 		// refreshWalls(wallMeta, wallEquations); // UPDATE FALSE
 		// wallMeta.forEach((wall: WallMetaData) => {
@@ -266,15 +262,15 @@ export const handleMouseMoveBindMode = (
 		// $("#boxSurface").empty();
 		// setWallMeta([...wallMeta]);
 
-		for (const k in currentNodeWallObjectData) {
-			const wall = currentNodeWallObjectData[k].wall;
-			let objTarget: ObjectMetaData | null = currentNodeWallObjectData[k].obj;
+		for (const k in connectedObjects) {
+			const wall = connectedObjects[k].wall;
+			let objTarget: ObjectMetaData | null = connectedObjects[k].obj;
 
 			const angleWall = getAngle(wall.start, wall.end, 'deg').deg;
 			const limits = computeLimit(
 				wall.equations.base,
-				2 * currentNodeWallObjectData[k].distance,
-				currentNodeWallObjectData[k].from
+				2 * connectedObjects[k].distance,
+				connectedObjects[k].from
 			); // COORDS OBJ AFTER ROTATION
 			let indexLimits = 0;
 			if (wall.pointInsideWall(limits[1], false)) indexLimits = 1;
@@ -294,15 +290,10 @@ export const handleMouseMoveBindMode = (
 				objTarget.graph.remove();
 				objTarget = null;
 				objectMeta.splice(objMetaIndex, 1);
-				currentNodeWallObjectData.splice(+k, 1);
+				connectedObjects.splice(+k, 1);
 			}
 		}
-		// for (k in toClean)
-		// $("#boxRoom").empty();
-		// $("#boxSurface").empty();
-		// const polygonData = polygonize(wallMeta);
-		// setRoomPolygonData(polygonData);
-		// renderRooms(polygonData, roomMeta, setRoomMeta);
+		setNodeBeingMoved({ node: coords, connectedWalls, connectedObjects });
 	} else if (
 		wallUnderCursor &&
 		action &&

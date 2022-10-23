@@ -12,6 +12,7 @@ import {
 	CursorType,
 	LayerSettings,
 	Mode,
+	NodeMoveData,
 	ObjectMetaData,
 	Point2D,
 	RoomDisplayData,
@@ -62,7 +63,7 @@ interface Props {
 	wallMetaData: WallMetaData[];
 	setWallMetaData: (w: WallMetaData[]) => void;
 	openingWidth: number | null;
-	openingIdBeingEdited: string | null;
+	openingIdBeingEdited: string | undefined;
 }
 
 interface RoomPathData {
@@ -113,7 +114,9 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		before: Point2D;
 	} | null>(null);
 	const [wallUnderCursor, setWallUnderCursor] = useState<WallMetaData | null>(null);
+	const [nodeUnderCursor, setNodeUnderCursor] = useState<Point2D | undefined>();
 	const [objectBeingMoved, setObjectBeingMoved] = useState<ObjectMetaData | null>(null);
+	const [nodeBeingMoved, setNodeBeingMoved] = useState<NodeMoveData | undefined>();
 
 	const gradientData = useMemo<{ id: string; color1: string; color2: string }[]>(
 		() => GradientData,
@@ -405,7 +408,9 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					startWallDrawing,
 					setSelectedWallData,
 					setPoint,
-					objectBeingMoved
+					objectBeingMoved,
+					nodeUnderCursor,
+					setNodeBeingMoved
 				})
 			}
 			onMouseUp={(e) => {
@@ -436,7 +441,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					startWallDrawing,
 					selectedWallData,
 					objectBeingMoved,
-					setObjectBeingMoved
+					setObjectBeingMoved,
+					setNodeBeingMoved
 				);
 			}}
 			onMouseMove={(e) => {
@@ -476,7 +482,10 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					setCursor,
 					setWallUnderCursor,
 					objectBeingMoved,
-					setObjectBeingMoved
+					setObjectBeingMoved,
+					setNodeUnderCursor,
+					nodeBeingMoved,
+					setNodeBeingMoved
 				);
 			}}>
 			<defs>
@@ -574,6 +583,20 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			</g>
 			<g id="boxEnergy" visibility={layerSettings.showDevices ? 'visible' : 'hidden'}></g>
 			<g id="boxbind">
+				{nodeUnderCursor && (
+					<circle
+						className="circle_css_2"
+						cx={nodeUnderCursor.x}
+						cy={nodeUnderCursor.y}
+						r={constants.CIRCLE_BINDER_RADIUS}></circle>
+				)}
+				{nodeBeingMoved && (
+					<circle
+						className="circle_css"
+						cx={nodeBeingMoved.node.x}
+						cy={nodeBeingMoved.node.y}
+						r={constants.CIRCLE_BINDER_RADIUS}></circle>
+				)}
 				{wallUnderCursor && (
 					<g>
 						<line
@@ -584,10 +607,15 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 							strokeWidth={5}
 							stroke="#5cba79"></line>
 						<circle
+							className="circle_css"
 							cx={wallUnderCursor.start.x}
 							cy={wallUnderCursor.start.y}
 							r={circleRadius}></circle>
-						<circle cx={wallUnderCursor.end.x} cy={wallUnderCursor.end.y} r={circleRadius}></circle>
+						<circle
+							className="circle_css"
+							cx={wallUnderCursor.end.x}
+							cy={wallUnderCursor.end.y}
+							r={circleRadius}></circle>
 					</g>
 				)}
 				{helperLineSvgData && (

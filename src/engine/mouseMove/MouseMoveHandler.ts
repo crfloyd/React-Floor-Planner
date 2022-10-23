@@ -1,6 +1,7 @@
 import {
 	CursorType,
 	Mode,
+	NodeMoveData,
 	ObjectEquationData,
 	ObjectMetaData,
 	Point2D,
@@ -35,7 +36,10 @@ export const handleMouseMove = (
 	setCursor: (crsr: CursorType) => void,
 	setWallUnderCursor: (wall: WallMetaData | null) => void,
 	objectBeingMoved: ObjectMetaData | null,
-	setObjectBeingMoved: (o: ObjectMetaData | null) => void
+	setObjectBeingMoved: (o: ObjectMetaData | null) => void,
+	setNodeUnderCursor: (p: Point2D | undefined) => void,
+	nodeBeingMoved: NodeMoveData | undefined,
+	setNodeBeingMoved: (n: NodeMoveData | undefined) => void
 ) => {
 	if (
 		![
@@ -77,7 +81,6 @@ export const handleMouseMove = (
 		}
 		case Mode.Select: {
 			handleMouseMoveSelectMode(
-				target,
 				snap,
 				canvasState,
 				viewbox,
@@ -88,7 +91,8 @@ export const handleMouseMove = (
 				setWallUnderCursor,
 				point,
 				objectBeingMoved,
-				setObjectBeingMoved
+				setObjectBeingMoved,
+				setNodeUnderCursor
 			);
 			break;
 		}
@@ -107,7 +111,9 @@ export const handleMouseMove = (
 				setObjectMetaData,
 				setWallMetaData,
 				objectBeingMoved,
-				setObjectBeingMoved
+				setObjectBeingMoved,
+				nodeBeingMoved,
+				setNodeBeingMoved
 			);
 			break;
 		}

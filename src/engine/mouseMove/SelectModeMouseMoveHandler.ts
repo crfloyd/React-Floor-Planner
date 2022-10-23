@@ -15,11 +15,10 @@ import {
 	setInWallMeasurementText,
 	updateMeasurementText
 } from '../../utils/svgTools';
-import { getNearestWall, getWallsOnPoint } from '../../utils/utils';
+import { getNearestWallNode, getWallsOnPoint } from '../../utils/utils';
 import { CanvasState } from '../';
 
 export const handleMouseMoveSelectMode = (
-	target: EventTarget,
 	snap: SnapData,
 	{ binder, setBinder, drag }: CanvasState,
 	viewbox: ViewboxData,
@@ -30,7 +29,8 @@ export const handleMouseMoveSelectMode = (
 	setWallUnderCursor: (wall: WallMetaData | null) => void,
 	point: Point2D,
 	objectBeingMoved: ObjectMetaData | null,
-	setObjectBeingMoved: (o: ObjectMetaData | null) => void
+	setObjectBeingMoved: (o: ObjectMetaData | null) => void,
+	setNodeUnderCursor: (p: Point2D | undefined) => void
 ) => {
 	setWallUnderCursor(null);
 
@@ -41,20 +41,8 @@ export const handleMouseMoveSelectMode = (
 		handleCameraChange('zoomdrag', distX, distY);
 		return;
 	}
-
-	// objectBeingMoved?.update();
-	// console.log(
-	// 	'Checking for object under cursor: objBeingMoved:',
-	// 	objectBeingMoved,
-	// 	'meta:',
-	// 	objectMeta
-	// );
 	const objectsToCheck = objectBeingMoved ? objectMeta.concat([objectBeingMoved]) : objectMeta;
 	const matches = objectsToCheck.filter((o) => {
-		// console.log(
-		// 	`mouse: ${snap.x},${snap.y} obj: x:${o.realBbox[0].x}-${o.realBbox[3].x}, y:${o.realBbox[0].y}-${o.realBbox[3].y}`
-		// );
-		// console.log(o.type, o.realBbox);
 		return pointInPolygon({ x: snap.x, y: snap.y }, o.realBbox);
 	});
 	const objectUnderCursor = matches.length > 0 ? matches[0] : null;
@@ -83,31 +71,6 @@ export const handleMouseMoveSelectMode = (
 					objectUnderCursor.realBbox,
 					viewbox
 				);
-
-				// newObject.update();
-
-				// const {
-				// 	newWidth,
-				// 	newHeight,
-				// 	newRenderData,
-				// 	newRealBbox: newBbox
-				// } = calculateObjectRenderData(
-				// 	boundingBox.size,
-				// 	boundingBox.thick,
-				// 	boundingBox.angle,
-				// 	boundingBox.class,
-				// 	boundingBox.type,
-				// 	boundingBox.pos
-				// );
-				// setObjectBeingMoved({
-				// 	...boundingBox,
-				// 	width: newWidth,
-				// 	height: newHeight,
-				// 	renderData: newRenderData,
-				// 	realBbox: newBbox,
-				// 	oldXY: { x: boundingBox.x, y: boundingBox.y },
-				// 	targetId: objectUnderCursor.id
-				// });
 				const updatedObject = getUpdatedObject(boundingBox, objectUnderCursor.id);
 				updatedObject.oldXY = { x: boundingBox.x, y: boundingBox.y };
 				setObjectBeingMoved(updatedObject);
@@ -141,28 +104,6 @@ export const handleMouseMoveSelectMode = (
 					0,
 					viewbox
 				);
-				// const {
-				// 	newWidth,
-				// 	newHeight,
-				// 	newRenderData,
-				// 	newRealBbox: newBbox
-				// } = calculateObjectRenderData(
-				// 	hoverBox.size,
-				// 	hoverBox.thick,
-				// 	hoverBox.angle,
-				// 	hoverBox.class,
-				// 	hoverBox.type,
-				// 	hoverBox.pos
-				// );
-				// setObjectBeingMoved({
-				// 	...hoverBox,
-				// 	width: newWidth,
-				// 	height: newHeight,
-				// 	renderData: newRenderData,
-				// 	realBbox: newBbox,
-				// 	targetId: objectUnderCursor.id,
-				// 	oldXY: { x: objectUnderCursor.x, y: objectUnderCursor.y }
-				// });
 				const updatedObject = getUpdatedObject(hoverBox, objectUnderCursor.id);
 				updatedObject.oldXY = { x: objectUnderCursor.x, y: objectUnderCursor.y };
 				setObjectBeingMoved(updatedObject);
@@ -196,41 +137,13 @@ export const handleMouseMoveSelectMode = (
 	}
 
 	// BIND CIRCLE IF nearNode and GROUP ALL SAME XY SEG POINTS
-	const nearestWallData = getNearestWall(snap, wallMeta, 20);
-	if (nearestWallData) {
-		if (binder == null || binder.type == 'segment') {
-			binder = setBinder(
-				createSvgElement('boxbind', 'circle', {
-					id: 'circlebinder',
-					class: 'circle_css_2',
-					cx: nearestWallData.bestPoint.x,
-					cy: nearestWallData.bestPoint.y,
-					r: constants.CIRCLE_BINDER_RADIUS
-				})
-			);
-			binder.data = {
-				x: nearestWallData.bestPoint.x,
-				y: nearestWallData.bestPoint.y
-			};
-			binder.type = 'node';
-			if ($('#linebinder').length) $('#linebinder').remove();
-		} else {
-			// REMAKE CIRCLE_CSS ON BINDER AND TAKE DATA SEG GROUP
-			// if (typeof(binder) != 'undefined') {
-			//     binder.attr({
-			//         class: "circle_css_2"
-			//     });
-			// }
-		}
+	const nearestWallNode = getNearestWallNode(snap, wallMeta, 20);
+	setNodeUnderCursor(nearestWallNode?.bestPoint);
+	if (nearestWallNode) {
 		setCursor('move');
+		return;
 	} else {
-		if (binder && binder.type == 'node') {
-			binder.remove();
-			binder = setBinder(null);
-			$('#boxbind').empty();
-			setCursor('default');
-			updateMeasurementText(wallMeta);
-		}
+		setCursor('default');
 	}
 
 	// BIND WALL WITH NEARPOINT function ---> WALL BINDER CREATION
@@ -238,47 +151,9 @@ export const handleMouseMoveSelectMode = (
 	if (wallsUnderCursor.length > 0) {
 		const wallUnderCursor = wallsUnderCursor[wallsUnderCursor.length - 1];
 		if (wallUnderCursor && binder == null) {
-			// const objWall = wallUnderCursor.getObjects(objectMeta);
-			// if (objWall.length > 0) updateLenghtText(wallUnderCursor, objectMeta);
 			setWallUnderCursor(wallUnderCursor);
 			binder = setBinder({ wall: wallUnderCursor, type: 'segment' });
-			// binder.wall.inWallRib(objectMeta);
 			setInWallMeasurementText(binder.wall, objectMeta);
-			// const line = createSvgElement('none', 'line', {
-			// 	x1: binder.wall.start.x,
-			// 	y1: binder.wall.start.y,
-			// 	x2: binder.wall.end.x,
-			// 	y2: binder.wall.end.y,
-			// 	'stroke-width': 5,
-			// 	stroke: '#5cba79'
-			// });
-			// const ball1 = createSvgElement('none', 'circle', {
-			// 	class: 'circle_css',
-			// 	cx: binder.wall.start.x,
-			// 	cy: binder.wall.start.y,
-			// 	r: constants.CIRCLE_BINDER_RADIUS / 1.8
-			// });
-			// const ball2 = createSvgElement('none', 'circle', {
-			// 	class: 'circle_css',
-			// 	cx: binder.wall.end.x,
-			// 	cy: binder.wall.end.y,
-			// 	r: constants.CIRCLE_BINDER_RADIUS / 1.8
-			// });
-			// const graph = createSvgElement('none', 'g');
-			// graph.appendChild(line);
-			// graph.appendChild(ball1);
-			// graph.appendChild(ball2);
-			// binder.graph = graph;
-			// $('#boxbind').append(binder.graph);
-			// setCursor('pointer');
-		}
-	} else {
-		if (binder && binder.type == 'segment') {
-			$(binder.graph).remove();
-			binder = setBinder(null);
-			$('#boxbind').empty();
-			setCursor('default');
-			updateMeasurementText(wallMeta);
 		}
 	}
 };
