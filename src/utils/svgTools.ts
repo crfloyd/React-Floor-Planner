@@ -1416,17 +1416,6 @@ export const nearPointOnEquation = (equation: WallEquation, point: Point2D) => {
 	}
 };
 
-export const create = (id: string, shape: string, attrs: string[]) => {
-	const svg = $(document.createElementNS('http://www.w3.org/2000/svg', shape));
-	for (const k in attrs) {
-		svg.attr(k, attrs[k]);
-	}
-	if (id != 'none') {
-		$('#' + id).append(svg);
-	}
-	return svg;
-};
-
 export const vertexList = (junction: WallJunction[]) => {
 	const verticies: WallVertex[] = [];
 	// var vertextest = [];

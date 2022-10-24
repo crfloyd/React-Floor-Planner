@@ -124,7 +124,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	const [selectedRoomRenderData, setSelectedRoomRenderData] = useState<
 		{ path: string; selected: boolean; selectedColor: string | undefined } | undefined
 	>();
-	const [displayInWallMeasurementText, setDisplayInWallMeasurementText] = useState<boolean>(false);
 
 	const gradientData = useMemo<{ id: string; color1: string; color2: string }[]>(
 		() => GradientData,
@@ -328,6 +327,11 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	]);
 
 	// useEffect(() => {
+	// 	const rect = canvasRef.current?.getBoundingClientRect();
+	// 	console.log('canvas offset', rect);
+	// }, [canvasRef.current?.width]);
+
+	// useEffect(() => {
 	// 	console.log(wallHelperNodeCircle);
 	// }, [wallHelperNodeCircle]);
 
@@ -385,12 +389,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		}
 	}, [openingWidth]);
 
-	useEffect(() => {
-		if (inWallMeasurementRenderData) {
-			setDisplayInWallMeasurementText(true);
-		}
-	}, [inWallMeasurementRenderData]);
-
 	const circleRadius = constants.CIRCLE_BINDER_RADIUS / 1.8;
 
 	return (
@@ -437,7 +435,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					wallUnderCursor
 				})
 			}
-			onMouseUp={(e) => {
+			onMouseUp={() => {
 				handleMouseUp(
 					snapPosition,
 					point,
@@ -472,8 +470,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 							return prev ? { ...prev, selected: true } : undefined;
 						});
 					},
-					clearWallHelperState,
-					setDisplayInWallMeasurementText
+					clearWallHelperState
 				);
 			}}
 			onMouseMove={(e) => {
@@ -764,7 +761,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 							strokeWidth="0.2px"
 							fill="#555"
 							fontSize={content < 1 ? '0.73em' : '0.9em'}>
-							{content}
+							{content.toFixed(2)}
 						</text>
 					))}
 				{wallUnderCursor &&

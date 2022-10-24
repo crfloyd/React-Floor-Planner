@@ -298,13 +298,8 @@ export const calculateSnap = (
 	} else {
 		throw new Error('Unknown input event');
 	}
-	const offset = $('#lin').offset();
-	if (!offset) {
-		throw new Error('Could not get canvas offset');
-	}
-
-	const x_mouse = eX * viewbox.zoomFactor - offset.left * viewbox.zoomFactor + viewbox.originX;
-	const y_mouse = eY * viewbox.zoomFactor - offset.top * viewbox.zoomFactor + viewbox.originY;
+	const x_mouse = eX * viewbox.zoomFactor + viewbox.originX;
+	const y_mouse = eY * viewbox.zoomFactor + viewbox.originY;
 
 	if (state == 'on') {
 		return {

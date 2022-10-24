@@ -143,10 +143,10 @@ export const handleMouseMoveSelectMode = (
 	const wallsUnderCursor = getWallsOnPoint(snap, wallMeta);
 	if (wallsUnderCursor.length > 0) {
 		const wallUnderCursor = wallsUnderCursor[wallsUnderCursor.length - 1];
+		setWallUnderCursor(wallUnderCursor);
 		if (wallUnderCursor) {
-			setWallUnderCursor(wallUnderCursor);
-			binder = setBinder({ wall: wallUnderCursor, type: 'segment' });
-			setInWallMeasurementText(binder.wall, objectMeta);
+			// binder = setBinder({ wall: wallUnderCursor, type: 'segment' });
+			setInWallMeasurementText(wallUnderCursor, objectMeta);
 		}
 	}
 };

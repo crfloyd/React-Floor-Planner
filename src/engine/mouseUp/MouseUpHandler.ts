@@ -42,8 +42,7 @@ export const handleMouseUp = (
 	setNodeBeingMoved: (n: NodeMoveData | undefined) => void,
 	roomUnderCursor: RoomMetaData | undefined,
 	selectRoomUnderCursor: () => void,
-	clearWallHelperState: () => void,
-	setDisplayInWallMeasurementText: (d: boolean) => void
+	clearWallHelperState: () => void
 ) => {
 	// if (showMeasurements) {
 	// 	$('#boxScale').show(200);
@@ -51,7 +50,6 @@ export const handleMouseUp = (
 	const { binder, setBinder, setAction, mode, setMode, setDrag, wallEquations, followerData } =
 		canvasState;
 	setDrag(false);
-	setDisplayInWallMeasurementText(false);
 	setCursor('default');
 	if (mode == Mode.Select) {
 		if (binder) {

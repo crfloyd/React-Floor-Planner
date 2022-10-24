@@ -48,7 +48,7 @@ export const handleMouseMoveBindMode = (
 	setNodeBeingMoved: (n: NodeMoveData | undefined) => void,
 	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void
 ) => {
-	const { binder, action, wallEquations, followerData, objectEquationData } = canvasState;
+	const { action, wallEquations, followerData, objectEquationData } = canvasState;
 
 	const objTarget = objectMeta.find((o) => o.id === objectBeingMoved?.targetId);
 	if (objectBeingMoved?.type == 'boundingBox' && action && objTarget?.params.move) {
@@ -396,7 +396,7 @@ export const handleMouseMoveBindMode = (
 			followerData.intersection = intersectionOfEquations(equation.eq, wallEquations.equation2);
 			if (
 				followerData.intersection &&
-				binder.wall.pointInsideWall(followerData.intersection, true)
+				wallUnderCursor.pointInsideWall(followerData.intersection, true)
 			) {
 				const size = distanceBetween(equation.wall.start, equation.wall.end);
 				if (equation.type == 'start') {
@@ -466,12 +466,12 @@ export const handleMouseMoveBindMode = (
 		}
 
 		const newEquationData = resetObjectEquationData(); // REINIT eqObj -> MAYBE ONE OR PLUS OF OBJDATA REMOVED !!!!
-		const objWall = binder.wall.getObjects(objectMeta); // LIST OBJ ON EDGE
+		const objWall = wallUnderCursor.getObjects(objectMeta); // LIST OBJ ON EDGE
 		for (let ob = 0; ob < objWall.length; ob++) {
 			const objTarget = objWall[ob];
 			newEquationData.push({
 				obj: objTarget,
-				wall: binder.wall,
+				wall: wallUnderCursor,
 				eq: perpendicularEquation(wallEquations.equation2, objTarget.x, objTarget.y)
 			});
 		}
@@ -480,8 +480,6 @@ export const handleMouseMoveBindMode = (
 		// $("#boxSurface").empty();
 		// renderRooms(roomPolygonData, roomMeta, setRoomMeta);
 		setCursor('pointer');
-	} else if (binder && binder.type != 'obj' && binder.type != 'segment') {
-		// updateMeasurementText(wallMeta);
 	}
 
 	setObjectMeta([...objectMeta]);
