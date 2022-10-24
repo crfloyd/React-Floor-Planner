@@ -16,20 +16,19 @@ import {
 } from '../../utils/utils';
 
 export const handleSelectModeSegmentClicked = (
-	selectedWallData: { wall: WallMetaData; before: Point2D },
+	wallUnderCursor: WallMetaData,
 	wallMeta: WallMetaData[],
-	objectMeta: ObjectMetaData[],
-	wallEquations: WallEquationGroup,
 	followerData: {
 		equations: { wall: WallMetaData; eq: WallEquation; type: string }[];
 		intersection: Point2D | null;
 	}
 ) => {
-	const wall = Wall.fromWall(selectedWallData.wall);
-	selectedWallData = {
-		...selectedWallData,
-		before: selectedWallData.wall.start
+	const wall = Wall.fromWall(wallUnderCursor);
+	let selectedWallData = {
+		wall: wallUnderCursor,
+		before: wallUnderCursor.start
 	};
+	const wallEquations: WallEquationGroup = { equation1: null, equation2: null, equation3: null };
 	wallEquations.equation2 = wall.getEquation();
 	if (wall.parent != null) {
 		const parent = findById(wall.parent, wallMeta);
@@ -258,12 +257,5 @@ export const handleSelectModeSegmentClicked = (
 		}
 	}
 
-	const objectsOnWall = wall.getObjects(objectMeta);
-	const objectEquationData = objectsOnWall.map((objTarget) => ({
-		obj: objTarget,
-		wall: wall,
-		eq: perpendicularEquation(wallEquations.equation2 ?? { A: 0, B: 0 }, objTarget.x, objTarget.y)
-	}));
-
-	return { selectedWallData, wallMeta, objectEquationData, wallEquations };
+	return { selectedWallData, wallMeta, wallEquations };
 };

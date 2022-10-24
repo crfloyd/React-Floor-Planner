@@ -1,9 +1,12 @@
 import {
 	CursorType,
 	Mode,
+	NodeMoveData,
+	ObjectEquationData,
 	ObjectMetaData,
 	Point2D,
 	ViewboxData,
+	WallEquationGroup,
 	WallMetaData
 } from '../../models/models';
 import { findNearestWallInRange } from '../../utils/svgTools';
@@ -19,9 +22,16 @@ interface Props {
 	viewbox: ViewboxData;
 	wallMetaData: WallMetaData[];
 	setWallMetaData: (w: WallMetaData[]) => void;
+	wallUnderCursor: WallMetaData | null;
 	objectMetaData: ObjectMetaData[];
 	startWallDrawing: (startPoint: Point2D) => void;
 	setSelectedWallData: (data: { wall: WallMetaData; before: Point2D }) => void;
+	setObjectBeingMoved: (o: ObjectMetaData | null) => void;
+	nodeUnderCursor: Point2D | undefined;
+	setNodeBeingMoved: (n: NodeMoveData | undefined) => void;
+	setWallEquationData: (e: WallEquationGroup) => void;
+	setDragging: (d: boolean) => void;
+	objectUnderCursor: ObjectMetaData | undefined;
 }
 
 export const handleMouseDown = ({
@@ -34,7 +44,14 @@ export const handleMouseDown = ({
 	setWallMetaData,
 	objectMetaData,
 	startWallDrawing,
-	setSelectedWallData
+	setSelectedWallData,
+	nodeUnderCursor,
+	setNodeBeingMoved,
+	wallUnderCursor,
+	setWallEquationData,
+	setDragging,
+	objectUnderCursor,
+	setObjectBeingMoved
 }: Props) => {
 	event?.preventDefault();
 
@@ -72,7 +89,14 @@ export const handleMouseDown = ({
 				wallMetaData,
 				setWallMetaData,
 				setSelectedWallData,
-				setPoint
+				setPoint,
+				wallUnderCursor,
+				nodeUnderCursor,
+				setNodeBeingMoved,
+				setWallEquationData,
+				setDragging,
+				objectUnderCursor,
+				setObjectBeingMoved
 			});
 		}
 	}

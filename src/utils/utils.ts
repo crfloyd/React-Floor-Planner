@@ -143,7 +143,7 @@ export const vectorDeter = (p1: Point2D, p2: Point2D) => {
 	return p1.x * p2.y - p1.y * p2.x;
 };
 
-export const getNearestWall = (
+export const getNearestWallNode = (
 	snap: SnapData,
 	wallMeta: WallMetaData[],
 	range = Infinity,
@@ -154,19 +154,21 @@ export const getNearestWall = (
 	let bestDistance = Infinity;
 	for (let k = 0; k < wallMeta.length; k++) {
 		const wall = wallMeta[k];
-		if (except.indexOf(wall) == -1) {
-			let scanDistance = distanceBetween(wall.start, snap);
-			if (scanDistance < bestDistance) {
-				bestPoint = wall.start;
-				bestDistance = scanDistance;
-				bestWallId = wall.id;
-			}
-			scanDistance = distanceBetween(wall.end, snap);
-			if (scanDistance < bestDistance) {
-				bestPoint = wall.end;
-				bestDistance = scanDistance;
-				bestWallId = wall.id;
-			}
+
+		if (except.indexOf(wall) >= 0) continue;
+
+		const distFromStart = distanceBetween(wall.start, snap);
+		if (distFromStart < bestDistance) {
+			bestPoint = wall.start;
+			bestDistance = distFromStart;
+			bestWallId = wall.id;
+		}
+
+		const distFromEnd = distanceBetween(wall.end, snap);
+		if (distFromEnd < bestDistance) {
+			bestPoint = wall.end;
+			bestDistance = distFromEnd;
+			bestWallId = wall.id;
 		}
 	}
 	return bestDistance <= range ? { bestPoint, bestWallId } : null;
@@ -175,7 +177,7 @@ export const getNearestWall = (
 export const getWallsOnPoint = (point: Point2D, wallMeta: WallMetaData[]) => {
 	const wallsOnPoint: WallMetaData[] = [];
 	wallMeta.forEach((wall) => {
-		const polygon = [];
+		const polygon: Point2D[] = [];
 		for (let i = 0; i < 4; i++) {
 			polygon.push({
 				x: wall.coords[i].x,
@@ -296,13 +298,8 @@ export const calculateSnap = (
 	} else {
 		throw new Error('Unknown input event');
 	}
-	const offset = $('#lin').offset();
-	if (!offset) {
-		throw new Error('Could not get canvas offset');
-	}
-
-	const x_mouse = eX * viewbox.zoomFactor - offset.left * viewbox.zoomFactor + viewbox.originX;
-	const y_mouse = eY * viewbox.zoomFactor - offset.top * viewbox.zoomFactor + viewbox.originY;
+	const x_mouse = eX * viewbox.zoomFactor + viewbox.originX;
+	const y_mouse = eY * viewbox.zoomFactor + viewbox.originY;
 
 	if (state == 'on') {
 		return {

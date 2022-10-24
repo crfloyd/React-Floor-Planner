@@ -29,7 +29,7 @@ export const useCameraTools = (canvasDimensions: { width: number; height: number
 
 				return {
 					zoomLevel: prev.zoomLevel - 1,
-					zoomFactor: prev.width / viewbox.width,
+					zoomFactor: newWidth / canvasDimensions.width,
 					width: newWidth,
 					height: newWidth * ratio_viewbox,
 					originX: prev.originX - xmove / 2,
@@ -41,11 +41,12 @@ export const useCameraTools = (canvasDimensions: { width: number; height: number
 			return;
 		} else if (lens == 'zoomin' && viewbox.zoomLevel < 14 && viewbox.zoomLevel > 0) {
 			const newWidth = viewbox.width - xmove;
+
 			setViewBox((prev) => {
 				const ratio_viewbox = prev.height / newWidth;
 				return {
 					zoomLevel: prev.zoomLevel + 1,
-					zoomFactor: prev.width / viewbox.width,
+					zoomFactor: newWidth / canvasDimensions.width,
 					width: newWidth,
 					height: newWidth * ratio_viewbox,
 					originX: prev.originX + xmove / 2,
@@ -95,7 +96,8 @@ export const useCameraTools = (canvasDimensions: { width: number; height: number
 			setViewBox((prev) => ({
 				...prev,
 				originX: prev.originX - xmove,
-				originY: prev.originY - xview
+				originY: prev.originY - xview,
+				zoomFactor: newZoomFactor
 			}));
 		} else {
 			setViewBox((prev) => ({

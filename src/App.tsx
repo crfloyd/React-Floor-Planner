@@ -1,6 +1,6 @@
 import './App.scss';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { constants } from '../constants';
 import DoorWindowTools from './components/DoorWindowTools';
@@ -23,14 +23,8 @@ import {
 	WallMetaData
 } from './models/models';
 import { Wall } from './models/Wall';
-import { renderRooms, setInWallMeasurementText, updateMeasurementText } from './utils/svgTools';
-import {
-	computeLimit,
-	distanceBetween,
-	findById,
-	getWallsOnPoint,
-	intersectionOfEquations
-} from './utils/utils';
+import { renderRooms } from './utils/svgTools';
+import { distanceBetween, findById, intersectionOfEquations } from './utils/utils';
 
 const canvasState = new CanvasState();
 
@@ -56,6 +50,7 @@ function App() {
 	});
 
 	const [selectedOpening, setSelectedOpening] = useState({
+		id: '',
 		minWidth: 0,
 		maxWidth: 0,
 		width: 0
@@ -81,6 +76,7 @@ function App() {
 	const [showSubMenu, setShowSubMenu] = useState(false);
 	const [continuousWallMode, setContinuousWallMode] = useState(true);
 	const [roomColor, setRoomColor] = useState('gradientNeutral');
+	const [selectedRoomColor, setSelectedRoomColor] = useState<string | undefined>();
 	const [boxInfoText, setBoxInfoText] = useState('');
 	const [showDoorList, setShowDoorList] = useState(false);
 	const [showWindowList, setShowWindowList] = useState(false);
@@ -97,12 +93,15 @@ function App() {
 	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
 	const [wallMetaData, setWallMetaData] = useState<WallMetaData[]>([]);
 	const [objectMetaData, setObjectMetaData] = useState<ObjectMetaData[]>([]);
+	const [openingWidth, setOpeningWidth] = useState<number | null>(null);
+	const [openingIdBeingEdited, setOpeningIdBeingEdited] = useState<string | undefined>();
 
 	const [selectedWall, setSelectedWall] = useState<WallMetaData | null>(null);
 
 	const { save, init, undo, redo, historyIndex } = useHistory();
 
 	const { viewbox, scaleValue, handleCameraChange } = useCameraTools(canvasDimensions);
+	const [planToRecover, setPlanToRecover] = useState(false);
 
 	useKeybindings({
 		onSelectMode: () => {
@@ -114,22 +113,40 @@ function App() {
 		}
 	});
 
+	const modalRef = useRef<HTMLDivElement>(null);
+
 	useEffect(() => {
-		if (!localStorage.getItem('history')) {
-			$('#recover').html('<p>Select a plan type.');
+		if (localStorage.getItem('history')) {
+			setPlanToRecover(true);
 		}
-		$('#myModal').modal();
+
+		const modals = document.querySelectorAll('[data-modal]');
+
+		modals.forEach(function (trigger) {
+			const a = trigger as HTMLAnchorElement;
+			const modal = document.getElementById(a.dataset.modal ?? '');
+			modal?.classList.add('open');
+			const exits = modal?.querySelectorAll('.modal-exit');
+			exits?.forEach(function (exit) {
+				exit.addEventListener('click', function (event) {
+					event.preventDefault();
+					modal?.classList.remove('open');
+				});
+			});
+		});
 	}, []);
 
-	const modalToggle = () => {
-		$('#myModal').modal('toggle');
+	const dismissModal = () => {
+		modalRef.current?.classList.remove('open');
 	};
 
 	const onRoomColorClicked = (val: string) => {
 		setSelectedRoomData({ ...selectedRoomData, background: val });
 		const backgroundFill = 'url(#' + val + ')';
-		const svg = canvasState.binder as SVGElement;
-		svg.setAttribute('fill', backgroundFill);
+		setSelectedRoomColor(backgroundFill);
+		// console.log('setting color to', backgroundFill);
+		// const svg = canvasState.binder as SVGElement;
+		// svg.setAttribute('fill', backgroundFill);
 		// svg.back
 		// canvasState.binder.background = canvasState.binder.attr({
 		// 	fill: "url(#" + val + ")",
@@ -140,8 +157,8 @@ function App() {
 		setShowRoomTools(false);
 		setShowMainPanel(true);
 
-		canvasState.binder.remove();
-		canvasState.setBinder(null);
+		// canvasState.binder.remove();
+		// canvasState.setBinder(null);
 
 		const roomMetaCopy = [...roomMetaData];
 		const id = selectedRoomData.roomIndex;
@@ -156,6 +173,7 @@ function App() {
 
 		setRoomMetaData(roomMetaCopy);
 		renderRooms(roomPolygonData, roomMetaCopy, setRoomMetaData);
+		setSelectedRoomColor(undefined);
 
 		setBoxInfoText('Room modified');
 		applyMode(Mode.Select);
@@ -210,28 +228,28 @@ function App() {
 		setShowSubMenu(false);
 
 		// Reset buttons
-		$('#rect_mode').removeClass('btn-success');
-		$('#rect_mode').addClass('btn-default');
-		$('#select_mode').removeClass('btn-success');
-		$('#select_mode').addClass('btn-default');
-		$('#line_mode').removeClass('btn-success');
-		$('#line_mode').addClass('btn-default');
-		$('#partition_mode').removeClass('btn-success');
-		$('#partition_mode').addClass('btn-default');
-		$('#door_mode').removeClass('btn-success');
-		$('#door_mode').addClass('btn-default');
-		$('#node_mode').removeClass('btn-success');
-		$('#node_mode').addClass('btn-default');
-		$('#text_mode').removeClass('btn-success');
-		$('#text_mode').addClass('btn-default');
-		$('#room_mode').removeClass('btn-success');
-		$('#room_mode').addClass('btn-default');
-		$('#distance_mode').removeClass('btn-success');
-		$('#distance_mode').addClass('btn-default');
-		$('#object_mode').removeClass('btn-success');
-		$('#object_mode').addClass('btn-default');
-		$('#stair_mode').removeClass('btn-success');
-		$('#stair_mode').addClass('btn-default');
+		// $('#rect_mode').removeClass('btn-success');
+		// $('#rect_mode').addClass('btn-default');
+		// $('#select_mode').removeClass('btn-success');
+		// $('#select_mode').addClass('btn-default');
+		// $('#line_mode').removeClass('btn-success');
+		// $('#line_mode').addClass('btn-default');
+		// $('#partition_mode').removeClass('btn-success');
+		// $('#partition_mode').addClass('btn-default');
+		// $('#door_mode').removeClass('btn-success');
+		// $('#door_mode').addClass('btn-default');
+		// $('#node_mode').removeClass('btn-success');
+		// $('#node_mode').addClass('btn-default');
+		// $('#text_mode').removeClass('btn-success');
+		// $('#text_mode').addClass('btn-default');
+		// $('#room_mode').removeClass('btn-success');
+		// $('#room_mode').addClass('btn-default');
+		// $('#distance_mode').removeClass('btn-success');
+		// $('#distance_mode').addClass('btn-default');
+		// $('#object_mode').removeClass('btn-success');
+		// $('#object_mode').addClass('btn-default');
+		// $('#stair_mode').removeClass('btn-success');
+		// $('#stair_mode').addClass('btn-default');
 
 		canvasState.setMode(mode);
 		canvasState.setModeOption(option);
@@ -265,13 +283,10 @@ function App() {
 		roomData: RoomMetaData[]
 	) => {
 		setObjectMetaData(objectData);
-		if (objectData.length > 0) {
-			$('#boxcarpentry').append(objectData[objectData.length - 1].graph);
-		}
 
 		setWallMetaData(wallData);
 		setRoomMetaData(roomData);
-		updateMeasurementText(wallMetaData);
+		// updateMeasurementText(wallMetaData);
 	};
 
 	// Wall Tools
@@ -293,7 +308,7 @@ function App() {
 			}
 		});
 		setObjectMetaData(objMetaCopy);
-		updateMeasurementText(wallMetaData);
+		// updateMeasurementText(wallMetaData);
 	};
 
 	const onWallSplitClicked = () => {
@@ -338,57 +353,51 @@ function App() {
 			if (wallMetaCopy[k].parent === wall.id) {
 				wallMetaCopy[k].parent = null;
 			}
-			// if (wallMetaCopy[k].id === wall.id) {
-			// 	wallMetaCopy[k].graph.remove();
-			// }
 		}
 		setWallMetaData(wallMetaCopy);
 
 		setSelectedWall(null);
-		// wall.graph.remove();
-		$(canvasState.binder.graph).remove();
-		updateMeasurementText(wallMetaData);
+		// updateMeasurementText(wallMetaData);
 		canvasState.setMode(Mode.Select);
 		setShowMainPanel(true);
 	};
 
 	// Object Tools
 	const onObjectWidthChanged = (val: number) => {
-		const objTarget = canvasState.binder.obj;
-		objTarget.size = (val / 100) * constants.METER_SIZE;
-		objTarget.update();
-		canvasState.binder.size = (val / 100) * constants.METER_SIZE;
-		canvasState.binder.update();
+		// const objTarget = canvasState.binder.obj;
+		// objTarget.size = (val / 100) * constants.METER_SIZE;
+		// objTarget.update();
+		// canvasState.binder.size = (val / 100) * constants.METER_SIZE;
+		// canvasState.binder.update();
 	};
 
 	const onConfigureObjectBackClicked = () => {
-		applyMode(Mode.Select);
-		setBoxInfoText('Mode selection');
-		setShowObjectTools(false);
-		setShowMainPanel(true);
-		$(canvasState.binder.graph).remove();
-		canvasState.setBinder(null);
+		// applyMode(Mode.Select);
+		// setBoxInfoText('Mode selection');
+		// setShowObjectTools(false);
+		// setShowMainPanel(true);
+		// canvasState.setBinder(null);
 	};
 
 	const onObjectHeightChanged = (val: number) => {
-		const objTarget = canvasState.binder.obj;
-		objTarget.thick = (val / 100) * constants.METER_SIZE;
-		objTarget.update();
-		canvasState.binder.thick = (val / 100) * constants.METER_SIZE;
-		canvasState.binder.update();
+		// const objTarget = canvasState.binder.obj;
+		// objTarget.thick = (val / 100) * constants.METER_SIZE;
+		// objTarget.update();
+		// canvasState.binder.thick = (val / 100) * constants.METER_SIZE;
+		// canvasState.binder.update();
 	};
 
 	const onObjectNumStepsChanged = (val: number) => {
-		canvasState.binder.obj.value = val;
-		canvasState.binder.obj.update();
+		// canvasState.binder.obj.value = val;
+		// canvasState.binder.obj.update();
 	};
 
 	const onObjectRotationChanged = (val: number) => {
-		const objTarget = canvasState.binder.obj;
-		objTarget.angle = val;
-		objTarget.update();
-		canvasState.binder.angle = val;
-		canvasState.binder.update();
+		// const objTarget = canvasState.binder.obj;
+		// objTarget.angle = val;
+		// objTarget.update();
+		// canvasState.binder.angle = val;
+		// canvasState.binder.update();
 	};
 
 	const onObjectTrashClicked = () => {
@@ -397,40 +406,44 @@ function App() {
 		setShowMainPanel(true);
 		applyMode(Mode.Select);
 
-		const obj = canvasState.binder.obj;
-		obj.graph.remove();
-		setObjectMetaData([...objectMetaData.filter((o) => o != obj)]);
-		$(canvasState.binder.graph).remove();
-		canvasState.setBinder(null);
-		updateMeasurementText(wallMetaData);
+		setObjectMetaData([...objectMetaData.filter((o) => o.id !== selectedOpening.id)]);
+		// canvasState.setBinder(null);
+		// updateMeasurementText(wallMetaData);
 	};
 
 	// Door/Window Tools
 	const onFlipOpeningClicked = () => {
-		const target = canvasState.binder.obj;
+		const target = objectMetaData.find((o) => o.id === selectedOpening.id);
+		if (!target) {
+			console.warn('No opening found with the id:', selectedOpening.id);
+			return;
+		}
 		const hingeStatus = target.hinge; // normal - reverse
 		target.hinge = hingeStatus == 'normal' ? 'reverse' : 'normal';
-		target.update();
+		setObjectMetaData([...objectMetaData]);
 	};
 
 	const onOpeningWidthChanged = (val: number) => {
-		const objTarget = canvasState.binder.obj as ObjectMetaData;
-		const wallBind = getWallsOnPoint({ x: objTarget.x, y: objTarget.y }, wallMetaData);
-		const wallUnderOpening = wallBind[wallBind.length - 1];
-		const limits = computeLimit(wallUnderOpening.equations.base, val, objTarget);
-		if (
-			wallUnderOpening.pointInsideWall(limits[0], false) &&
-			wallUnderOpening.pointInsideWall(limits[1], false)
-		) {
-			objTarget.size = val;
-			objTarget.limit = limits;
-			objTarget.update();
-			canvasState.binder.size = val;
-			canvasState.binder.limit = limits;
-			canvasState.binder.update();
-		}
-		// wallUnderOpening.inWallRib(objectMeta);
-		setInWallMeasurementText(wallUnderOpening, objectMetaData);
+		setOpeningWidth(val);
+		// const objTarget = objectMetaData.find((o) => o.id === canvasState.binder.targetId);
+		// if (!objTarget) return;
+		// const wallBind = getWallsOnPoint({ x: objTarget.x, y: objTarget.y }, wallMetaData);
+		// const wallUnderOpening = wallBind[wallBind.length - 1];
+		// const limits = computeLimit(wallUnderOpening.equations.base, val, objTarget);
+		// if (
+		// 	wallUnderOpening.pointInsideWall(limits[0], false) &&
+		// 	wallUnderOpening.pointInsideWall(limits[1], false)
+		// ) {
+		// 	objTarget.size = val;
+		// 	objTarget.limit = limits;
+		// 	objTarget.update();
+		// 	canvasState.binder.size = val;
+		// 	canvasState.binder.limit = limits;
+		// 	canvasState.binder.update();
+		// 	setObjectMetaData([...objectMetaData]);
+		// }
+		// // wallUnderOpening.inWallRib(objectMeta);
+		// setInWallMeasurementText(wallUnderOpening, objectMetaData);
 	};
 
 	const onWallModeClicked = () => {
@@ -488,7 +501,7 @@ function App() {
 
 	const enterSelectMode = () => {
 		setBoxInfoText('Selection mode');
-		canvasState.setBinder(null);
+		// canvasState.setBinder(null);
 		setCursor('default');
 		applyMode(Mode.Select);
 	};
@@ -499,8 +512,6 @@ function App() {
 			canvasState.action
 		) {
 			canvasState.setAction(false);
-			canvasState.setBinder(null);
-			canvasState.setLengthTemp(null);
 		}
 	};
 
@@ -515,12 +526,16 @@ function App() {
 		setBoxInfoText('Configure the room');
 	};
 
-	const showOpeningTools = (min: number, max: number, value: number) => {
+	const showOpeningTools = (opening: ObjectMetaData) => {
+		const min = opening.params.resizeLimit.width.min;
+		const max = opening.params.resizeLimit.width.max;
 		setSelectedOpening({
+			id: opening.id,
 			minWidth: min,
 			maxWidth: max,
-			width: value
+			width: opening.size
 		});
+		setOpeningIdBeingEdited(opening.id);
 		setCursor('default');
 		setBoxInfoText('Configure the door/window');
 		setShowMainPanel(false);
@@ -530,19 +545,19 @@ function App() {
 	const updateObjectTools = () => {
 		setShowMainPanel(false);
 		setShowObjectTools(true);
-		const objTarget = canvasState.binder.obj;
-		const limit = objTarget.params.resizeLimit;
-		setSelectedObject({
-			minWidth: +limit.width.min,
-			maxWidth: +limit.width.max,
-			width: +objTarget.width * 100,
-			minHeight: +limit.height.min,
-			maxHeight: +limit.height.max,
-			height: +objTarget.height * 100,
-			rotation: +objTarget.angle,
-			showStepCounter: objTarget.class === 'stair',
-			stepCount: +objTarget.value
-		});
+		// const objTarget = canvasState.binder.obj;
+		// const limit = objTarget.params.resizeLimit;
+		// setSelectedObject({
+		// 	minWidth: +limit.width.min,
+		// 	maxWidth: +limit.width.max,
+		// 	width: +objTarget.width * 100,
+		// 	minHeight: +limit.height.min,
+		// 	maxHeight: +limit.height.max,
+		// 	height: +objTarget.height * 100,
+		// 	rotation: +objTarget.angle,
+		// 	showStepCounter: objTarget.class === 'stair',
+		// 	stepCount: +objTarget.value
+		// });
 		setBoxInfoText('Modify the object');
 	};
 
@@ -565,7 +580,7 @@ function App() {
 				continuousWallMode={continuousWallMode}
 				handleCameraChange={handleCameraChange}
 				showObjectTools={updateObjectTools}
-				showOpeningTools={showOpeningTools}
+				startModifyingOpening={showOpeningTools}
 				wallClicked={handleWallCliked}
 				updateRoomDisplayData={updateRoomDisplayData}
 				cursor={cursor}
@@ -582,6 +597,9 @@ function App() {
 				wallMetaData={wallMetaData}
 				setWallMetaData={setWallMetaData}
 				onMouseMove={() => setShowSubMenu(false)}
+				openingWidth={openingWidth}
+				openingIdBeingEdited={openingIdBeingEdited}
+				selectedRoomColor={selectedRoomColor}
 			/>
 
 			<div id="areaValue"></div>
@@ -628,9 +646,8 @@ function App() {
 							setShowObjectTools(false);
 							setShowMainPanel(true);
 							setShowConfigureDoorWindowPanel(false);
-
-							$(canvasState.binder.graph).remove();
-							updateMeasurementText(wallMetaData);
+							setOpeningIdBeingEdited(undefined);
+							// updateMeasurementText(wallMetaData);
 						}}
 					/>
 				</div>
@@ -1101,9 +1118,10 @@ function App() {
 							setShowMainPanel(true);
 							setBoxInfoText('Room modified');
 							applyMode(Mode.Select);
-							if (canvasState.binder && canvasState.binder.remove) {
-								canvasState.binder.remove();
-							}
+							setSelectedRoomColor(undefined);
+							// if (canvasState.binder && canvasState.binder.remove) {
+							// 	canvasState.binder.remove();
+							// }
 							// onResetRoomToolsClicked(binder, setBinder);
 						}}>
 						Cancel
@@ -1553,95 +1571,95 @@ function App() {
 				</div>
 			)}
 
-			<div
-				className="modal modal-open fade col-xs-9 col-md-12"
-				id="myModal"
-				tabIndex={-1}
-				role="dialog"
-				aria-labelledby="myModalLabel"
-				// style={{ display: "block" }}
-			>
-				<div className="modal-dialog" role="document">
-					<div className="modal-content">
-						<div className="modal-header">
-							<button type="button" className="close" data-dismiss="modal" aria-label="Close">
-								<span aria-hidden="true">&times;</span>
-							</button>
-							<h4 className="modal-title" id="myModalLabel">
-								React Floor Plan v0.1
-							</h4>
+			<div className="container">
+				<a data-modal="modal-one"></a>
+			</div>
+
+			<div className="modal" id="modal-one" ref={modalRef}>
+				<div className="modal-bg modal-exit"></div>
+				<div className="modal-container">
+					<div className="modal-header">
+						<h4 className="modal-title" id="myModalLabel">
+							React Floor Plan v0.1
+						</h4>
+					</div>
+					<div className="modal-body">
+						<div id="recover">
+							{planToRecover && (
+								<>
+									<p>A plan already exists in history, would you like recover it?</p>
+									<button
+										className="btn btn-default"
+										onClick={() => {
+											initHistory('recovery');
+											dismissModal();
+										}}>
+										Yes
+									</button>
+									<hr />
+									<p>Or would you prefer to start a new plan?</p>
+								</>
+							)}
+							{!planToRecover && (
+								<>
+									<p>Select a template or start a blank canvas</p>
+									<hr />
+								</>
+							)}
 						</div>
-						<div className="modal-body">
-							<div id="recover">
-								<p>A plan already exists in history, would you like recover it?</p>
-								<button
-									className="btn btn-default"
-									onClick={() => {
-										initHistory('recovery');
-										modalToggle();
-										// $("#myModal").modal("toggle");
-									}}>
-									Yes
-								</button>
-								<hr />
-								<p>Or would you prefer to start a new plan?</p>
-							</div>
-							<div className="row new-plan-button-row">
-								<button
-									className="col-md-3 col-xs-3 boxMouseOver"
-									style={{
-										minHeight: '140px',
-										margin: '15px',
-										background: "url('newPlanEmpty.jpg')"
-									}}
-									onClick={() => {
-										initHistory('');
-										modalToggle();
-										// $("#myModal").modal("toggle");
-									}}>
-									<img src="newPlanEmpty.jpg" className="img-responsive" alt="newPlanEmpty" />
-								</button>
-								<button
-									className="col-md-3 col-xs-3 boxMouseOver"
-									style={{
-										minHeight: '140px',
-										margin: '15px',
-										background: "url('newPlanEmpty.jpg')"
-									}}
-									onClick={() => {
-										initHistory('newSquare');
-										modalToggle();
-										// $("#myModal").modal("toggle");
-									}}>
-									<img
-										src="newPlanSquare.jpg"
-										className="img-responsive"
-										alt="newPlanSquare"
-										style={{ marginTop: '10px' }}
-									/>
-								</button>
-								<button
-									className="col-md-3 col-xs-3 boxMouseOver"
-									style={{
-										minHeight: '140px',
-										margin: '15px',
-										background: "url('newPlanEmpty.jpg')"
-									}}
-									onClick={() => {
-										initHistory('newL');
-										modalToggle();
-										// $("#myModal").modal("toggle");
-									}}>
-									<img
-										src="newPlanL.jpg"
-										alt="newPlanL"
-										className="img-responsive"
-										style={{ marginTop: '20px' }}
-									/>
-								</button>
-							</div>
+						<div className="row new-plan-button-row">
+							<button
+								className="col-md-3 col-xs-3 boxMouseOver"
+								style={{
+									minHeight: '140px',
+									margin: '15px',
+									background: "url('newPlanEmpty.jpg')"
+								}}
+								onClick={() => {
+									initHistory('');
+									dismissModal();
+								}}>
+								<img src="newPlanEmpty.jpg" className="img-responsive" alt="newPlanEmpty" />
+							</button>
+							<button
+								className="col-md-3 col-xs-3 boxMouseOver"
+								style={{
+									minHeight: '140px',
+									margin: '15px',
+									background: "url('newPlanEmpty.jpg')"
+								}}
+								onClick={() => {
+									initHistory('newSquare');
+									dismissModal();
+								}}>
+								<img
+									src="newPlanSquare.jpg"
+									className="img-responsive"
+									alt="newPlanSquare"
+									style={{ marginTop: '10px' }}
+								/>
+							</button>
+							<button
+								className="col-md-3 col-xs-3 boxMouseOver"
+								style={{
+									minHeight: '140px',
+									margin: '15px',
+									background: "url('newPlanEmpty.jpg')"
+								}}
+								onClick={() => {
+									initHistory('newL');
+									dismissModal();
+								}}>
+								<img
+									src="newPlanL.jpg"
+									alt="newPlanL"
+									className="img-responsive"
+									style={{ marginTop: '20px' }}
+								/>
+							</button>
 						</div>
 					</div>
+					<button className="modal-close modal-exit">X</button>
 				</div>
 			</div>
 

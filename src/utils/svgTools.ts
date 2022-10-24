@@ -14,6 +14,7 @@ import {
 	WallMetaData,
 	WallVertex
 } from '../models/models';
+import { Object2D } from '../models/Object2D';
 import {
 	arraysAreEqual,
 	distanceBetween,
@@ -29,24 +30,6 @@ import {
 	valueIsBetween,
 	vectorVertex
 } from './utils';
-
-export const createSvgElement = (id: string, shape: string, attrs?: any) => {
-	const svg = document.createElementNS('http://www.w3.org/2000/svg', shape);
-	if (attrs) {
-		for (const k in attrs) {
-			const v = attrs[k];
-			if (v) {
-				svg.setAttribute(k, v);
-			}
-			// s.attr(k, attrs[k]);
-		}
-	}
-
-	if (id != 'none') {
-		$('#' + id).append(svg);
-	}
-	return svg;
-};
 
 export const carpentryCalc = (
 	classType: string,
@@ -851,340 +834,6 @@ export const refreshWalls = (
 	wallMetas.forEach((wall) => wall.update(wallMetas, wallEquations, moveAction));
 };
 
-export const setInWallMeasurementText = (
-	wall: WallMetaData,
-	objectMetas: ObjectMetaData[],
-	option = false
-) => {
-	if (!option) $('#boxRib').empty();
-	const upWalls: WallMeasurementData[] = [];
-	const downWalls: WallMeasurementData[] = [];
-	upWalls.push({
-		side: 'up',
-		coords: wall.coords[0],
-		distance: 0
-	});
-	downWalls.push({
-		side: 'down',
-		coords: wall.coords[1],
-		distance: 0
-	});
-
-	const addMeasureData = (
-		p1: { x: number; y: number },
-		p2: { x: number; y: number },
-		objSide: 'up' | 'down'
-	) => {
-		const mesureArray = objSide === 'up' ? upWalls : downWalls;
-		const distance = distanceBetween(p1, p2) / constants.METER_SIZE;
-		mesureArray.push({
-			side: objSide,
-			coords: p2,
-			distance: parseInt(distance.toFixed(2))
-		});
-	};
-
-	const objectsOnWall = wall.getObjects(objectMetas);
-	for (const ob in objectsOnWall) {
-		const objTarget = objectsOnWall[ob];
-		const upPoints = [
-			nearPointOnEquation(wall.equations.up, objTarget.limit[0]),
-			nearPointOnEquation(wall.equations.up, objTarget.limit[1])
-		];
-		const downPoints = [
-			nearPointOnEquation(wall.equations.down, objTarget.limit[0]),
-			nearPointOnEquation(wall.equations.down, objTarget.limit[1])
-		];
-		addMeasureData(wall.coords[0], upPoints[0], 'up');
-		addMeasureData(wall.coords[0], upPoints[1], 'up');
-		addMeasureData(wall.coords[1], downPoints[0], 'down');
-		addMeasureData(wall.coords[1], downPoints[1], 'down');
-	}
-
-	addMeasureData(wall.coords[0], wall.coords[3], 'up');
-	addMeasureData(wall.coords[1], wall.coords[2], 'down');
-
-	upWalls.sort((a, b) => {
-		return parseInt((a.distance - b.distance).toFixed(2));
-	});
-	downWalls.sort((a, b) => {
-		return parseInt((a.distance - b.distance).toFixed(2));
-	});
-
-	addInWallMeasurementsToScene(upWalls, wall);
-	addInWallMeasurementsToScene(downWalls, wall);
-};
-
-export const updateMeasurementText = (wallMeta: WallMetaData[], shift = 5) => {
-	const { downWalls, upWalls } = buildWallMeasurementData(wallMeta);
-
-	if (shift == 5) $('#boxRib').empty();
-
-	upWalls.forEach((upWallArray) => {
-		addWallMeasurementsToScene(upWallArray, wallMeta, shift);
-	});
-	downWalls.forEach((downWallArray) => {
-		addWallMeasurementsToScene(downWallArray, wallMeta, shift);
-	});
-};
-
-type WallMeasurementData = {
-	wallIndex?: number;
-	crossEdge?: number;
-	side: string;
-	coords: Point2D;
-	distance: number;
-};
-
-const buildWallMeasurementData = (
-	wallMeta: WallMetaData[]
-): { upWalls: WallMeasurementData[][]; downWalls: WallMeasurementData[][] } => {
-	const upWalls: WallMeasurementData[][] = [];
-	const downWalls: WallMeasurementData[][] = [];
-	for (const i in wallMeta) {
-		const wall = wallMeta[i];
-		if (!wall.equations.base) continue;
-
-		const upDataArray: WallMeasurementData[] = [];
-		upDataArray.push({
-			wallIndex: +i,
-			crossEdge: +i,
-			side: 'up',
-			coords: wall.coords[0],
-			distance: 0
-		});
-
-		const downDataArray: WallMeasurementData[] = [];
-		downDataArray.push({
-			wallIndex: +i,
-			crossEdge: +i,
-			side: 'down',
-			coords: wall.coords[1],
-			distance: 0
-		});
-		for (const p in wallMeta) {
-			if (i === p) continue;
-
-			const comparisonWall = wallMeta[p];
-			if (!comparisonWall.equations.base) continue;
-
-			const cross = intersectionOfSideEquations(wall.equations.base, comparisonWall.equations.base);
-			if (!cross || !wall.pointInsideWall(cross, true)) continue;
-
-			let inter = intersectionOfSideEquations(wall.equations.up, comparisonWall.equations.up);
-			if (
-				inter &&
-				wall.pointBetweenCoords(inter, 1, true) &&
-				comparisonWall.pointBetweenCoords(inter, 1, true)
-			) {
-				const distance = distanceBetween(wall.coords[0], inter) / constants.METER_SIZE;
-				upDataArray.push({
-					wallIndex: +i,
-					crossEdge: +p,
-					side: 'up',
-					coords: inter,
-					distance: +distance.toFixed(2)
-				});
-			}
-
-			inter = intersectionOfSideEquations(wall.equations.up, comparisonWall.equations.down);
-			if (
-				inter &&
-				wall.pointBetweenCoords(inter, 1, true) &&
-				comparisonWall.pointBetweenCoords(inter, 2, true)
-			) {
-				const distance = distanceBetween(wall.coords[0], inter) / constants.METER_SIZE;
-				upDataArray.push({
-					wallIndex: +i,
-					crossEdge: +p,
-					side: 'up',
-					coords: inter,
-					distance: +distance.toFixed(2)
-				});
-			}
-
-			inter = intersectionOfSideEquations(wall.equations.down, comparisonWall.equations.up);
-			if (
-				inter &&
-				wall.pointBetweenCoords(inter, 2, true) &&
-				comparisonWall.pointBetweenCoords(inter, 1, true)
-			) {
-				const distance = distanceBetween(wall.coords[1], inter) / constants.METER_SIZE;
-				downDataArray.push({
-					wallIndex: +i,
-					crossEdge: +p,
-					side: 'down',
-					coords: inter,
-					distance: +distance.toFixed(2)
-				});
-			}
-
-			inter = intersectionOfSideEquations(wall.equations.down, comparisonWall.equations.down);
-			if (
-				inter &&
-				wall.pointBetweenCoords(inter, 2, true) &&
-				comparisonWall.pointBetweenCoords(inter, 2, true)
-			) {
-				const distance = distanceBetween(wall.coords[1], inter) / constants.METER_SIZE;
-				downDataArray.push({
-					wallIndex: +i,
-					crossEdge: +p,
-					side: 'down',
-					coords: inter,
-					distance: +distance.toFixed(2)
-				});
-			}
-		}
-		const distance = distanceBetween(wall.coords[0], wall.coords[3]) / constants.METER_SIZE;
-		upDataArray.push({
-			wallIndex: +i,
-			crossEdge: +i,
-			side: 'up',
-			coords: wall.coords[3],
-			distance: +distance.toFixed(2)
-		});
-		const distance2 = distanceBetween(wall.coords[1], wall.coords[2]) / constants.METER_SIZE;
-		downDataArray.push({
-			wallIndex: +i,
-			crossEdge: +i,
-			side: 'down',
-			coords: wall.coords[2],
-			distance: +distance2.toFixed(2)
-		});
-
-		upWalls.push(upDataArray);
-		downWalls.push(downDataArray);
-	}
-
-	// Sort by distance
-	for (const a in upWalls) {
-		upWalls[a].sort(function (a, b) {
-			return +(a.distance - b.distance).toFixed(2);
-		});
-	}
-	for (const a in downWalls) {
-		downWalls[a].sort(function (a, b) {
-			return +(a.distance - b.distance).toFixed(2);
-		});
-	}
-
-	return { upWalls, downWalls };
-};
-
-const addWallMeasurementsToScene = (
-	measureData: WallMeasurementData[],
-	wallMeta: WallMetaData[],
-	shift: number
-) => {
-	for (let n = 1; n < measureData.length; n++) {
-		const current = measureData[n];
-		const previous = measureData[n - 1];
-		const edge = current.wallIndex ?? 0;
-		const crossEdge = current.crossEdge ?? 0;
-		const prevCrossEdge = previous.crossEdge ?? 0;
-		if (previous.wallIndex == edge) {
-			const valueText = Math.abs(previous.distance - current.distance);
-
-			if (valueText < 0.15) continue;
-
-			if (prevCrossEdge == crossEdge && crossEdge != edge) continue;
-
-			if (measureData.length > 2) {
-				const polygon = [];
-				if (n == 1) {
-					for (let pp = 0; pp < 4; pp++) {
-						polygon.push({
-							x: wallMeta[crossEdge].coords[pp].x,
-							y: wallMeta[crossEdge].coords[pp].y
-						});
-					}
-					if (pointInPolygon(measureData[0].coords, polygon)) {
-						continue;
-					}
-				} else if (n == measureData.length - 1) {
-					for (let pp = 0; pp < 4; pp++) {
-						polygon.push({
-							x: wallMeta[prevCrossEdge].coords[pp].x,
-							y: wallMeta[prevCrossEdge].coords[pp].y
-						});
-					}
-					if (pointInPolygon(measureData[measureData.length - 1].coords, polygon)) {
-						continue;
-					}
-				}
-			}
-
-			let angle = wallMeta[edge].angle * (180 / Math.PI);
-			let shiftValue = -shift;
-			if (previous.side == 'down') {
-				shiftValue = -shiftValue + 10;
-			}
-			if (angle > 90 || angle < -89) {
-				angle -= 180;
-				shiftValue = -shift;
-				if (previous.side !== 'down') {
-					shiftValue = -shiftValue + 10;
-				}
-			}
-
-			addSizeTextToScene(current, previous, valueText, angle, shiftValue);
-		}
-	}
-};
-
-const addInWallMeasurementsToScene = (measureData: WallMeasurementData[], wall: WallMetaData) => {
-	for (let i = 1; i < measureData.length; i++) {
-		let angleTextValue = wall.angle * (180 / Math.PI);
-		const current = measureData[i];
-		const previous = measureData[i - 1];
-		const valueText = Math.abs(previous.distance - current.distance);
-
-		let shift = -5;
-		if (previous.side === 'down') {
-			shift = -shift + 10;
-		}
-		if (angleTextValue > 89 || angleTextValue < -89) {
-			angleTextValue -= 180;
-			if (previous.side === 'down') {
-				shift = -5;
-			} else {
-				shift = -shift + 10;
-			}
-		}
-
-		addSizeTextToScene(current, previous, valueText, angleTextValue, shift, true);
-	}
-};
-
-const addSizeTextToScene = (
-	current: WallMeasurementData,
-	previous: WallMeasurementData,
-	valueText: number,
-	angleText: number,
-	shiftValue: number,
-	inWall = false
-) => {
-	const sizeTextSvg = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-	const startText = getMidPoint(previous.coords, current.coords);
-	sizeTextSvg.setAttributeNS(null, 'x', startText.x.toString());
-	sizeTextSvg.setAttributeNS(null, 'y', (startText.y + shiftValue).toString());
-	sizeTextSvg.setAttributeNS(null, 'text-anchor', 'middle');
-	sizeTextSvg.setAttributeNS(null, 'font-family', 'roboto');
-	sizeTextSvg.setAttributeNS(null, 'stroke', '#ffffff');
-	sizeTextSvg.textContent = valueText.toFixed(2);
-	if (+sizeTextSvg.textContent < 1) {
-		sizeTextSvg.setAttributeNS(null, 'font-size', inWall ? '0.8em' : '0.73em');
-		sizeTextSvg.textContent = sizeTextSvg.textContent.substring(1, sizeTextSvg.textContent.length);
-	} else {
-		sizeTextSvg.setAttributeNS(null, 'font-size', inWall ? '1em' : '0.9em');
-	}
-	sizeTextSvg.setAttributeNS(null, 'stroke-width', inWall ? '0.27px' : '0.2px');
-	sizeTextSvg.setAttributeNS(null, 'fill', inWall ? '#666666' : '#555555');
-	sizeTextSvg.setAttribute('transform', `rotate(${angleText} ${startText.x},${startText.y})`);
-
-	$('#boxRib').append(sizeTextSvg);
-};
-
 export const createEquation = (x0: number, y0: number, x1: number, y1: number): WallEquation => {
 	if (x1 - x0 == 0) {
 		return {
@@ -1436,17 +1085,6 @@ export const nearPointOnEquation = (equation: WallEquation, point: Point2D) => {
 		const p2 = { x: (point.y - equation.B) / equation.A, y: point.y };
 		return pDistance(point, p1, p2);
 	}
-};
-
-export const create = (id: string, shape: string, attrs: string[]) => {
-	const svg = $(document.createElementNS('http://www.w3.org/2000/svg', shape));
-	for (const k in attrs) {
-		svg.attr(k, attrs[k]);
-	}
-	if (id != 'none') {
-		$('#' + id).append(svg);
-	}
-	return svg;
 };
 
 export const vertexList = (junction: WallJunction[]) => {
@@ -2288,4 +1926,95 @@ export const getPolygonVisualCenter = (room: RoomMetaData, allRooms: RoomMetaDat
 		}
 	}
 	return grid[bestMatrix];
+};
+
+export const getUpdatedObject = (
+	original: ObjectMetaData,
+	targetId?: string | null
+): ObjectMetaData => {
+	const {
+		newWidth,
+		newHeight,
+		newRenderData,
+		newRealBbox: newBbox
+	} = calculateObjectRenderData(
+		original.size,
+		original.thick,
+		original.angle,
+		original.class,
+		original.type,
+		{ x: original.x, y: original.y }
+	);
+	const updatedMeta = {
+		...original,
+		width: newWidth,
+		height: newHeight,
+		renderData: newRenderData,
+		realBbox: newBbox,
+		targetId: targetId ?? original.targetId
+	};
+	return new Object2D(
+		updatedMeta.family,
+		updatedMeta.class,
+		updatedMeta.type,
+		{
+			x: updatedMeta.x,
+			y: updatedMeta.y
+		},
+		updatedMeta.angle,
+		updatedMeta.angleSign,
+		updatedMeta.size,
+		updatedMeta.hinge,
+		updatedMeta.thick,
+		updatedMeta.value,
+		updatedMeta.viewbox,
+		updatedMeta
+	);
+};
+
+export const calculateObjectRenderData = (
+	size: number,
+	thickness: number,
+	angle: number,
+	className: string,
+	type: string,
+	position: Point2D
+): {
+	newWidth: number;
+	newHeight: number;
+	newRenderData: SVGCreationData;
+	newRealBbox: Point2D[];
+} => {
+	const newWidth = size / constants.METER_SIZE;
+	const newHeight = thickness / constants.METER_SIZE;
+	const cc = carpentryCalc(className, type, size, thickness);
+	const newRenderData = cc;
+
+	const angleRadian = -angle * (Math.PI / 180);
+	const newBbox = [
+		{ x: -size / 2, y: -thickness / 2 },
+		{ x: size / 2, y: -thickness / 2 },
+		{ x: size / 2, y: thickness / 2 },
+		{ x: -size / 2, y: thickness / 2 }
+	];
+	const sinCos = (p: Point2D) =>
+		p.y * Math.sin(angleRadian) + p.x * Math.cos(angleRadian) + position.x;
+
+	const cosSin = (p: Point2D) =>
+		p.y * Math.cos(angleRadian) + p.x * Math.sin(angleRadian) + position.y;
+
+	const newRealBbox = [
+		{ x: sinCos(newBbox[0]), y: cosSin(newBbox[0]) },
+		{ x: sinCos(newBbox[1]), y: cosSin(newBbox[1]) },
+		{ x: sinCos(newBbox[2]), y: cosSin(newBbox[2]) },
+		{ x: sinCos(newBbox[3]), y: cosSin(newBbox[3]) }
+	];
+
+	// console.log('2 - Updated object realBbox', newRealBbox[0], newRealBbox[3], className);
+	return {
+		newWidth,
+		newHeight,
+		newRealBbox,
+		newRenderData
+	};
 };
