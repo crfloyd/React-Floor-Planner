@@ -6,9 +6,9 @@ import {
 	ObjectMetaData,
 	Point2D,
 	RoomMetaData,
-	RoomPolygonData,
 	SnapData,
 	ViewboxData,
+	WallEquationGroup,
 	WallMetaData
 } from '../../models/models';
 import { CanvasState } from '../';
@@ -30,16 +30,19 @@ export const handleMouseMove = (
 	objectMetaData: ObjectMetaData[],
 	setObjectMetaData: (o: ObjectMetaData[]) => void,
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void,
-	resetObjectEquationData: () => ObjectEquationData[],
 	setCursor: (crsr: CursorType) => void,
 	setWallUnderCursor: (wall: WallMetaData | null) => void,
+	setObjectUnderCursor: (o: ObjectMetaData | undefined) => void,
 	objectBeingMoved: ObjectMetaData | null,
 	setObjectBeingMoved: (o: ObjectMetaData | null) => void,
 	setNodeUnderCursor: (p: Point2D | undefined) => void,
 	nodeBeingMoved: NodeMoveData | undefined,
 	setNodeBeingMoved: (n: NodeMoveData | undefined) => void,
 	setRoomUnderCursor: (r: RoomMetaData | undefined) => void,
-	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void
+	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void,
+	objectEquationData: ObjectEquationData[],
+	wallEquationData: WallEquationGroup,
+	dragging: boolean
 ) => {
 	if (
 		![
@@ -82,18 +85,19 @@ export const handleMouseMove = (
 		case Mode.Select: {
 			handleMouseMoveSelectMode(
 				snap,
-				canvasState,
 				viewbox,
 				setCursor,
 				handleCameraChange,
 				wallMetaData,
 				objectMetaData,
 				setWallUnderCursor,
+				setObjectUnderCursor,
 				point,
 				objectBeingMoved,
 				setObjectBeingMoved,
 				setNodeUnderCursor,
-				setInWallMeasurementText
+				setInWallMeasurementText,
+				dragging
 			);
 			break;
 		}
@@ -103,7 +107,6 @@ export const handleMouseMove = (
 		case Mode.Bind: {
 			handleMouseMoveBindMode(
 				snap,
-				resetObjectEquationData,
 				setCursor,
 				canvasState,
 				wallMetaData,
@@ -115,7 +118,9 @@ export const handleMouseMove = (
 				setObjectBeingMoved,
 				nodeBeingMoved,
 				setNodeBeingMoved,
-				setInWallMeasurementText
+				setInWallMeasurementText,
+				objectEquationData,
+				wallEquationData
 			);
 			break;
 		}

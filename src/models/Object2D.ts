@@ -28,7 +28,7 @@ export class Object2D implements ObjectMetaData {
 		public angle: number,
 		public angleSign: boolean,
 		public size: number,
-		public hinge = 'normal',
+		public hinge: 'normal' | 'reverse' = 'normal',
 		public thick: number,
 		public value: number,
 		public viewbox: ViewboxData,
@@ -80,14 +80,14 @@ export class Object2D implements ObjectMetaData {
 			this.angle,
 			this.class,
 			this.type,
-			this.pos
+			{ x: this.x, y: this.y }
 		);
 		this.width = newWidth;
 		this.height = newHeight;
 		this.realBbox = newRealBbox;
 		this.renderData = newRenderData;
 
-		// console.trace(
+		// console.log(
 		// 	'Object2D - update(): from ',
 		// 	before[0],
 		// 	before[3],

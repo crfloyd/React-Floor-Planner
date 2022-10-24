@@ -158,7 +158,7 @@ function App() {
 		setShowMainPanel(true);
 
 		// canvasState.binder.remove();
-		canvasState.setBinder(null);
+		// canvasState.setBinder(null);
 
 		const roomMetaCopy = [...roomMetaData];
 		const id = selectedRoomData.roomIndex;
@@ -364,40 +364,40 @@ function App() {
 
 	// Object Tools
 	const onObjectWidthChanged = (val: number) => {
-		const objTarget = canvasState.binder.obj;
-		objTarget.size = (val / 100) * constants.METER_SIZE;
-		objTarget.update();
-		canvasState.binder.size = (val / 100) * constants.METER_SIZE;
-		canvasState.binder.update();
+		// const objTarget = canvasState.binder.obj;
+		// objTarget.size = (val / 100) * constants.METER_SIZE;
+		// objTarget.update();
+		// canvasState.binder.size = (val / 100) * constants.METER_SIZE;
+		// canvasState.binder.update();
 	};
 
 	const onConfigureObjectBackClicked = () => {
-		applyMode(Mode.Select);
-		setBoxInfoText('Mode selection');
-		setShowObjectTools(false);
-		setShowMainPanel(true);
-		canvasState.setBinder(null);
+		// applyMode(Mode.Select);
+		// setBoxInfoText('Mode selection');
+		// setShowObjectTools(false);
+		// setShowMainPanel(true);
+		// canvasState.setBinder(null);
 	};
 
 	const onObjectHeightChanged = (val: number) => {
-		const objTarget = canvasState.binder.obj;
-		objTarget.thick = (val / 100) * constants.METER_SIZE;
-		objTarget.update();
-		canvasState.binder.thick = (val / 100) * constants.METER_SIZE;
-		canvasState.binder.update();
+		// const objTarget = canvasState.binder.obj;
+		// objTarget.thick = (val / 100) * constants.METER_SIZE;
+		// objTarget.update();
+		// canvasState.binder.thick = (val / 100) * constants.METER_SIZE;
+		// canvasState.binder.update();
 	};
 
 	const onObjectNumStepsChanged = (val: number) => {
-		canvasState.binder.obj.value = val;
-		canvasState.binder.obj.update();
+		// canvasState.binder.obj.value = val;
+		// canvasState.binder.obj.update();
 	};
 
 	const onObjectRotationChanged = (val: number) => {
-		const objTarget = canvasState.binder.obj;
-		objTarget.angle = val;
-		objTarget.update();
-		canvasState.binder.angle = val;
-		canvasState.binder.update();
+		// const objTarget = canvasState.binder.obj;
+		// objTarget.angle = val;
+		// objTarget.update();
+		// canvasState.binder.angle = val;
+		// canvasState.binder.update();
 	};
 
 	const onObjectTrashClicked = () => {
@@ -407,16 +407,20 @@ function App() {
 		applyMode(Mode.Select);
 
 		setObjectMetaData([...objectMetaData.filter((o) => o.id !== selectedOpening.id)]);
-		canvasState.setBinder(null);
+		// canvasState.setBinder(null);
 		// updateMeasurementText(wallMetaData);
 	};
 
 	// Door/Window Tools
 	const onFlipOpeningClicked = () => {
-		const target = canvasState.binder.obj;
+		const target = objectMetaData.find((o) => o.id === selectedOpening.id);
+		if (!target) {
+			console.warn('No opening found with the id:', selectedOpening.id);
+			return;
+		}
 		const hingeStatus = target.hinge; // normal - reverse
 		target.hinge = hingeStatus == 'normal' ? 'reverse' : 'normal';
-		target.update();
+		setObjectMetaData([...objectMetaData]);
 	};
 
 	const onOpeningWidthChanged = (val: number) => {
@@ -497,7 +501,7 @@ function App() {
 
 	const enterSelectMode = () => {
 		setBoxInfoText('Selection mode');
-		canvasState.setBinder(null);
+		// canvasState.setBinder(null);
 		setCursor('default');
 		applyMode(Mode.Select);
 	};
@@ -508,8 +512,6 @@ function App() {
 			canvasState.action
 		) {
 			canvasState.setAction(false);
-			canvasState.setBinder(null);
-			canvasState.setLengthTemp(null);
 		}
 	};
 
@@ -543,19 +545,19 @@ function App() {
 	const updateObjectTools = () => {
 		setShowMainPanel(false);
 		setShowObjectTools(true);
-		const objTarget = canvasState.binder.obj;
-		const limit = objTarget.params.resizeLimit;
-		setSelectedObject({
-			minWidth: +limit.width.min,
-			maxWidth: +limit.width.max,
-			width: +objTarget.width * 100,
-			minHeight: +limit.height.min,
-			maxHeight: +limit.height.max,
-			height: +objTarget.height * 100,
-			rotation: +objTarget.angle,
-			showStepCounter: objTarget.class === 'stair',
-			stepCount: +objTarget.value
-		});
+		// const objTarget = canvasState.binder.obj;
+		// const limit = objTarget.params.resizeLimit;
+		// setSelectedObject({
+		// 	minWidth: +limit.width.min,
+		// 	maxWidth: +limit.width.max,
+		// 	width: +objTarget.width * 100,
+		// 	minHeight: +limit.height.min,
+		// 	maxHeight: +limit.height.max,
+		// 	height: +objTarget.height * 100,
+		// 	rotation: +objTarget.angle,
+		// 	showStepCounter: objTarget.class === 'stair',
+		// 	stepCount: +objTarget.value
+		// });
 		setBoxInfoText('Modify the object');
 	};
 

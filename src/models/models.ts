@@ -148,7 +148,7 @@ export interface ObjectMetaData {
 	angle: number;
 	angleSign: boolean;
 	limit: Point2D[];
-	hinge: string;
+	hinge: 'normal' | 'reverse';
 	scale: Point2D;
 	size: number;
 	thick: number;

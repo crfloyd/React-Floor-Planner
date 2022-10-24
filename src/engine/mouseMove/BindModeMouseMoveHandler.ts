@@ -5,9 +5,9 @@ import {
 	ObjectMetaData,
 	Point2D,
 	SnapData,
+	WallEquationGroup,
 	WallMetaData
 } from '../../models/models';
-import { Object2D } from '../../models/Object2D';
 import {
 	calculateObjectRenderData,
 	createWallGuideLine,
@@ -15,8 +15,6 @@ import {
 	getAngle,
 	getUpdatedObject,
 	pointInPolygon
-	// setInWallMeasurementText,
-	// updateMeasurementText
 } from '../../utils/svgTools';
 import {
 	computeLimit,
@@ -25,7 +23,6 @@ import {
 	getNearestWallNode,
 	intersectionOfEquations,
 	isObjectsEquals,
-	perpendicularEquation,
 	pointsAreEqual,
 	vectorDeter,
 	vectorXY
@@ -34,7 +31,6 @@ import { CanvasState } from '../';
 
 export const handleMouseMoveBindMode = (
 	snap: SnapData,
-	resetObjectEquationData: () => ObjectEquationData[],
 	setCursor: (crsr: CursorType) => void,
 	canvasState: CanvasState,
 	wallMeta: WallMetaData[],
@@ -46,40 +42,38 @@ export const handleMouseMoveBindMode = (
 	setObjectBeingMoved: (o: ObjectMetaData | null) => void,
 	nodeBeingMoved: NodeMoveData | undefined,
 	setNodeBeingMoved: (n: NodeMoveData | undefined) => void,
-	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void
+	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void,
+	objectEquationData: ObjectEquationData[],
+	wallEquations: WallEquationGroup
 ) => {
-	const { action, wallEquations, followerData, objectEquationData } = canvasState;
+	const { action, followerData } = canvasState;
 
 	const objTarget = objectMeta.find((o) => o.id === objectBeingMoved?.targetId);
-	if (objectBeingMoved?.type == 'boundingBox' && action && objTarget?.params.move) {
+	// if (objTarget) console.log('object moved:', objTarget);
+	if (objectBeingMoved?.type == 'boundingBox' && action) {
 		objectBeingMoved.x = snap.x;
 		objectBeingMoved.y = snap.y;
 
-		objTarget.x = snap.x;
-		objTarget.y = snap.y;
-		// objectBeingMoved.update();
-		// const {
-		// 	newWidth,
-		// 	newHeight,
-		// 	newRenderData,
-		// 	newRealBbox: newBbox
-		// } = calculateObjectRenderData(
-		// 	objectBeingMoved.size,
-		// 	objectBeingMoved.thick,
-		// 	objectBeingMoved.angle,
-		// 	objectBeingMoved.class,
-		// 	objectBeingMoved.type,
-		// 	{ x: objectBeingMoved.x, y: objectBeingMoved.y }
-		// );
-		// objTarget.update();
-		// setObjectBeingMoved({
-		// 	...objectBeingMoved,
-		// 	width: newWidth,
-		// 	height: newHeight,
-		// 	renderData: newRenderData,
-		// 	realBbox: newBbox
-		// });
-		setObjectBeingMoved(getUpdatedObject(objectBeingMoved));
+		if (objTarget) {
+			const { newHeight, newWidth, newRealBbox, newRenderData } = calculateObjectRenderData(
+				objTarget.size,
+				objTarget.thick,
+				objTarget.angle,
+				objTarget.class,
+				objTarget.type,
+				{ x: snap.x, y: snap.y }
+			);
+			objTarget.x = snap.x;
+			objTarget.y = snap.y;
+			objTarget.height = newHeight;
+			objTarget.width = newWidth;
+			objTarget.realBbox = newRealBbox;
+			objTarget.renderData = newRenderData;
+		}
+		objectBeingMoved.update();
+		objectMeta = [...objectMeta];
+		// setObjectMeta(objectMeta);
+		// setObjectBeingMoved(objectBeingMoved);
 	} else if (objectBeingMoved && action) {
 		const nearestWallData = findNearestWallInRange(snap, wallMeta, Infinity, false);
 		if (nearestWallData && nearestWallData.wall.type !== 'separate') {
@@ -154,27 +148,6 @@ export const handleMouseMoveBindMode = (
 					!isObjectsEquals(updatedTargetObject.renderData, objTarget.renderData) ||
 					!isObjectsEquals(updatedTargetObject.realBbox, objTarget.realBbox)
 				) {
-					// objTarget.width = newWidth;
-					// objTarget.height = newHeight;
-					// objTarget.renderData = newRenderData;
-					// objTarget.realBbox = newRealBbox;
-
-					// const updatedTarget = new Object2D(
-					// 	objTarget.family,
-					// 	objTarget.class,
-					// 	objTarget.type,
-					// 	{ x: objTarget.x, y: objTarget.y },
-					// 	objTarget.angle,
-					// 	objTarget.angleSign,
-					// 	objTarget.size,
-					// 	objTarget.hinge,
-					// 	objTarget.thick,
-					// 	objTarget.value,
-					// 	objTarget.viewbox,
-					// 	objTarget
-					// );
-					// updatedTarget.id = objTarget.id;
-					// objectMeta = [...objectMeta.filter((o) => o.id !== objTarget.id), objTarget];
 					objectMeta = [...objectMeta.filter((o) => o.id !== objTarget.id), updatedTargetObject];
 				}
 				// console.log('target bbox - after:', objTarget?.realBbox);
@@ -319,20 +292,6 @@ export const handleMouseMoveBindMode = (
 		wallUnderCursor.start = intersection1 ?? wallUnderCursor.start;
 		wallUnderCursor.end = intersection2 ?? wallUnderCursor.end;
 
-		// const graph = binder.graph as SVGElement;
-		// const graphChildren = [...graph.childNodes].map((n) => {
-		// 	return n as SVGElement;
-		// });
-
-		// graphChildren[0].setAttribute('x1', intersection1?.x?.toString() ?? '');
-		// graphChildren[0].setAttribute('x2', intersection2?.x?.toString() ?? '');
-		// graphChildren[0].setAttribute('y1', intersection1?.y?.toString() ?? '');
-		// graphChildren[0].setAttribute('y2', intersection2?.y?.toString() ?? '');
-		// graphChildren[1].setAttribute('cx', intersection1?.x?.toString() ?? '');
-		// graphChildren[1].setAttribute('cy', intersection1?.y?.toString() ?? '');
-		// graphChildren[2].setAttribute('cx', intersection2?.x?.toString() ?? '');
-		// graphChildren[2].setAttribute('cy', intersection2?.y?.toString() ?? '');
-
 		// THE EQ FOLLOWED BY eq (PARENT EQ1 --- CHILD EQ3)
 		if (wallEquations.equation1.follow != undefined) {
 			const backup = wallEquations.equation1.backup;
@@ -434,17 +393,6 @@ export const handleMouseMoveBindMode = (
 					objectMeta.splice(indexObj, 1);
 				}
 			}
-		}
-
-		const newEquationData = resetObjectEquationData(); // REINIT eqObj -> MAYBE ONE OR PLUS OF OBJDATA REMOVED !!!!
-		const objWall = wallUnderCursor.getObjects(objectMeta); // LIST OBJ ON EDGE
-		for (let ob = 0; ob < objWall.length; ob++) {
-			const objTarget = objWall[ob];
-			newEquationData.push({
-				obj: objTarget,
-				wall: wallUnderCursor,
-				eq: perpendicularEquation(wallEquations.equation2, objTarget.x, objTarget.y)
-			});
 		}
 		setCursor('pointer');
 	}

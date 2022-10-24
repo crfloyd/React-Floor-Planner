@@ -7,7 +7,6 @@ import {
 } from '../../models/models';
 
 export const handleMouseUpBindMode = (
-	binder: any,
 	objectMetaData: ObjectMetaData[],
 	startModifyingOpening: (object: ObjectMetaData) => void,
 	selectedWallData: { wall: WallMetaData; before: Point2D } | null,
@@ -16,22 +15,13 @@ export const handleMouseUpBindMode = (
 	objectBeingMoved: ObjectMetaData | null,
 	setObjectBeingMoved: (o: ObjectMetaData | null) => void
 ): {
-	updatedBinder: any;
 	updatedMode: string;
 	updatedObjectMeta: ObjectMetaData[];
 } => {
 	let mode = Mode.Select;
 
-	if (selectedWallData) {
-		if (selectedWallData.wall.start == selectedWallData.before) {
-			wallClicked(selectedWallData.wall);
-			// mode = Mode.EditWall;
-		}
-
-		resetEquationData();
-	}
-
-	if (objectBeingMoved?.type == 'boundingBox') {
+	console.log('MouseUp: ', objectBeingMoved, objectBeingMoved?.type);
+	if (objectBeingMoved?.type === 'boundingBox') {
 		const moveObj =
 			Math.abs(objectBeingMoved.oldXY.x - objectBeingMoved.x) +
 			Math.abs(objectBeingMoved.oldXY.y - objectBeingMoved.y);
@@ -58,22 +48,27 @@ export const handleMouseUpBindMode = (
 			mode = Mode.Select;
 			setObjectBeingMoved(null);
 		}
+	} else if (selectedWallData) {
+		if (selectedWallData.wall.start == selectedWallData.before) {
+			wallClicked(selectedWallData.wall);
+			// mode = Mode.EditWall;
+		}
+
+		resetEquationData();
 	}
 
-	if (!binder)
-		return {
-			updatedBinder: binder,
-			updatedMode: mode,
-			updatedObjectMeta: objectMetaData
-		};
+	// if (!binder)
+	// 	return {
+	// 		updatedBinder: binder,
+	// 		updatedMode: mode,
+	// 		updatedObjectMeta: objectMetaData
+	// 	};
 
-	if (mode == Mode.Bind) {
-		binder.remove();
-		binder = null;
-	}
+	// if (mode == Mode.Bind) {
+	// 	binder = null;
+	// }
 
 	return {
-		updatedBinder: binder,
 		updatedMode: mode,
 		updatedObjectMeta: objectMetaData
 	};

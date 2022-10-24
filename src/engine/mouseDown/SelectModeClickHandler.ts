@@ -1,9 +1,11 @@
 import {
 	Mode,
 	NodeMoveData,
+	ObjectEquationData,
 	ObjectMetaData,
 	Point2D,
 	ViewboxData,
+	WallEquationGroup,
 	WallMetaData
 } from '../../models/models';
 import { calculateSnap } from '../../utils/utils';
@@ -21,22 +23,17 @@ interface Props {
 	wallMetaData: WallMetaData[];
 	setWallMetaData: (w: WallMetaData[]) => void;
 	setSelectedWallData: (data: { wall: WallMetaData; before: Point2D }) => void;
-	objectBeingMoved: ObjectMetaData | null;
 	nodeUnderCursor: Point2D | undefined;
 	setNodeBeingMoved: (data: NodeMoveData | undefined) => void;
+	setWallEquationData: (e: WallEquationGroup) => void;
+	setDragging: (d: boolean) => void;
+	objectUnderCursor: ObjectMetaData | undefined;
+	setObjectBeingMoved: (o: ObjectMetaData | null) => void;
 }
 
 export const handleSelectModeClick = ({
 	event,
-	canvasState: {
-		setMode,
-		setAction,
-		wallEquations,
-		followerData,
-		setObjectEquationData,
-		setWallEquations,
-		setDrag
-	},
+	canvasState: { setMode, setAction, followerData },
 	viewbox,
 	objectMetaData,
 	wallMetaData,
@@ -44,9 +41,12 @@ export const handleSelectModeClick = ({
 	setSelectedWallData,
 	setPoint,
 	wallUnderCursor,
-	objectBeingMoved,
 	nodeUnderCursor,
-	setNodeBeingMoved
+	setNodeBeingMoved,
+	setWallEquationData,
+	setDragging,
+	objectUnderCursor,
+	setObjectBeingMoved
 }: Props) => {
 	if (nodeUnderCursor) {
 		setMode(Mode.Bind);
@@ -74,30 +74,24 @@ export const handleSelectModeClick = ({
 		const {
 			selectedWallData,
 			wallMeta: wallMetaResult,
-			objectEquationData: objectEquationsResult,
-			wallEquations: wallEquationsResult
-		} = handleSelectModeSegmentClicked(
-			wallUnderCursor,
-			wallMetaData,
-			objectMetaData,
-			wallEquations,
-			followerData
-		);
+			wallEquations
+		} = handleSelectModeSegmentClicked(wallUnderCursor, wallMetaData, followerData);
 		setSelectedWallData(selectedWallData);
 		setWallMetaData(wallMetaResult);
-		setObjectEquationData(objectEquationsResult);
-		setWallEquations(wallEquationsResult);
+		setWallEquationData(wallEquations);
 		return;
 	}
 
-	if (objectBeingMoved) {
+	if (objectUnderCursor) {
+		setObjectBeingMoved(objectUnderCursor);
+		console.log('Object Being Moved');
 		setMode(Mode.Bind);
 		setAction(true);
 		return;
 	}
 
 	setAction(false);
-	setDrag(true);
+	setDragging(true);
 	const snap = calculateSnap(event, viewbox);
 	setPoint({ x: snap.xMouse, y: snap.yMouse });
 };

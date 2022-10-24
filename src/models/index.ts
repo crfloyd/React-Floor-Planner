@@ -9,3 +9,5 @@ export type {
 	ViewboxData,
 	WallMetaData
 } from './models';
+export { Mode } from './models';
+export { Object2D } from './Object2D';

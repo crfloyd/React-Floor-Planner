@@ -8,6 +8,7 @@ import {
 	RoomDisplayData,
 	RoomMetaData,
 	SnapData,
+	WallEquationGroup,
 	WallMetaData
 } from '../../models/models';
 import { Wall } from '../../models/Wall';
@@ -42,19 +43,11 @@ export const handleMouseUp = (
 	setNodeBeingMoved: (n: NodeMoveData | undefined) => void,
 	roomUnderCursor: RoomMetaData | undefined,
 	selectRoomUnderCursor: () => void,
-	clearWallHelperState: () => void
+	clearWallHelperState: () => void,
+	wallEquations: WallEquationGroup
 ) => {
-	const { binder, setBinder, setAction, mode, setMode, setDrag, wallEquations, followerData } =
-		canvasState;
-	setDrag(false);
+	const { setAction, mode, setMode, followerData } = canvasState;
 	setCursor('default');
-	if (mode == Mode.Select) {
-		if (binder) {
-			binder.remove();
-			setBinder(null);
-			save();
-		}
-	}
 
 	switch (mode) {
 		case Mode.Object: {
@@ -62,7 +55,6 @@ export const handleMouseUp = (
 				setObjectMetaData([...objectMetaData, objectBeingMoved]);
 				setObjectBeingMoved(null);
 			}
-			setBinder(null);
 			resetMode();
 			save();
 			break;
@@ -87,24 +79,25 @@ export const handleMouseUp = (
 			save();
 			break;
 		}
-		case Mode.Node: {
-			resetMode();
-			if (!binder) break;
-			const oldWall = binder.data;
-			const newWall = new Wall(
-				{ x: oldWall.x, y: oldWall.y },
-				oldWall.wall.end,
-				'normal',
-				oldWall.wall.thick
-			);
-			const updatedWalls = [...wallMetaData, newWall];
-			setWallMetaData(updatedWalls);
-			oldWall.wall.end = { x: oldWall.x, y: oldWall.y };
-			binder.remove();
-			setBinder(null);
-			save();
-			break;
-		}
+		// case Mode.Node: {
+		// 	console.log('mouse up Node mode');
+		// 	resetMode();
+		// 	if (!binder) break;
+		// 	const oldWall = binder.data;
+		// 	const newWall = new Wall(
+		// 		{ x: oldWall.x, y: oldWall.y },
+		// 		oldWall.wall.end,
+		// 		'normal',
+		// 		oldWall.wall.thick
+		// 	);
+		// 	const updatedWalls = [...wallMetaData, newWall];
+		// 	setWallMetaData(updatedWalls);
+		// 	oldWall.wall.end = { x: oldWall.x, y: oldWall.y };
+		// 	binder.remove();
+		// 	setBinder(null);
+		// 	save();
+		// 	break;
+		// }
 		case Mode.Opening: {
 			if (!objectBeingMoved) {
 				// $('#boxinfo').html('The plan currently contains no wall.');
@@ -115,7 +108,6 @@ export const handleMouseUp = (
 			const updatedObjects = [...objectMetaData, newObjectBeingMoved];
 			setObjectBeingMoved(null);
 			setObjectMetaData(updatedObjects);
-			setBinder(null);
 			// $('#boxinfo').html('Element added');
 			resetMode();
 			save();
@@ -154,17 +146,12 @@ export const handleMouseUp = (
 				setAction(false);
 				// $('#boxinfo').html('Select mode');
 				resetMode();
-				if (binder) {
-					binder.remove();
-					setBinder(null);
-				}
 				setPoint({ x: snap.x, y: snap.y });
 			}
 			break;
 		}
 		case Mode.Bind: {
-			const { updatedMode, updatedBinder, updatedObjectMeta } = handleMouseUpBindMode(
-				binder,
+			const { updatedMode, updatedObjectMeta } = handleMouseUpBindMode(
 				objectMetaData,
 				startModifyingOpening,
 				selectedWallData,
@@ -179,7 +166,6 @@ export const handleMouseUp = (
 				setObjectBeingMoved
 			);
 			setMode(updatedMode);
-			setBinder(updatedBinder);
 			setObjectMetaData(updatedObjectMeta);
 			setNodeBeingMoved(undefined);
 			save();
@@ -187,9 +173,5 @@ export const handleMouseUp = (
 		}
 		default:
 			break;
-	}
-
-	if (mode != Mode.EditRoom) {
-		// updateMeasurementText(wallMetaData);
 	}
 };
