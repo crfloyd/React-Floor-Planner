@@ -40,15 +40,14 @@ export const handleMouseUpBindMode = (
 			// TO REMOVE MEASURE ON PLAN
 			// objTarget.graph.remove();
 			objectMetaData = objectMetaData.filter((o) => o !== objTarget);
-			$('#boxinfo').html('Measure deleted!');
 		}
 		if (moveObj < 1 && objTarget?.params.move) {
-			if (!objTarget.params.resize) {
-				$('#objBoundingBoxScale').hide();
-			} else {
-				console.log('showObjTools true');
-				$('#objBoundingBoxScale').show();
-			}
+			// if (!objTarget.params.resize) {
+			// 	$('#objBoundingBoxScale').hide();
+			// } else {
+			// 	console.log('showObjTools true');
+			// 	$('#objBoundingBoxScale').show();
+			// }
 
 			mode = Mode.EditBoundingBox;
 		} else {

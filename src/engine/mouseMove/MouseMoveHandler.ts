@@ -21,14 +21,12 @@ import { handleMouseMoveSelectMode } from './SelectModeMouseMoveHandler';
 export const handleMouseMove = (
 	snap: SnapData,
 	point: Point2D,
-	target: EventTarget,
 	canvasState: CanvasState,
 	viewbox: ViewboxData,
 	wallMetaData: WallMetaData[],
 	wallUnderCursor: WallMetaData | null,
 	setWallMetaData: (w: WallMetaData[]) => void,
 	roomMetaData: RoomMetaData[],
-	roomPolygonData: RoomPolygonData,
 	objectMetaData: ObjectMetaData[],
 	setObjectMetaData: (o: ObjectMetaData[]) => void,
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void,
@@ -39,7 +37,9 @@ export const handleMouseMove = (
 	setObjectBeingMoved: (o: ObjectMetaData | null) => void,
 	setNodeUnderCursor: (p: Point2D | undefined) => void,
 	nodeBeingMoved: NodeMoveData | undefined,
-	setNodeBeingMoved: (n: NodeMoveData | undefined) => void
+	setNodeBeingMoved: (n: NodeMoveData | undefined) => void,
+	setRoomUnderCursor: (r: RoomMetaData | undefined) => void,
+	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void
 ) => {
 	if (
 		![
@@ -66,7 +66,7 @@ export const handleMouseMove = (
 			break;
 		}
 		case Mode.Room:
-			handleMouseMoveRoomMode(snap, canvasState, roomMetaData, roomPolygonData);
+			handleMouseMoveRoomMode(snap, roomMetaData, setRoomUnderCursor);
 			break;
 		case Mode.Opening: {
 			handleMouseMoveOpeningMode(
@@ -92,7 +92,8 @@ export const handleMouseMove = (
 				point,
 				objectBeingMoved,
 				setObjectBeingMoved,
-				setNodeUnderCursor
+				setNodeUnderCursor,
+				setInWallMeasurementText
 			);
 			break;
 		}
@@ -113,7 +114,8 @@ export const handleMouseMove = (
 				objectBeingMoved,
 				setObjectBeingMoved,
 				nodeBeingMoved,
-				setNodeBeingMoved
+				setNodeBeingMoved,
+				setInWallMeasurementText
 			);
 			break;
 		}

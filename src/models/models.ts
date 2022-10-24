@@ -149,7 +149,6 @@ export interface ObjectMetaData {
 	angleSign: boolean;
 	limit: Point2D[];
 	hinge: string;
-	graph: any;
 	scale: Point2D;
 	size: number;
 	thick: number;
@@ -159,8 +158,6 @@ export interface ObjectMetaData {
 	bbox: BoundingBox;
 	realBbox: Point2D[];
 	renderData: SVGCreationData;
-	// up: PointDistance[];
-	// down: PointDistance[];
 	params: SVGCreationData;
 	targetId: string | null;
 	viewbox: ViewboxData;

@@ -14,9 +14,9 @@ import {
 	findNearestWallInRange,
 	getAngle,
 	getUpdatedObject,
-	pointInPolygon,
-	setInWallMeasurementText,
-	updateMeasurementText
+	pointInPolygon
+	// setInWallMeasurementText,
+	// updateMeasurementText
 } from '../../utils/svgTools';
 import {
 	computeLimit,
@@ -45,7 +45,8 @@ export const handleMouseMoveBindMode = (
 	objectBeingMoved: ObjectMetaData | null,
 	setObjectBeingMoved: (o: ObjectMetaData | null) => void,
 	nodeBeingMoved: NodeMoveData | undefined,
-	setNodeBeingMoved: (n: NodeMoveData | undefined) => void
+	setNodeBeingMoved: (n: NodeMoveData | undefined) => void,
+	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void
 ) => {
 	const { binder, action, wallEquations, followerData, objectEquationData } = canvasState;
 
@@ -287,7 +288,6 @@ export const handleMouseMoveBindMode = (
 				// objTarget.update();
 			} else {
 				const objMetaIndex = objectMeta.indexOf(objTarget);
-				objTarget.graph.remove();
 				objTarget = null;
 				objectMeta.splice(objMetaIndex, 1);
 				connectedObjects.splice(+k, 1);
@@ -301,7 +301,7 @@ export const handleMouseMoveBindMode = (
 		wallEquations.equation2 &&
 		wallEquations.equation3
 	) {
-		updateMeasurementText(wallMeta);
+		// updateMeasurementText(wallMeta);
 
 		if (wallEquations.equation2.A == 'v') {
 			wallEquations.equation2.B = snap.x;
@@ -459,7 +459,6 @@ export const handleMouseMoveBindMode = (
 					!wallMeta[k].pointInsideWall(limits[0], false) ||
 					!wallMeta[k].pointInsideWall(limits[1], false)
 				) {
-					objTarget.graph.remove();
 					const indexObj = objectMeta.indexOf(objTarget);
 					objectMeta.splice(indexObj, 1);
 				}
@@ -482,7 +481,7 @@ export const handleMouseMoveBindMode = (
 		// renderRooms(roomPolygonData, roomMeta, setRoomMeta);
 		setCursor('pointer');
 	} else if (binder && binder.type != 'obj' && binder.type != 'segment') {
-		updateMeasurementText(wallMeta);
+		// updateMeasurementText(wallMeta);
 	}
 
 	setObjectMeta([...objectMeta]);

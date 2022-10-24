@@ -63,7 +63,6 @@ export const useDrawWalls = (
 	};
 
 	const startWallDrawing = (startPoint: Point2D) => {
-		// clearWallHelperState();
 		setWallStartPoint(startPoint);
 	};
 
@@ -93,7 +92,10 @@ export const useDrawWalls = (
 
 	useEffect(() => {
 		// Only run in Line or Partition modes
-		if (mode !== Mode.Line && mode !== Mode.Partition) return;
+		if (mode !== Mode.Line && mode !== Mode.Partition) {
+			clearWallHelperState();
+			return;
+		}
 
 		// Find the node nearest the current mouse position;
 		const nearestWallData = getNearestWallNode(snapPosition, wallMetaData, 20);
@@ -111,6 +113,7 @@ export const useDrawWalls = (
 				// if (wallGuideLine.distance < 10) {
 				// 	startPoint = { x: wallGuideLine.x, y: wallGuideLine.y };
 				// }
+
 				setHelperLineSvgData(wallGuideLine.svgData);
 			} else {
 				cursor = 'crosshair';
@@ -119,6 +122,7 @@ export const useDrawWalls = (
 			if (nearestWallData) {
 				// startPoint = nearestWallData.bestPoint;
 				cursor = 'grab';
+				console.log('nearest wall', nearestWallData);
 				setWallHelperNodeCircle(nearestWallData.bestPoint);
 			} else {
 				setWallHelperNodeCircle(null);
@@ -258,12 +262,12 @@ export const useDrawWalls = (
 
 	return {
 		startWallDrawing,
-		clearWallHelperState,
 		wallHelperTextData,
 		wallHelperNodeCircle,
 		wallHelperPathInfo,
 		wallEndConstructionData,
 		helperLineSvgData,
-		shouldWallConstructionEnd
+		shouldWallConstructionEnd,
+		clearWallHelperState
 	};
 };

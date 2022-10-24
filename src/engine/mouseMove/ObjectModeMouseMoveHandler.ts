@@ -27,7 +27,6 @@ export const handleMouseMoveObjectMode = (
 	setObjectBeingMoved: (o: ObjectMetaData) => void
 ) => {
 	if (objectBeingMoved == null) {
-		$('#object_list').hide(200);
 		if (modeOption == 'simpleStair') {
 			const stairs = new Object2D(
 				'free',
@@ -42,26 +41,6 @@ export const handleMouseMoveObjectMode = (
 				15,
 				viewbox
 			);
-			// const {
-			// 	newWidth,
-			// 	newHeight,
-			// 	newRenderData,
-			// 	newRealBbox: newBbox
-			// } = calculateObjectRenderData(
-			// 	stairs.size,
-			// 	stairs.thick,
-			// 	stairs.angle,
-			// 	stairs.class,
-			// 	stairs.type,
-			// 	stairs.pos
-			// );
-			// setObjectBeingMoved({
-			// 	...stairs,
-			// 	width: newWidth,
-			// 	height: newHeight,
-			// 	renderData: newRenderData,
-			// 	realBbox: newBbox
-			// });
 			setObjectBeingMoved(getUpdatedObject(stairs));
 		} else {
 			const device = new Object2D(
@@ -77,26 +56,6 @@ export const handleMouseMoveObjectMode = (
 				0,
 				viewbox
 			);
-			// const {
-			// 	newWidth,
-			// 	newHeight,
-			// 	newRenderData,
-			// 	newRealBbox: newBbox
-			// } = calculateObjectRenderData(
-			// 	device.size,
-			// 	device.thick,
-			// 	device.angle,
-			// 	device.class,
-			// 	device.type,
-			// 	device.pos
-			// );
-			// setObjectBeingMoved({
-			// 	...device,
-			// 	width: newWidth,
-			// 	height: newHeight,
-			// 	renderData: newRenderData,
-			// 	realBbox: newBbox
-			// });
 			setObjectBeingMoved(getUpdatedObject(device));
 		}
 		return;
@@ -104,24 +63,10 @@ export const handleMouseMoveObjectMode = (
 
 	const updatedObject = objectBeingMoved;
 
-	if (
-		(updatedObject.family !== 'stick' && updatedObject.family !== 'collision') ||
-		wallMetaData.length == 0
-	) {
+	if (updatedObject.family !== 'stick' || wallMetaData.length == 0) {
 		updatedObject.x = snap.x;
 		updatedObject.y = snap.y;
 		updatedObject.oldXY = { x: updatedObject.x, y: updatedObject.y };
-	} else if (updatedObject.family === 'collision') {
-		const found = pointsWithBoundingBox(updatedObject.bbox, wallMetaData);
-
-		if (!found) {
-			updatedObject.x = snap.x;
-			updatedObject.y = snap.y;
-			updatedObject.oldXY = { x: updatedObject.x, y: updatedObject.y };
-		} else {
-			updatedObject.x = updatedObject.oldXY.x;
-			updatedObject.y = updatedObject.oldXY.y;
-		}
 	} else if (updatedObject.family === 'stick') {
 		const stickData = stickOnWall(snap, wallMetaData);
 		if (!stickData) return { newObject: null };

@@ -9,11 +9,10 @@ import {
 } from '../../models/models';
 import { Object2D } from '../../models/Object2D';
 import {
-	createSvgElement,
 	getUpdatedObject,
-	pointInPolygon,
-	setInWallMeasurementText,
-	updateMeasurementText
+	pointInPolygon
+	// setInWallMeasurementText,
+	// updateMeasurementText
 } from '../../utils/svgTools';
 import { getNearestWallNode, getWallsOnPoint } from '../../utils/utils';
 import { CanvasState } from '../';
@@ -30,7 +29,8 @@ export const handleMouseMoveSelectMode = (
 	point: Point2D,
 	objectBeingMoved: ObjectMetaData | null,
 	setObjectBeingMoved: (o: ObjectMetaData | null) => void,
-	setNodeUnderCursor: (p: Point2D | undefined) => void
+	setNodeUnderCursor: (p: Point2D | undefined) => void,
+	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void
 ) => {
 	setWallUnderCursor(null);
 
@@ -48,13 +48,6 @@ export const handleMouseMoveSelectMode = (
 	const objectUnderCursor = matches.length > 0 ? matches[0] : null;
 
 	if (objectUnderCursor) {
-		// console.log('found object under cursor objectBeingMoved:', objectBeingMoved, matches);
-		if (binder?.type === 'segment') {
-			$(binder.graph).remove();
-			binder = setBinder(null);
-			// setObjectBeingMoved(null);
-			setCursor('default');
-		}
 		if (objectUnderCursor.params.bindBox) {
 			// OBJ -> BOUNDINGBOX TOOL
 			if (objectBeingMoved == null) {
@@ -125,11 +118,11 @@ export const handleMouseMoveSelectMode = (
 		}
 	} else {
 		if (binder) {
-			if (binder.graph && typeof binder.graph != 'undefined') $(binder.graph).remove();
-			else if (binder.remove != undefined) binder.remove();
+			// if (binder.graph && typeof binder.graph != 'undefined') $(binder.graph).remove();
+			if (binder.remove != undefined) binder.remove();
 			binder = setBinder(null);
 			setCursor('default');
-			updateMeasurementText(wallMeta);
+			// updateMeasurementText(wallMeta);
 		}
 		if (objectBeingMoved) {
 			setObjectBeingMoved(null);
@@ -150,7 +143,7 @@ export const handleMouseMoveSelectMode = (
 	const wallsUnderCursor = getWallsOnPoint(snap, wallMeta);
 	if (wallsUnderCursor.length > 0) {
 		const wallUnderCursor = wallsUnderCursor[wallsUnderCursor.length - 1];
-		if (wallUnderCursor && binder == null) {
+		if (wallUnderCursor) {
 			setWallUnderCursor(wallUnderCursor);
 			binder = setBinder({ wall: wallUnderCursor, type: 'segment' });
 			setInWallMeasurementText(binder.wall, objectMeta);

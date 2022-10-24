@@ -20,6 +20,7 @@ interface Props {
 	viewbox: ViewboxData;
 	wallMetaData: WallMetaData[];
 	setWallMetaData: (w: WallMetaData[]) => void;
+	wallUnderCursor: WallMetaData | null;
 	objectMetaData: ObjectMetaData[];
 	startWallDrawing: (startPoint: Point2D) => void;
 	setSelectedWallData: (data: { wall: WallMetaData; before: Point2D }) => void;
@@ -41,7 +42,8 @@ export const handleMouseDown = ({
 	setSelectedWallData,
 	objectBeingMoved,
 	nodeUnderCursor,
-	setNodeBeingMoved
+	setNodeBeingMoved,
+	wallUnderCursor
 }: Props) => {
 	event?.preventDefault();
 
@@ -80,6 +82,7 @@ export const handleMouseDown = ({
 				setWallMetaData,
 				setSelectedWallData,
 				setPoint,
+				wallUnderCursor,
 				objectBeingMoved,
 				nodeUnderCursor,
 				setNodeBeingMoved

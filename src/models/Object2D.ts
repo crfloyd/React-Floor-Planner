@@ -1,7 +1,7 @@
 import { v4 as uuid } from 'uuid';
 
 import { constants } from '../../constants';
-import { calculateObjectRenderData, carpentryCalc, createSvgElement } from '../utils/svgTools';
+import { calculateObjectRenderData, carpentryCalc } from '../utils/svgTools';
 import { BoundingBox, ObjectMetaData, Point2D, SVGCreationData, ViewboxData } from './models';
 
 // export enum ObjectType {
@@ -23,7 +23,6 @@ import { BoundingBox, ObjectMetaData, Point2D, SVGCreationData, ViewboxData } fr
 
 export class Object2D implements ObjectMetaData {
 	id = uuid();
-	graph: SVGElement = createSvgElement('none', 'g');
 	scale = { x: 1, y: 1 };
 	height: number;
 	width: number;
@@ -99,18 +98,26 @@ export class Object2D implements ObjectMetaData {
 		// 	}
 		// }
 
-		const bbox = this.graph.getBoundingClientRect();
-		const offset = $('#lin').offset() ?? { left: 0, top: 0 };
+		// const bbox = this.graph.getBoundingClientRect();
+		// const offset = $('#lin').offset() ?? { left: 0, top: 0 };
 
-		bbox.x = bbox.x * viewbox.zoomFactor - offset.left * viewbox.zoomFactor + viewbox.originX;
-		bbox.y = bbox.y * viewbox.zoomFactor - offset.top * viewbox.zoomFactor + viewbox.originY;
+		// bbox.x = bbox.x * viewbox.zoomFactor - offset.left * viewbox.zoomFactor + viewbox.originX;
+		// bbox.y = bbox.y * viewbox.zoomFactor - offset.top * viewbox.zoomFactor + viewbox.originY;
 
+		// console.log(offset);
 		// bbox.x = this.x;
 		// bbox.y = this.y;
 		this.bbox = {
-			...bbox,
 			id: '',
-			origin: { x: this.x, y: this.y }
+			origin: { x: this.x, y: this.y },
+			bottom: 0,
+			top: 0,
+			height: 0,
+			left: 0,
+			right: 0,
+			width: 0,
+			x: this.x,
+			y: this.y
 		};
 		this.realBbox = [
 			{ x: -this.size / 2, y: -this.thick / 2 },
@@ -142,13 +149,13 @@ export class Object2D implements ObjectMetaData {
 		this.realBbox = newRealBbox;
 		this.renderData = newRenderData;
 
-		console.log(
-			'Object2D - update(): from ',
-			before[0],
-			before[3],
-			'to: ',
-			newRealBbox[0],
-			newRealBbox[3]
-		);
+		// console.trace(
+		// 	'Object2D - update(): from ',
+		// 	before[0],
+		// 	before[3],
+		// 	'to: ',
+		// 	newRealBbox[0],
+		// 	newRealBbox[3]
+		// );
 	};
 }

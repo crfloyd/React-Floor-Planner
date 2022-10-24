@@ -23,14 +23,8 @@ import {
 	WallMetaData
 } from './models/models';
 import { Wall } from './models/Wall';
-import { renderRooms, setInWallMeasurementText, updateMeasurementText } from './utils/svgTools';
-import {
-	computeLimit,
-	distanceBetween,
-	findById,
-	getWallsOnPoint,
-	intersectionOfEquations
-} from './utils/utils';
+import { renderRooms } from './utils/svgTools';
+import { distanceBetween, findById, intersectionOfEquations } from './utils/utils';
 
 const canvasState = new CanvasState();
 
@@ -81,6 +75,7 @@ function App() {
 	const [showSubMenu, setShowSubMenu] = useState(false);
 	const [continuousWallMode, setContinuousWallMode] = useState(true);
 	const [roomColor, setRoomColor] = useState('gradientNeutral');
+	const [selectedRoomColor, setSelectedRoomColor] = useState<string | undefined>();
 	const [boxInfoText, setBoxInfoText] = useState('');
 	const [showDoorList, setShowDoorList] = useState(false);
 	const [showWindowList, setShowWindowList] = useState(false);
@@ -130,8 +125,10 @@ function App() {
 	const onRoomColorClicked = (val: string) => {
 		setSelectedRoomData({ ...selectedRoomData, background: val });
 		const backgroundFill = 'url(#' + val + ')';
-		const svg = canvasState.binder as SVGElement;
-		svg.setAttribute('fill', backgroundFill);
+		setSelectedRoomColor(backgroundFill);
+		// console.log('setting color to', backgroundFill);
+		// const svg = canvasState.binder as SVGElement;
+		// svg.setAttribute('fill', backgroundFill);
 		// svg.back
 		// canvasState.binder.background = canvasState.binder.attr({
 		// 	fill: "url(#" + val + ")",
@@ -142,7 +139,7 @@ function App() {
 		setShowRoomTools(false);
 		setShowMainPanel(true);
 
-		canvasState.binder.remove();
+		// canvasState.binder.remove();
 		canvasState.setBinder(null);
 
 		const roomMetaCopy = [...roomMetaData];
@@ -158,6 +155,7 @@ function App() {
 
 		setRoomMetaData(roomMetaCopy);
 		renderRooms(roomPolygonData, roomMetaCopy, setRoomMetaData);
+		setSelectedRoomColor(undefined);
 
 		setBoxInfoText('Room modified');
 		applyMode(Mode.Select);
@@ -273,7 +271,7 @@ function App() {
 
 		setWallMetaData(wallData);
 		setRoomMetaData(roomData);
-		updateMeasurementText(wallMetaData);
+		// updateMeasurementText(wallMetaData);
 	};
 
 	// Wall Tools
@@ -295,7 +293,7 @@ function App() {
 			}
 		});
 		setObjectMetaData(objMetaCopy);
-		updateMeasurementText(wallMetaData);
+		// updateMeasurementText(wallMetaData);
 	};
 
 	const onWallSplitClicked = () => {
@@ -349,7 +347,7 @@ function App() {
 		setSelectedWall(null);
 		// wall.graph.remove();
 		// $(canvasState.binder.graph).remove();
-		updateMeasurementText(wallMetaData);
+		// updateMeasurementText(wallMetaData);
 		canvasState.setMode(Mode.Select);
 		setShowMainPanel(true);
 	};
@@ -402,7 +400,7 @@ function App() {
 		setObjectMetaData([...objectMetaData.filter((o) => o != canvasState.binder.targetId)]);
 		// $(canvasState.binder.graph).remove();
 		canvasState.setBinder(null);
-		updateMeasurementText(wallMetaData);
+		// updateMeasurementText(wallMetaData);
 	};
 
 	// Door/Window Tools
@@ -590,6 +588,7 @@ function App() {
 				onMouseMove={() => setShowSubMenu(false)}
 				openingWidth={openingWidth}
 				openingIdBeingEdited={openingIdBeingEdited}
+				selectedRoomColor={selectedRoomColor}
 			/>
 
 			<div id="areaValue"></div>
@@ -638,7 +637,7 @@ function App() {
 							setShowConfigureDoorWindowPanel(false);
 							setOpeningIdBeingEdited(undefined);
 							// $(canvasState.binder.graph).remove();
-							updateMeasurementText(wallMetaData);
+							// updateMeasurementText(wallMetaData);
 						}}
 					/>
 				</div>
@@ -1109,9 +1108,10 @@ function App() {
 							setShowMainPanel(true);
 							setBoxInfoText('Room modified');
 							applyMode(Mode.Select);
-							if (canvasState.binder && canvasState.binder.remove) {
-								canvasState.binder.remove();
-							}
+							setSelectedRoomColor(undefined);
+							// if (canvasState.binder && canvasState.binder.remove) {
+							// 	canvasState.binder.remove();
+							// }
 							// onResetRoomToolsClicked(binder, setBinder);
 						}}>
 						Cancel

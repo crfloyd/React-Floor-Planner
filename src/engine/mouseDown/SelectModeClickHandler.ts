@@ -14,6 +14,7 @@ import { handleSelectModeSegmentClicked } from './SelectModeSegmentClickHandler'
 interface Props {
 	event: React.TouchEvent | React.MouseEvent;
 	setPoint: (p: Point2D) => void;
+	wallUnderCursor: WallMetaData | null;
 	canvasState: CanvasState;
 	viewbox: ViewboxData;
 	objectMetaData: ObjectMetaData[];
@@ -28,7 +29,6 @@ interface Props {
 export const handleSelectModeClick = ({
 	event,
 	canvasState: {
-		binder,
 		setMode,
 		setAction,
 		wallEquations,
@@ -36,8 +36,6 @@ export const handleSelectModeClick = ({
 		setObjectEquationData,
 		setWallEquations,
 		setDrag
-		// setCurrentNodeWallObjects
-		// setCurrentNodeWalls
 	},
 	viewbox,
 	objectMetaData,
@@ -45,6 +43,7 @@ export const handleSelectModeClick = ({
 	setWallMetaData,
 	setSelectedWallData,
 	setPoint,
+	wallUnderCursor,
 	objectBeingMoved,
 	nodeUnderCursor,
 	setNodeBeingMoved
@@ -52,7 +51,6 @@ export const handleSelectModeClick = ({
 	if (nodeUnderCursor) {
 		setMode(Mode.Bind);
 		setAction(true);
-		$('#boxScale').hide(100);
 		setPoint({ ...nodeUnderCursor });
 
 		const { nodeWalls, nodeWallObjects } = handleSelectModeNodeClicked({
@@ -67,68 +65,39 @@ export const handleSelectModeClick = ({
 			connectedWalls: nodeWalls,
 			connectedObjects: nodeWallObjects
 		});
-		// setCurrentNodeWallObjects(nodeWallObjects);
-		// setCurrentNodeWalls(nodeWalls);
 		return;
 	}
 
-	switch (binder?.type) {
-		case 'segment': {
-			setMode(Mode.Bind);
-			setAction(true);
-			$('#boxScale').hide(100);
-			const {
-				selectedWallData,
-				wallMeta: wallMetaResult,
-				objectEquationData: objectEquationsResult,
-				wallEquations: wallEquationsResult
-			} = handleSelectModeSegmentClicked(
-				binder,
-				wallMetaData,
-				objectMetaData,
-				wallEquations,
-				followerData
-			);
-			setSelectedWallData(selectedWallData);
-			setWallMetaData(wallMetaResult);
-			setObjectEquationData(objectEquationsResult);
-			setWallEquations(wallEquationsResult);
-			break;
-		}
-		// case 'node': {
-		// 	setMode(Mode.Bind);
-		// 	setAction(true);
-		// 	$('#boxScale').hide(100);
-		// 	const node = binder.data;
-		// 	setPoint({ x: node.x, y: node.y });
-
-		// 	const { nodeWalls, nodeWallObjects } = handleSelectModeNodeClicked({
-		// 		x: node.x,
-		// 		y: node.y,
-		// 		wallMeta: wallMetaData,
-		// 		objectMeta: objectMetaData
-		// 	});
-
-		// 	setCurrentNodeWallObjects(nodeWallObjects);
-		// 	setCurrentNodeWalls(nodeWalls);
-		// 	break;
-		// }
-		case 'obj':
-		case 'boundingBox': {
-			setMode(Mode.Bind);
-			setAction(true);
-			break;
-		}
-		default: {
-			setAction(false);
-			setDrag(true);
-			const snap = calculateSnap(event, viewbox);
-			setPoint({ x: snap.xMouse, y: snap.yMouse });
-			break;
-		}
+	if (wallUnderCursor) {
+		setMode(Mode.Bind);
+		setAction(true);
+		const {
+			selectedWallData,
+			wallMeta: wallMetaResult,
+			objectEquationData: objectEquationsResult,
+			wallEquations: wallEquationsResult
+		} = handleSelectModeSegmentClicked(
+			wallUnderCursor,
+			wallMetaData,
+			objectMetaData,
+			wallEquations,
+			followerData
+		);
+		setSelectedWallData(selectedWallData);
+		setWallMetaData(wallMetaResult);
+		setObjectEquationData(objectEquationsResult);
+		setWallEquations(wallEquationsResult);
+		return;
 	}
+
 	if (objectBeingMoved) {
 		setMode(Mode.Bind);
 		setAction(true);
+		return;
 	}
+
+	setAction(false);
+	setDrag(true);
+	const snap = calculateSnap(event, viewbox);
+	setPoint({ x: snap.xMouse, y: snap.yMouse });
 };

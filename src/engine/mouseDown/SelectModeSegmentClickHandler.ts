@@ -16,7 +16,8 @@ import {
 } from '../../utils/utils';
 
 export const handleSelectModeSegmentClicked = (
-	selectedWallData: { wall: WallMetaData; before: Point2D },
+	// selectedWallData: { wall: WallMetaData; before: Point2D },
+	wallUnderCursor: WallMetaData,
 	wallMeta: WallMetaData[],
 	objectMeta: ObjectMetaData[],
 	wallEquations: WallEquationGroup,
@@ -25,10 +26,10 @@ export const handleSelectModeSegmentClicked = (
 		intersection: Point2D | null;
 	}
 ) => {
-	const wall = Wall.fromWall(selectedWallData.wall);
-	selectedWallData = {
-		...selectedWallData,
-		before: selectedWallData.wall.start
+	const wall = Wall.fromWall(wallUnderCursor);
+	let selectedWallData = {
+		wall: wallUnderCursor,
+		before: wallUnderCursor.start
 	};
 	wallEquations.equation2 = wall.getEquation();
 	if (wall.parent != null) {
