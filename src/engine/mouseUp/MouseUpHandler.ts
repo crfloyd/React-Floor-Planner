@@ -44,9 +44,6 @@ export const handleMouseUp = (
 	selectRoomUnderCursor: () => void,
 	clearWallHelperState: () => void
 ) => {
-	// if (showMeasurements) {
-	// 	$('#boxScale').show(200);
-	// }
 	const { binder, setBinder, setAction, mode, setMode, setDrag, wallEquations, followerData } =
 		canvasState;
 	setDrag(false);

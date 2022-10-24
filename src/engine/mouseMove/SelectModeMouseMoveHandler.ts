@@ -61,16 +61,12 @@ export const handleMouseMoveSelectMode = (
 					objectUnderCursor.size,
 					'normal',
 					objectUnderCursor.thick,
-					objectUnderCursor.realBbox,
+					0,
 					viewbox
 				);
 				const updatedObject = getUpdatedObject(boundingBox, objectUnderCursor.id);
 				updatedObject.oldXY = { x: boundingBox.x, y: boundingBox.y };
 				setObjectBeingMoved(updatedObject);
-				// binder = setBinder(boundingBox);
-
-				// binder.obj = objectUnderCursor;
-				// $('#boxbind').append(binder.graph);
 				if (!objectUnderCursor.params.move) {
 					setCursor('trash'); // LIKE MEASURE ON PLAN
 				} else setCursor('move');
@@ -100,9 +96,6 @@ export const handleMouseMoveSelectMode = (
 				const updatedObject = getUpdatedObject(hoverBox, objectUnderCursor.id);
 				updatedObject.oldXY = { x: objectUnderCursor.x, y: objectUnderCursor.y };
 				setObjectBeingMoved(updatedObject);
-				// binder = setBinder(hoverBox);
-
-				// $('#boxbind').append(binder.graph);
 			} else {
 				// if (target == objectBeingMoved) {
 				// 	setCursor('move');
@@ -118,7 +111,6 @@ export const handleMouseMoveSelectMode = (
 		}
 	} else {
 		if (binder) {
-			// if (binder.graph && typeof binder.graph != 'undefined') $(binder.graph).remove();
 			if (binder.remove != undefined) binder.remove();
 			binder = setBinder(null);
 			setCursor('default');

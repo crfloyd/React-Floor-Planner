@@ -37,24 +37,13 @@ export const handleMouseUpBindMode = (
 			Math.abs(objectBeingMoved.oldXY.y - objectBeingMoved.y);
 		const objTarget = objectMetaData.find((o) => o.id === objectBeingMoved.targetId);
 		if (!objTarget?.params.move) {
-			// TO REMOVE MEASURE ON PLAN
-			// objTarget.graph.remove();
 			objectMetaData = objectMetaData.filter((o) => o !== objTarget);
 		}
 		if (moveObj < 1 && objTarget?.params.move) {
-			// if (!objTarget.params.resize) {
-			// 	$('#objBoundingBoxScale').hide();
-			// } else {
-			// 	console.log('showObjTools true');
-			// 	$('#objBoundingBoxScale').show();
-			// }
-
 			mode = Mode.EditBoundingBox;
 		} else {
 			mode = Mode.Select;
-			// $(objectBeingMoved.graph).remove();
 			setObjectBeingMoved(null);
-			// objectBeingMoved = null;
 		}
 	} else if (objectBeingMoved) {
 		const objTarget = objectMetaData.find((o) => o.id === objectBeingMoved.targetId);
@@ -67,8 +56,6 @@ export const handleMouseUpBindMode = (
 			mode = Mode.EditDoor;
 		} else {
 			mode = Mode.Select;
-			// $(objectBeingMoved.graph).remove();
-			// objectBeingMoved = null;
 			setObjectBeingMoved(null);
 		}
 	}

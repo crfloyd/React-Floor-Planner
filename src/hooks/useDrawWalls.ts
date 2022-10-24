@@ -234,10 +234,8 @@ export const useDrawWalls = (
 
 			endPoint = { x, y };
 			if (found) {
-				// $("#line_construc").attr({ "stroke-opacity": 1 });
 				pathData.constructOpacity = 1;
 			}
-			// else $("#line_construc").attr({ "stroke-opacity": 0.7 });
 		}
 
 		pathData.x2 = endPoint.x;

@@ -1,6 +1,6 @@
 import './App.scss';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { constants } from '../constants';
 import DoorWindowTools from './components/DoorWindowTools';
@@ -50,6 +50,7 @@ function App() {
 	});
 
 	const [selectedOpening, setSelectedOpening] = useState({
+		id: '',
 		minWidth: 0,
 		maxWidth: 0,
 		width: 0
@@ -100,6 +101,7 @@ function App() {
 	const { save, init, undo, redo, historyIndex } = useHistory();
 
 	const { viewbox, scaleValue, handleCameraChange } = useCameraTools(canvasDimensions);
+	const [planToRecover, setPlanToRecover] = useState(false);
 
 	useKeybindings({
 		onSelectMode: () => {
@@ -111,15 +113,31 @@ function App() {
 		}
 	});
 
+	const modalRef = useRef<HTMLDivElement>(null);
+
 	useEffect(() => {
-		if (!localStorage.getItem('history')) {
-			$('#recover').html('<p>Select a plan type.');
+		if (localStorage.getItem('history')) {
+			setPlanToRecover(true);
 		}
-		$('#myModal').modal();
+
+		const modals = document.querySelectorAll('[data-modal]');
+
+		modals.forEach(function (trigger) {
+			const a = trigger as HTMLAnchorElement;
+			const modal = document.getElementById(a.dataset.modal ?? '');
+			modal?.classList.add('open');
+			const exits = modal?.querySelectorAll('.modal-exit');
+			exits?.forEach(function (exit) {
+				exit.addEventListener('click', function (event) {
+					event.preventDefault();
+					modal?.classList.remove('open');
+				});
+			});
+		});
 	}, []);
 
-	const modalToggle = () => {
-		$('#myModal').modal('toggle');
+	const dismissModal = () => {
+		modalRef.current?.classList.remove('open');
 	};
 
 	const onRoomColorClicked = (val: string) => {
@@ -210,28 +228,28 @@ function App() {
 		setShowSubMenu(false);
 
 		// Reset buttons
-		$('#rect_mode').removeClass('btn-success');
-		$('#rect_mode').addClass('btn-default');
-		$('#select_mode').removeClass('btn-success');
-		$('#select_mode').addClass('btn-default');
-		$('#line_mode').removeClass('btn-success');
-		$('#line_mode').addClass('btn-default');
-		$('#partition_mode').removeClass('btn-success');
-		$('#partition_mode').addClass('btn-default');
-		$('#door_mode').removeClass('btn-success');
-		$('#door_mode').addClass('btn-default');
-		$('#node_mode').removeClass('btn-success');
-		$('#node_mode').addClass('btn-default');
-		$('#text_mode').removeClass('btn-success');
-		$('#text_mode').addClass('btn-default');
-		$('#room_mode').removeClass('btn-success');
-		$('#room_mode').addClass('btn-default');
-		$('#distance_mode').removeClass('btn-success');
-		$('#distance_mode').addClass('btn-default');
-		$('#object_mode').removeClass('btn-success');
-		$('#object_mode').addClass('btn-default');
-		$('#stair_mode').removeClass('btn-success');
-		$('#stair_mode').addClass('btn-default');
+		// $('#rect_mode').removeClass('btn-success');
+		// $('#rect_mode').addClass('btn-default');
+		// $('#select_mode').removeClass('btn-success');
+		// $('#select_mode').addClass('btn-default');
+		// $('#line_mode').removeClass('btn-success');
+		// $('#line_mode').addClass('btn-default');
+		// $('#partition_mode').removeClass('btn-success');
+		// $('#partition_mode').addClass('btn-default');
+		// $('#door_mode').removeClass('btn-success');
+		// $('#door_mode').addClass('btn-default');
+		// $('#node_mode').removeClass('btn-success');
+		// $('#node_mode').addClass('btn-default');
+		// $('#text_mode').removeClass('btn-success');
+		// $('#text_mode').addClass('btn-default');
+		// $('#room_mode').removeClass('btn-success');
+		// $('#room_mode').addClass('btn-default');
+		// $('#distance_mode').removeClass('btn-success');
+		// $('#distance_mode').addClass('btn-default');
+		// $('#object_mode').removeClass('btn-success');
+		// $('#object_mode').addClass('btn-default');
+		// $('#stair_mode').removeClass('btn-success');
+		// $('#stair_mode').addClass('btn-default');
 
 		canvasState.setMode(mode);
 		canvasState.setModeOption(option);
@@ -265,9 +283,6 @@ function App() {
 		roomData: RoomMetaData[]
 	) => {
 		setObjectMetaData(objectData);
-		// if (objectData.length > 0) {
-		// 	$('#boxcarpentry').append(objectData[objectData.length - 1].graph);
-		// }
 
 		setWallMetaData(wallData);
 		setRoomMetaData(roomData);
@@ -338,15 +353,10 @@ function App() {
 			if (wallMetaCopy[k].parent === wall.id) {
 				wallMetaCopy[k].parent = null;
 			}
-			// if (wallMetaCopy[k].id === wall.id) {
-			// 	wallMetaCopy[k].graph.remove();
-			// }
 		}
 		setWallMetaData(wallMetaCopy);
 
 		setSelectedWall(null);
-		// wall.graph.remove();
-		// $(canvasState.binder.graph).remove();
 		// updateMeasurementText(wallMetaData);
 		canvasState.setMode(Mode.Select);
 		setShowMainPanel(true);
@@ -366,7 +376,6 @@ function App() {
 		setBoxInfoText('Mode selection');
 		setShowObjectTools(false);
 		setShowMainPanel(true);
-		// $(canvasState.binder.graph).remove();
 		canvasState.setBinder(null);
 	};
 
@@ -397,8 +406,7 @@ function App() {
 		setShowMainPanel(true);
 		applyMode(Mode.Select);
 
-		setObjectMetaData([...objectMetaData.filter((o) => o != canvasState.binder.targetId)]);
-		// $(canvasState.binder.graph).remove();
+		setObjectMetaData([...objectMetaData.filter((o) => o.id !== selectedOpening.id)]);
 		canvasState.setBinder(null);
 		// updateMeasurementText(wallMetaData);
 	};
@@ -520,6 +528,7 @@ function App() {
 		const min = opening.params.resizeLimit.width.min;
 		const max = opening.params.resizeLimit.width.max;
 		setSelectedOpening({
+			id: opening.id,
 			minWidth: min,
 			maxWidth: max,
 			width: opening.size
@@ -636,7 +645,6 @@ function App() {
 							setShowMainPanel(true);
 							setShowConfigureDoorWindowPanel(false);
 							setOpeningIdBeingEdited(undefined);
-							// $(canvasState.binder.graph).remove();
 							// updateMeasurementText(wallMetaData);
 						}}
 					/>
@@ -1561,95 +1569,95 @@ function App() {
 				</div>
 			)}
 
-			<div
-				className="modal modal-open fade col-xs-9 col-md-12"
-				id="myModal"
-				tabIndex={-1}
-				role="dialog"
-				aria-labelledby="myModalLabel"
-				// style={{ display: "block" }}
-			>
-				<div className="modal-dialog" role="document">
-					<div className="modal-content">
-						<div className="modal-header">
-							<button type="button" className="close" data-dismiss="modal" aria-label="Close">
-								<span aria-hidden="true">&times;</span>
-							</button>
-							<h4 className="modal-title" id="myModalLabel">
-								React Floor Plan v0.1
-							</h4>
+			<div className="container">
+				<a data-modal="modal-one"></a>
+			</div>
+
+			<div className="modal" id="modal-one" ref={modalRef}>
+				<div className="modal-bg modal-exit"></div>
+				<div className="modal-container">
+					<div className="modal-header">
+						<h4 className="modal-title" id="myModalLabel">
+							React Floor Plan v0.1
+						</h4>
+					</div>
+					<div className="modal-body">
+						<div id="recover">
+							{planToRecover && (
+								<>
+									<p>A plan already exists in history, would you like recover it?</p>
+									<button
+										className="btn btn-default"
+										onClick={() => {
+											initHistory('recovery');
+											dismissModal();
+										}}>
+										Yes
+									</button>
+									<hr />
+									<p>Or would you prefer to start a new plan?</p>
+								</>
+							)}
+							{!planToRecover && (
+								<>
+									<p>Select a template or start a blank canvas</p>
+									<hr />
+								</>
+							)}
 						</div>
-						<div className="modal-body">
-							<div id="recover">
-								<p>A plan already exists in history, would you like recover it?</p>
-								<button
-									className="btn btn-default"
-									onClick={() => {
-										initHistory('recovery');
-										modalToggle();
-										// $("#myModal").modal("toggle");
-									}}>
-									Yes
-								</button>
-								<hr />
-								<p>Or would you prefer to start a new plan?</p>
-							</div>
-							<div className="row new-plan-button-row">
-								<button
-									className="col-md-3 col-xs-3 boxMouseOver"
-									style={{
-										minHeight: '140px',
-										margin: '15px',
-										background: "url('newPlanEmpty.jpg')"
-									}}
-									onClick={() => {
-										initHistory('');
-										modalToggle();
-										// $("#myModal").modal("toggle");
-									}}>
-									<img src="newPlanEmpty.jpg" className="img-responsive" alt="newPlanEmpty" />
-								</button>
-								<button
-									className="col-md-3 col-xs-3 boxMouseOver"
-									style={{
-										minHeight: '140px',
-										margin: '15px',
-										background: "url('newPlanEmpty.jpg')"
-									}}
-									onClick={() => {
-										initHistory('newSquare');
-										modalToggle();
-										// $("#myModal").modal("toggle");
-									}}>
-									<img
-										src="newPlanSquare.jpg"
-										className="img-responsive"
-										alt="newPlanSquare"
-										style={{ marginTop: '10px' }}
-									/>
-								</button>
-								<button
-									className="col-md-3 col-xs-3 boxMouseOver"
-									style={{
-										minHeight: '140px',
-										margin: '15px',
-										background: "url('newPlanEmpty.jpg')"
-									}}
-									onClick={() => {
-										initHistory('newL');
-										modalToggle();
-										// $("#myModal").modal("toggle");
-									}}>
-									<img
-										src="newPlanL.jpg"
-										alt="newPlanL"
-										className="img-responsive"
-										style={{ marginTop: '20px' }}
-									/>
-								</button>
-							</div>
+						<div className="row new-plan-button-row">
+							<button
+								className="col-md-3 col-xs-3 boxMouseOver"
+								style={{
+									minHeight: '140px',
+									margin: '15px',
+									background: "url('newPlanEmpty.jpg')"
+								}}
+								onClick={() => {
+									initHistory('');
+									dismissModal();
+								}}>
+								<img src="newPlanEmpty.jpg" className="img-responsive" alt="newPlanEmpty" />
+							</button>
+							<button
+								className="col-md-3 col-xs-3 boxMouseOver"
+								style={{
+									minHeight: '140px',
+									margin: '15px',
+									background: "url('newPlanEmpty.jpg')"
+								}}
+								onClick={() => {
+									initHistory('newSquare');
+									dismissModal();
+								}}>
+								<img
+									src="newPlanSquare.jpg"
+									className="img-responsive"
+									alt="newPlanSquare"
+									style={{ marginTop: '10px' }}
+								/>
+							</button>
+							<button
+								className="col-md-3 col-xs-3 boxMouseOver"
+								style={{
+									minHeight: '140px',
+									margin: '15px',
+									background: "url('newPlanEmpty.jpg')"
+								}}
+								onClick={() => {
+									initHistory('newL');
+									dismissModal();
+								}}>
+								<img
+									src="newPlanL.jpg"
+									alt="newPlanL"
+									className="img-responsive"
+									style={{ marginTop: '20px' }}
+								/>
+							</button>
 						</div>
 					</div>
+					<button className="modal-close modal-exit">X</button>
 				</div>
 			</div>
 

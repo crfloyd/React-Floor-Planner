@@ -4,23 +4,6 @@ import { constants } from '../../constants';
 import { calculateObjectRenderData, carpentryCalc } from '../utils/svgTools';
 import { BoundingBox, ObjectMetaData, Point2D, SVGCreationData, ViewboxData } from './models';
 
-// export enum ObjectType {
-// 	Unknown,
-// 	Bay,
-// 	Dimmer,
-// 	Double,
-// 	Fix,
-// 	Flap,
-// 	Gtl,
-// 	Opening,
-// 	Pocket,
-// 	Simple,
-// 	SimpleStair,
-// 	Switch,
-// 	DoubleSwitch,
-// 	Twin,
-// }
-
 export class Object2D implements ObjectMetaData {
 	id = uuid();
 	scale = { x: 1, y: 1 };
@@ -36,8 +19,6 @@ export class Object2D implements ObjectMetaData {
 	renderData: SVGCreationData;
 	oldXY = { x: 0, y: 0 };
 	targetId: string | null;
-	// up: PointDistance[] = [];
-	// down: PointDistance[] = [];
 
 	constructor(
 		public readonly family: string,
@@ -49,7 +30,7 @@ export class Object2D implements ObjectMetaData {
 		public size: number,
 		public hinge = 'normal',
 		public thick: number,
-		public value: any,
+		public value: number,
 		public viewbox: ViewboxData,
 		init?: Partial<Object2D>
 	) {
@@ -63,50 +44,9 @@ export class Object2D implements ObjectMetaData {
 
 		const svgData = carpentryCalc(classe, type, size, thick, value);
 		this.renderData = svgData;
-		// const cc = svgData.construc;
 		this.family = svgData.family ?? this.family;
 		this.width = svgData.width ?? this.width;
 		this.height = svgData.height ?? this.height;
-		// for (let i = 0; i < cc.length; i++) {
-		// 	const item = cc[i];
-		// 	if (item.path) {
-		// 		// const s: SVGPathElement = document.createElementNS(
-		// 		// 	"http://www.w3.org/2000/svg",
-		// 		// 	"path"
-		// 		// );
-		// 		const blank = createSvgElement('none', 'path', {
-		// 			d: item.path,
-		// 			'stroke-width': 1,
-		// 			fill: item.fill,
-		// 			stroke: item.stroke,
-		// 			'stroke-dasharray': item.strokeDashArray
-		// 		});
-		// 		this.graph.appendChild(blank);
-		// 	} else if (item.text) {
-		// 		const blank = createSvgElement('none', 'text', {
-		// 			x: item.x,
-		// 			y: item.y,
-		// 			'font-size': item.fontSize,
-		// 			stroke: item.stroke,
-		// 			'stroke-width': item.strokeWidth,
-		// 			'font-family': 'roboto',
-		// 			'text-anchor': 'middle',
-		// 			fill: item.fill
-		// 		});
-		// 		blank.textContent = item.text;
-		// 		this.graph.appendChild(blank);
-		// 	}
-		// }
-
-		// const bbox = this.graph.getBoundingClientRect();
-		// const offset = $('#lin').offset() ?? { left: 0, top: 0 };
-
-		// bbox.x = bbox.x * viewbox.zoomFactor - offset.left * viewbox.zoomFactor + viewbox.originX;
-		// bbox.y = bbox.y * viewbox.zoomFactor - offset.top * viewbox.zoomFactor + viewbox.originY;
-
-		// console.log(offset);
-		// bbox.x = this.x;
-		// bbox.y = this.y;
 		this.bbox = {
 			id: '',
 			origin: { x: this.x, y: this.y },
@@ -125,8 +65,6 @@ export class Object2D implements ObjectMetaData {
 			{ x: this.size / 2, y: this.thick / 2 },
 			{ x: -this.size / 2, y: this.thick / 2 }
 		];
-		// if (family == "byObject") this.family = cc.family;
-		// this.params = cc.params; // (bindBox, move, resize, rotate)
 		this.params = svgData;
 		svgData.width ? (this.size = svgData.width) : (this.size = size);
 		svgData.height ? (this.thick = svgData.height) : (this.thick = thick);
@@ -135,7 +73,7 @@ export class Object2D implements ObjectMetaData {
 	}
 
 	update = () => {
-		const before = [...this.realBbox];
+		// const before = [...this.realBbox];
 		const { newHeight, newWidth, newRealBbox, newRenderData } = calculateObjectRenderData(
 			this.size,
 			this.thick,

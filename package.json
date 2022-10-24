@@ -12,14 +12,12 @@
 		"format": "prettier --write './**/*.{js,jsx,ts,tsx,css,md,json}' --config ./.prettierrc"
 	},
 	"dependencies": {
-		"jquery": "^3.6.1",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"uuid": "^8.3.2"
 	},
 	"devDependencies": {
 		"@types/bootstrap": "^5.2.3",
-		"@types/jquery": "^3.5.14",
 		"@types/node": "^18.11.2",
 		"@types/react": "^18.0.17",
 		"@types/react-dom": "^18.0.6",

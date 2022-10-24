@@ -211,11 +211,6 @@ export const handleMouseMoveBindMode = (
 		if (nearestWallData) {
 			coords.x = nearestWallData.bestPoint.x;
 			coords.y = nearestWallData.bestPoint.y;
-			// $('#circlebinder').attr({
-			// 	class: 'circleGum',
-			// 	cx: coords.x,
-			// 	cy: coords.y
-			// });
 			setCursor('grab');
 		} else {
 			if (magnetic) {
@@ -236,11 +231,6 @@ export const handleMouseMoveBindMode = (
 			} else {
 				setCursor('move');
 			}
-			// $('#circlebinder').attr({
-			// 	class: 'circle_css',
-			// 	cx: coords.x,
-			// 	cy: coords.y
-			// });
 		}
 		for (const k in connectedWalls) {
 			if (pointsAreEqual(connectedWalls[k].start, node)) {
@@ -252,16 +242,6 @@ export const handleMouseMoveBindMode = (
 				connectedWalls[k].end.y = coords.y;
 			}
 		}
-		// binder.data = coords;
-
-		// refreshWalls(wallMeta, wallEquations); // UPDATE FALSE
-		// wallMeta.forEach((wall: WallMetaData) => {
-		// 	wall.addToScene();
-		// });
-
-		// $("#boxRoom").empty();
-		// $("#boxSurface").empty();
-		// setWallMeta([...wallMeta]);
 
 		for (const k in connectedObjects) {
 			const wall = connectedObjects[k].wall;
@@ -419,15 +399,6 @@ export const handleMouseMoveBindMode = (
 				}
 			}
 		}
-		// WALL COMPUTING, BLOCK FAMILY OF BINDERWALL IF NULL (START OR END) !!!!!
-		// refreshWalls(wallMeta, wallEquations, true);
-		// wallMeta.forEach((wall: WallMetaData) => {
-		// 	wall.addToScene();
-		// });
-
-		// $("#boxRoom").empty();
-		// $("#boxSurface").empty();
-		// setRoomPolygonData(polygonize(wallMeta));
 
 		// OBJDATA(s) FOLLOW 90° EDGE SELECTED
 		for (let rp = 0; rp < objectEquationData.length; rp++) {
@@ -475,10 +446,6 @@ export const handleMouseMoveBindMode = (
 				eq: perpendicularEquation(wallEquations.equation2, objTarget.x, objTarget.y)
 			});
 		}
-
-		// $("#boxRoom").empty();
-		// $("#boxSurface").empty();
-		// renderRooms(roomPolygonData, roomMeta, setRoomMeta);
 		setCursor('pointer');
 	}
 
