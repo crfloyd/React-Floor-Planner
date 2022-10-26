@@ -1,5 +1,6 @@
 import {
 	CursorType,
+	DeviceMetaData,
 	Mode,
 	NodeMoveData,
 	ObjectEquationData,
@@ -42,10 +43,13 @@ export const handleMouseMove = (
 	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void,
 	objectEquationData: ObjectEquationData[],
 	wallEquationData: WallEquationGroup,
-	dragging: boolean
+	dragging: boolean,
+	deviceBeingMoved: DeviceMetaData | undefined,
+	deviceUnderCursor: DeviceMetaData | undefined
 ) => {
 	if (
 		![
+			Mode.Device,
 			Mode.Object,
 			Mode.Room,
 			Mode.Opening,
@@ -97,7 +101,8 @@ export const handleMouseMove = (
 				setObjectBeingMoved,
 				setNodeUnderCursor,
 				setInWallMeasurementText,
-				dragging
+				dragging,
+				deviceUnderCursor
 			);
 			break;
 		}
@@ -120,7 +125,8 @@ export const handleMouseMove = (
 				setNodeBeingMoved,
 				setInWallMeasurementText,
 				objectEquationData,
-				wallEquationData
+				wallEquationData,
+				deviceBeingMoved
 			);
 			break;
 		}

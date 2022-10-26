@@ -61,55 +61,33 @@ export const handleMouseMoveObjectMode = (
 		return;
 	}
 
-	const updatedObject = objectBeingMoved;
-
-	if (updatedObject.family !== 'stick' || wallMetaData.length == 0) {
-		updatedObject.x = snap.x;
-		updatedObject.y = snap.y;
-		updatedObject.oldXY = { x: updatedObject.x, y: updatedObject.y };
-	} else if (updatedObject.family === 'stick') {
+	if (objectBeingMoved.family !== 'stick' || wallMetaData.length == 0) {
+		objectBeingMoved.x = snap.x;
+		objectBeingMoved.y = snap.y;
+		objectBeingMoved.oldXY = { x: objectBeingMoved.x, y: objectBeingMoved.y };
+	} else if (objectBeingMoved.family === 'stick') {
 		const stickData = stickOnWall(snap, wallMetaData);
 		if (!stickData) return { newObject: null };
 		const { wall, point } = stickData;
-		updatedObject.oldXY = point;
+		objectBeingMoved.oldXY = point;
 		let angleWall = getAngle(wall.start, wall.end, 'deg').deg;
 		const v1 = vectorXY({ x: wall.start.x, y: wall.start.y }, { x: wall.end.x, y: wall.end.y });
 		const v2 = vectorXY({ x: wall.end.x, y: wall.end.y }, snap);
-		updatedObject.x =
-			point.x - (Math.sin(wall.angle * ((360 / 2) * Math.PI)) * updatedObject.thick) / 2;
-		updatedObject.y =
-			point.y - (Math.cos(wall.angle * ((360 / 2) * Math.PI)) * updatedObject.thick) / 2;
+		objectBeingMoved.x =
+			point.x - (Math.sin(wall.angle * ((360 / 2) * Math.PI)) * objectBeingMoved.thick) / 2;
+		objectBeingMoved.y =
+			point.y - (Math.cos(wall.angle * ((360 / 2) * Math.PI)) * objectBeingMoved.thick) / 2;
 		const newAngle = vectorDeter(v1, v2);
 		if (Math.sign(newAngle) == 1) {
 			angleWall += 180;
-			updatedObject.x =
-				point.x + (Math.sin(wall.angle * ((360 / 2) * Math.PI)) * updatedObject.thick) / 2;
-			updatedObject.y =
-				point.y + (Math.cos(wall.angle * ((360 / 2) * Math.PI)) * updatedObject.thick) / 2;
+			objectBeingMoved.x =
+				point.x + (Math.sin(wall.angle * ((360 / 2) * Math.PI)) * objectBeingMoved.thick) / 2;
+			objectBeingMoved.y =
+				point.y + (Math.cos(wall.angle * ((360 / 2) * Math.PI)) * objectBeingMoved.thick) / 2;
 		}
-		updatedObject.angle = angleWall;
+		objectBeingMoved.angle = angleWall;
 	}
-	// const {
-	// 	newWidth,
-	// 	newHeight,
-	// 	newRenderData,
-	// 	newRealBbox: newBbox
-	// } = calculateObjectRenderData(
-	// 	updatedObject.size,
-	// 	updatedObject.thick,
-	// 	updatedObject.angle,
-	// 	updatedObject.class,
-	// 	updatedObject.type,
-	// 	{ x: updatedObject.x, y: updatedObject.y }
-	// );
-	// setObjectBeingMoved({
-	// 	...updatedObject,
-	// 	width: newWidth,
-	// 	height: newHeight,
-	// 	renderData: newRenderData,
-	// 	realBbox: newBbox
-	// });
-	setObjectBeingMoved(getUpdatedObject(updatedObject));
+	setObjectBeingMoved(getUpdatedObject(objectBeingMoved));
 };
 
 const pointsWithBoundingBox = (bbox: BoundingBox, wallMetaData: WallMetaData[]): boolean => {

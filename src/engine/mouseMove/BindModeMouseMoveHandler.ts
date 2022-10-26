@@ -1,5 +1,6 @@
 import {
 	CursorType,
+	DeviceMetaData,
 	NodeMoveData,
 	ObjectEquationData,
 	ObjectMetaData,
@@ -44,12 +45,16 @@ export const handleMouseMoveBindMode = (
 	setNodeBeingMoved: (n: NodeMoveData | undefined) => void,
 	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void,
 	objectEquationData: ObjectEquationData[],
-	wallEquations: WallEquationGroup
+	wallEquations: WallEquationGroup,
+	deviceUnderCursor: DeviceMetaData | undefined
 ) => {
 	const { action, followerData } = canvasState;
 
+	if (deviceUnderCursor) {
+		return;
+	}
+
 	const objTarget = objectMeta.find((o) => o.id === objectBeingMoved?.targetId);
-	// if (objTarget) console.log('object moved:', objTarget);
 	if (objectBeingMoved?.type == 'boundingBox' && action) {
 		objectBeingMoved.x = snap.x;
 		objectBeingMoved.y = snap.y;

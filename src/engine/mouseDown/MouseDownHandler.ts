@@ -1,8 +1,8 @@
 import {
 	CursorType,
+	DeviceMetaData,
 	Mode,
 	NodeMoveData,
-	ObjectEquationData,
 	ObjectMetaData,
 	Point2D,
 	ViewboxData,
@@ -32,6 +32,7 @@ interface Props {
 	setWallEquationData: (e: WallEquationGroup) => void;
 	setDragging: (d: boolean) => void;
 	objectUnderCursor: ObjectMetaData | undefined;
+	deviceUnderCursor: DeviceMetaData | undefined;
 }
 
 export const handleMouseDown = ({
@@ -51,7 +52,8 @@ export const handleMouseDown = ({
 	setWallEquationData,
 	setDragging,
 	objectUnderCursor,
-	setObjectBeingMoved
+	setObjectBeingMoved,
+	deviceUnderCursor
 }: Props) => {
 	event?.preventDefault();
 
@@ -96,7 +98,9 @@ export const handleMouseDown = ({
 				setWallEquationData,
 				setDragging,
 				objectUnderCursor,
-				setObjectBeingMoved
+				setObjectBeingMoved,
+				deviceUnderCursor
+				// setDeviceBeingMoved
 			});
 		}
 	}

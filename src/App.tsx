@@ -3,6 +3,7 @@ import './App.scss';
 import { useEffect, useRef, useState } from 'react';
 
 import { constants } from '../constants';
+import MyImage from './assets/react.svg';
 import DoorWindowTools from './components/DoorWindowTools';
 import FloorPlannerCanvas from './components/FloorPlannerCanvas/FloorPlannerCanvas';
 import ObjectTools from './components/ObjectTools';
@@ -13,6 +14,7 @@ import { useHistory } from './hooks/useHistory';
 import { useKeybindings } from './hooks/useKeybindings';
 import {
 	CursorType,
+	DeviceMetaData,
 	LayerSettings,
 	Mode,
 	ObjectMetaData,
@@ -102,6 +104,7 @@ function App() {
 
 	const { viewbox, scaleValue, handleCameraChange } = useCameraTools(canvasDimensions);
 	const [planToRecover, setPlanToRecover] = useState(false);
+	const [deviceBeingMoved, setDeviceBeingMoved] = useState<DeviceMetaData>();
 
 	useKeybindings({
 		onSelectMode: () => {
@@ -220,7 +223,16 @@ function App() {
 		setShowDoorList(false);
 		setCursor('move');
 		setBoxInfoText('Add an object');
-		applyMode(Mode.Object, type);
+		// applyMode(Mode.Object, type);
+		setDeviceBeingMoved({
+			id: '123',
+			name: type,
+			height: 40,
+			width: 40,
+			image: MyImage,
+			x: 0,
+			y: 0
+		});
 	};
 
 	const applyMode = (mode: string, option = '') => {
@@ -600,6 +612,8 @@ function App() {
 				openingWidth={openingWidth}
 				openingIdBeingEdited={openingIdBeingEdited}
 				selectedRoomColor={selectedRoomColor}
+				deviceBeingMoved={deviceBeingMoved}
+				setDeviceBeingMoved={setDeviceBeingMoved}
 			/>
 
 			<div id="areaValue"></div>

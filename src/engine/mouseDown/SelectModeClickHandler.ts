@@ -1,4 +1,5 @@
 import {
+	DeviceMetaData,
 	Mode,
 	NodeMoveData,
 	ObjectEquationData,
@@ -29,6 +30,8 @@ interface Props {
 	setDragging: (d: boolean) => void;
 	objectUnderCursor: ObjectMetaData | undefined;
 	setObjectBeingMoved: (o: ObjectMetaData | null) => void;
+	deviceUnderCursor: DeviceMetaData | undefined;
+	// setDeviceBeingMoved: (d: DeviceMetaData | undefined) => void;
 }
 
 export const handleSelectModeClick = ({
@@ -46,8 +49,15 @@ export const handleSelectModeClick = ({
 	setWallEquationData,
 	setDragging,
 	objectUnderCursor,
-	setObjectBeingMoved
+	setObjectBeingMoved,
+	deviceUnderCursor
 }: Props) => {
+	if (deviceUnderCursor) {
+		setMode(Mode.Bind);
+		setAction(true);
+		return;
+	}
+
 	if (nodeUnderCursor) {
 		setMode(Mode.Bind);
 		setAction(true);

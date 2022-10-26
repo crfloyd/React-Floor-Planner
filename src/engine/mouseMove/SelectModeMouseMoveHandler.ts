@@ -1,6 +1,7 @@
 import { constants } from '../../../constants';
 import {
 	CursorType,
+	DeviceMetaData,
 	ObjectMetaData,
 	Point2D,
 	SnapData,
@@ -25,10 +26,16 @@ export const handleMouseMoveSelectMode = (
 	setObjectBeingMoved: (o: ObjectMetaData | null) => void,
 	setNodeUnderCursor: (p: Point2D | undefined) => void,
 	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void,
-	dragging: boolean
+	dragging: boolean,
+	deviceUnderCursor: DeviceMetaData | undefined
 ) => {
 	setWallUnderCursor(null);
 	setObjectUnderCursor(undefined);
+
+	if (deviceUnderCursor) {
+		setCursor('move');
+		return;
+	}
 
 	if (dragging) {
 		setCursor('move');
@@ -37,10 +44,11 @@ export const handleMouseMoveSelectMode = (
 		handleCameraChange('zoomdrag', distX, distY);
 		return;
 	}
-	const matches = objectMeta.filter((o) => {
+
+	const nearObjects = objectMeta.filter((o) => {
 		return pointInPolygon({ x: snap.x, y: snap.y }, o.realBbox);
 	});
-	const objectUnderCursor = matches.length > 0 ? matches[0] : undefined;
+	const objectUnderCursor = nearObjects.length > 0 ? nearObjects[0] : undefined;
 
 	if (objectUnderCursor) {
 		if (objectUnderCursor.params.bindBox) {

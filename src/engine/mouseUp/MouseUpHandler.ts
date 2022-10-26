@@ -1,6 +1,9 @@
+import React from 'react';
+
 import { constants } from '../../../constants';
 import {
 	CursorType,
+	DeviceMetaData,
 	Mode,
 	NodeMoveData,
 	ObjectMetaData,
@@ -44,12 +47,26 @@ export const handleMouseUp = (
 	roomUnderCursor: RoomMetaData | undefined,
 	selectRoomUnderCursor: () => void,
 	clearWallHelperState: () => void,
-	wallEquations: WallEquationGroup
+	wallEquations: WallEquationGroup,
+	deviceBeingMoved: DeviceMetaData | undefined,
+	setDeviceBeingMoved: (d: DeviceMetaData | undefined) => void,
+	setDevices: React.Dispatch<React.SetStateAction<DeviceMetaData[]>>
 ) => {
 	const { setAction, mode, setMode, followerData } = canvasState;
 	setCursor('default');
 
 	switch (mode) {
+		case Mode.Device: {
+			if (deviceBeingMoved) {
+				setDevices((prev) => [
+					...prev.filter((d) => d.id !== deviceBeingMoved.id),
+					deviceBeingMoved
+				]);
+			}
+			resetMode();
+			save();
+			break;
+		}
 		case Mode.Object: {
 			if (objectBeingMoved) {
 				setObjectMetaData([...objectMetaData, objectBeingMoved]);
@@ -79,28 +96,8 @@ export const handleMouseUp = (
 			save();
 			break;
 		}
-		// case Mode.Node: {
-		// 	console.log('mouse up Node mode');
-		// 	resetMode();
-		// 	if (!binder) break;
-		// 	const oldWall = binder.data;
-		// 	const newWall = new Wall(
-		// 		{ x: oldWall.x, y: oldWall.y },
-		// 		oldWall.wall.end,
-		// 		'normal',
-		// 		oldWall.wall.thick
-		// 	);
-		// 	const updatedWalls = [...wallMetaData, newWall];
-		// 	setWallMetaData(updatedWalls);
-		// 	oldWall.wall.end = { x: oldWall.x, y: oldWall.y };
-		// 	binder.remove();
-		// 	setBinder(null);
-		// 	save();
-		// 	break;
-		// }
 		case Mode.Opening: {
 			if (!objectBeingMoved) {
-				// $('#boxinfo').html('The plan currently contains no wall.');
 				resetMode();
 				break;
 			}

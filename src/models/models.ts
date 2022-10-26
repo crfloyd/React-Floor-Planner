@@ -15,6 +15,7 @@ export const Mode = {
 	EditText: 'edit_text_mode',
 	EditRoom: 'edit_room_mode',
 	Object: 'object_mode',
+	Device: 'device_mode',
 	Distance: 'distance_mode',
 	Room: 'room_mode',
 	Node: 'node_mode',
@@ -135,6 +136,16 @@ export interface BoundingBox {
 	bottom: number;
 	left: number;
 	origin: Point2D;
+}
+
+export interface DeviceMetaData {
+	id: string;
+	image: string;
+	name: string;
+	x: number;
+	y: number;
+	width: number;
+	height: number;
 }
 
 export interface ObjectMetaData {
