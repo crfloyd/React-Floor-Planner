@@ -15,12 +15,11 @@ export const handleMouseUpBindMode = (
 	objectBeingMoved: ObjectMetaData | null,
 	setObjectBeingMoved: (o: ObjectMetaData | null) => void
 ): {
-	updatedMode: string;
+	updatedMode: Mode;
 	updatedObjectMeta: ObjectMetaData[];
 } => {
 	let mode = Mode.Select;
 
-	console.log('MouseUp: ', objectBeingMoved, objectBeingMoved?.type);
 	if (objectBeingMoved?.type === 'boundingBox') {
 		const moveObj =
 			Math.abs(objectBeingMoved.oldXY.x - objectBeingMoved.x) +

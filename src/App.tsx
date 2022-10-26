@@ -1,6 +1,7 @@
 import './App.scss';
 
 import { useEffect, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { constants } from '../constants';
 import MyImage from './assets/react.svg';
@@ -25,12 +26,17 @@ import {
 	WallMetaData
 } from './models/models';
 import { Wall } from './models/Wall';
+import { setAction, setMode } from './store/floorPlanSlice';
+import { RootState } from './store/store';
 import { renderRooms } from './utils/svgTools';
 import { distanceBetween, findById, intersectionOfEquations } from './utils/utils';
 
 const canvasState = new CanvasState();
 
 function App() {
+	const dispatch = useDispatch();
+	const action = useSelector((state: RootState) => state.floorPlan.action);
+	const mode = useSelector((state: RootState) => state.floorPlan.mode);
 	const [cursor, setCursor] = useState<CursorType>('default');
 	const [layerSettings, setLayerSettings] = useState<LayerSettings>({
 		showSurfaces: true,
@@ -235,7 +241,7 @@ function App() {
 		});
 	};
 
-	const applyMode = (mode: string, option = '') => {
+	const applyMode = (mode: Mode, option = '') => {
 		save(wallMetaData, objectMetaData, roomMetaData);
 		setShowSubMenu(false);
 
@@ -263,7 +269,7 @@ function App() {
 		// $('#stair_mode').removeClass('btn-success');
 		// $('#stair_mode').addClass('btn-default');
 
-		canvasState.setMode(mode);
+		dispatch(setMode(mode));
 		canvasState.setModeOption(option);
 	};
 
@@ -328,7 +334,7 @@ function App() {
 			throw new Error('No selectedWall was set!');
 		}
 		splitWall(selectedWall);
-		canvasState.setMode(Mode.Select);
+		dispatch(setMode(Mode.Select));
 	};
 
 	const onConvertWallToSeparationClicked = () => {
@@ -345,7 +351,7 @@ function App() {
 			throw new Error('No selectedWall was set!');
 		}
 		makeWallVisible(selectedWall);
-		canvasState.setMode(Mode.Select);
+		dispatch(setMode(Mode.Select));
 	};
 
 	const onWallTrashClicked = () => {
@@ -370,7 +376,7 @@ function App() {
 
 		setSelectedWall(null);
 		// updateMeasurementText(wallMetaData);
-		canvasState.setMode(Mode.Select);
+		dispatch(setMode(Mode.Select));
 		setShowMainPanel(true);
 	};
 
@@ -461,7 +467,7 @@ function App() {
 	const onWallModeClicked = () => {
 		setCursor('crosshair');
 		setBoxInfoText('Wall creation');
-		canvasState.setAction(false);
+		dispatch(setAction(false));
 		applyMode(Mode.Line);
 	};
 
@@ -519,11 +525,8 @@ function App() {
 	};
 
 	const cancelWallCreation = () => {
-		if (
-			(canvasState.mode == Mode.Line || canvasState.mode == Mode.Partition) &&
-			canvasState.action
-		) {
-			canvasState.setAction(false);
+		if ((mode == Mode.Line || mode == Mode.Partition) && action) {
+			dispatch(setAction(false));
 		}
 	};
 
@@ -596,7 +599,6 @@ function App() {
 				wallClicked={handleWallCliked}
 				updateRoomDisplayData={updateRoomDisplayData}
 				cursor={cursor}
-				setCursor={setCursor}
 				canvasDimensions={canvasDimensions}
 				setCanvasDimensions={setCanvasDimenions}
 				viewbox={viewbox}

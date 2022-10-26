@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { constants } from '../../../constants';
 import { CanvasState } from '../../engine';
-import { handleMouseDown } from '../../engine/mouseDown/MouseDownHandler';
 import { handleMouseMove } from '../../engine/mouseMove/MouseMoveHandler';
 import { handleMouseUp } from '../../engine/mouseUp/MouseUpHandler';
 import { useDevices } from '../../hooks/useDevices';
 import { useDrawScaleBox } from '../../hooks/useDrawScaleBox';
 import { useDrawWalls } from '../../hooks/useDrawWalls';
+import { useHandleMouseDown } from '../../hooks/useHandleMouseDown';
 import { useHistory } from '../../hooks/useHistory';
 import { useWallMeasurements } from '../../hooks/useWallMeasurements';
 import {
@@ -27,6 +28,8 @@ import {
 	WallEquationGroup,
 	WallMetaData
 } from '../../models/models';
+import { setAction, setCursor, setMode } from '../../store/floorPlanSlice';
+import { RootState } from '../../store/store';
 import {
 	calculateObjectRenderData,
 	getPolygonVisualCenter,
@@ -41,7 +44,8 @@ import {
 	calculateSnap,
 	computeLimit,
 	getWallsOnPoint,
-	perpendicularEquation
+	perpendicularEquation,
+	snapPoint
 } from '../../utils/utils';
 import { GradientData } from './GradientData';
 import LinearGradient from './LinearGradient';
@@ -53,7 +57,7 @@ interface Props {
 	layerSettings: LayerSettings;
 	canvasState: CanvasState;
 	continuousWallMode: boolean;
-	applyMode: (mode: string, option: string) => void;
+	applyMode: (mode: Mode, option: string) => void;
 	updateRoomDisplayData: (roomData: RoomDisplayData) => void;
 	onMouseMove: () => void;
 	showObjectTools: () => void;
@@ -61,7 +65,6 @@ interface Props {
 	wallClicked: (wall: WallMetaData) => void;
 	handleCameraChange: (lens: string, xmove: number, xview: number) => void;
 	cursor: CursorType;
-	setCursor: (crsr: CursorType) => void;
 	setCanvasDimensions: (d: { width: number; height: number }) => void;
 	canvasDimensions: { width: number; height: number };
 	viewbox: ViewboxData;
@@ -90,15 +93,12 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	layerSettings,
 	canvasState,
 	continuousWallMode,
-	applyMode,
 	updateRoomDisplayData,
 	showObjectTools,
 	startModifyingOpening,
 	wallClicked,
 	handleCameraChange,
 	onMouseMove,
-	cursor,
-	setCursor,
 	setCanvasDimensions,
 	viewbox,
 	roomPolygonData,
@@ -115,6 +115,10 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	deviceBeingMoved,
 	setDeviceBeingMoved
 }) => {
+	const dispatch = useDispatch();
+	const cursor = useSelector((state: RootState) => state.floorPlan.cursor);
+	const action = useSelector((state: RootState) => state.floorPlan.action);
+
 	const [dragging, setDragging] = useState(false);
 	const [cursorImg, setCursorImg] = useState('default');
 	const [roomPathInfo, setRoomPathInfo] = useState<RoomPathData[]>([]);
@@ -156,10 +160,11 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 
 	const { devices, setDevices, deviceUnderCursor } = useDevices(
 		snapPosition,
-		canvasState.mode,
 		deviceBeingMoved,
 		setDeviceBeingMoved
 	);
+
+	const mode = useSelector((state: RootState) => state.floorPlan.mode);
 
 	const {
 		startWallDrawing,
@@ -170,13 +175,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		helperLineSvgData,
 		shouldWallConstructionEnd,
 		clearWallHelperState
-	} = useDrawWalls(
-		snapPosition,
-		wallMetaData,
-		canvasState.mode,
-		continuousWallMode,
-		setCursor,
-		(newPoint: Point2D) => setPoint(newPoint)
+	} = useDrawWalls(snapPosition, wallMetaData, mode, continuousWallMode, (newPoint: Point2D) =>
+		setPoint(newPoint)
 	);
 
 	useEffect(() => {
@@ -187,9 +187,9 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 
 	useEffect(() => {
 		if (deviceBeingMoved) {
-			canvasState.setMode(Mode.Device);
+			dispatch(setMode(Mode.Device));
 		} else {
-			if (canvasState.mode !== Mode.Room) {
+			if (mode !== Mode.Room) {
 				setRoomUnderCursor(undefined);
 				setSelectedRoomRenderData(undefined);
 			}
@@ -268,10 +268,10 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	}, [cursor]);
 
 	useEffect(() => {
-		if (canvasState.mode !== Mode.EditRoom) {
+		if (mode !== Mode.EditRoom) {
 			setSelectedRoomRenderData(undefined);
 		}
-	}, [canvasState.mode]);
+	}, [mode]);
 
 	useEffect(() => {
 		// console.log("walls updated", wallMetaData.length);
@@ -334,7 +334,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	// when the room under cursor changes (in ROOM mode), calculate
 	// the path for the highlight box and set to state
 	useEffect(() => {
-		if (canvasState.mode !== Mode.Room && !deviceBeingMoved) return;
+		if (mode !== Mode.Room && !deviceBeingMoved) return;
 
 		if (!roomUnderCursor) {
 			setSelectedRoomRenderData(undefined);
@@ -372,7 +372,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			selected: false,
 			selectedColor: 'none'
 		});
-	}, [roomPolygonData.polygons, roomUnderCursor, canvasState.mode]);
+	}, [roomPolygonData.polygons, roomUnderCursor, mode]);
 
 	useEffect(() => {
 		if (selectedRoomColor) {
@@ -450,6 +450,30 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 
 	const circleRadius = constants.CIRCLE_BINDER_RADIUS / 1.8;
 
+	const updateCursor = (c: CursorType) => {
+		dispatch(setCursor(c));
+		return;
+	};
+
+	const handleMouseDown = useHandleMouseDown({
+		setPoint,
+		viewbox,
+		wallMetaData,
+		setWallMetaData,
+		objectMetaData,
+		startWallDrawing,
+		setSelectedWallData,
+		nodeUnderCursor,
+		setNodeBeingMoved,
+		wallUnderCursor,
+		setWallEquationData,
+		setDragging,
+		objectUnderCursor,
+		setObjectBeingMoved,
+		deviceUnderCursor,
+		followerData: canvasState.followerData
+	});
+
 	return (
 		<svg
 			ref={canvasRef}
@@ -476,46 +500,25 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 				onMouseWheel(e.deltaY);
 			}}
 			onClick={(e) => e.preventDefault()}
-			onMouseDown={(e) =>
-				handleMouseDown({
-					event: e,
-					canvasState,
-					setCursor,
-					viewbox,
-					wallMetaData,
-					setWallMetaData,
-					objectMetaData,
-					startWallDrawing,
-					setSelectedWallData,
-					setPoint,
-					nodeUnderCursor,
-					setNodeBeingMoved,
-					wallUnderCursor,
-					setWallEquationData,
-					setDragging,
-					objectUnderCursor,
-					setObjectBeingMoved,
-					deviceUnderCursor
-					// setDeviceBeingMoved
-				})
-			}
+			onMouseDown={(event) => {
+				handleMouseDown(event);
+			}}
 			onMouseUp={() => {
 				setDragging(false);
 				handleMouseUp(
 					snapPosition,
+					mode,
+					(m: Mode) => dispatch(setMode(m)),
+					(a: boolean) => dispatch(setAction(a)),
 					point,
 					setPoint,
 					canvasState,
-					() => {
-						applyMode(Mode.Select, '');
-						return canvasState.mode;
-					},
 					() => save(wallMetaData, objectMetaData, roomMetaData),
 					updateRoomDisplayData,
 					continuousWallMode,
 					startModifyingOpening,
 					wallClicked,
-					setCursor,
+					updateCursor,
 					roomMetaData,
 					objectMetaData,
 					setObjectMetaData,
@@ -562,6 +565,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 				setSnapPosition(snap);
 
 				handleMouseMove(
+					mode,
+					action,
 					snap,
 					point,
 					canvasState,
@@ -573,7 +578,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					objectMetaData,
 					setObjectMetaData,
 					handleCameraChange,
-					setCursor,
+					updateCursor,
 					setWallUnderCursor,
 					setObjectUnderCursor,
 					objectBeingMoved,
@@ -588,9 +593,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					dragging,
 					deviceBeingMoved,
 					deviceUnderCursor
-					// setDeviceBeingMoved,
-					// setDeviceUnderCursor,
-					// devices
 				);
 			}}>
 			<defs>
@@ -798,7 +800,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 							x2={wallHelperPathInfo.x2}
 							y2={wallHelperPathInfo.y2}
 							stroke="#9fb2e2"
-							strokeWidth={canvasState.mode == Mode.Partition ? 10 : 20}
+							strokeWidth={mode == Mode.Partition ? 10 : 20}
 							strokeLinecap="butt"
 							strokeOpacity={wallHelperPathInfo.constructOpacity}></line>
 						<line

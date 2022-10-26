@@ -20,6 +20,8 @@ import { handleMouseMoveRoomMode } from './RoomModeMoveHandler';
 import { handleMouseMoveSelectMode } from './SelectModeMouseMoveHandler';
 
 export const handleMouseMove = (
+	mode: Mode,
+	action: boolean,
 	snap: SnapData,
 	point: Point2D,
 	canvasState: CanvasState,
@@ -57,10 +59,10 @@ export const handleMouseMove = (
 			Mode.Line,
 			Mode.Partition,
 			Mode.Bind
-		].includes(canvasState.mode)
+		].includes(mode)
 	)
 		return;
-	switch (canvasState.mode) {
+	switch (mode) {
 		case Mode.Object: {
 			handleMouseMoveObjectMode(
 				snap,
@@ -112,6 +114,7 @@ export const handleMouseMove = (
 		case Mode.Bind: {
 			handleMouseMoveBindMode(
 				snap,
+				action,
 				setCursor,
 				canvasState,
 				wallMetaData,

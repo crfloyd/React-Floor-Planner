@@ -1,5 +1,6 @@
 export type {
 	CursorType,
+	DeviceMetaData,
 	HistorySnapshot,
 	LayerSettings,
 	ObjectMetaData,

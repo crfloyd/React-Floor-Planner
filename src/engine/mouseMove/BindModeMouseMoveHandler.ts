@@ -32,6 +32,7 @@ import { CanvasState } from '../';
 
 export const handleMouseMoveBindMode = (
 	snap: SnapData,
+	action: boolean,
 	setCursor: (crsr: CursorType) => void,
 	canvasState: CanvasState,
 	wallMeta: WallMetaData[],
@@ -48,7 +49,7 @@ export const handleMouseMoveBindMode = (
 	wallEquations: WallEquationGroup,
 	deviceUnderCursor: DeviceMetaData | undefined
 ) => {
-	const { action, followerData } = canvasState;
+	const { followerData } = canvasState;
 
 	if (deviceUnderCursor) {
 		return;

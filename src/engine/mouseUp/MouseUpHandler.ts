@@ -22,10 +22,12 @@ import { handleMouseUpBindMode } from './BindModeMouseUpHandler';
 
 export const handleMouseUp = (
 	snap: SnapData,
+	mode: Mode,
+	setMode: (m: Mode) => void,
+	setAction: (a: boolean) => void,
 	point: Point2D,
 	setPoint: (p: Point2D) => void,
 	canvasState: CanvasState,
-	resetMode: () => string,
 	save: () => void,
 	updateRoomDisplayData: (data: RoomDisplayData) => void,
 	continuousWallMode: boolean,
@@ -52,7 +54,7 @@ export const handleMouseUp = (
 	setDeviceBeingMoved: (d: DeviceMetaData | undefined) => void,
 	setDevices: React.Dispatch<React.SetStateAction<DeviceMetaData[]>>
 ) => {
-	const { setAction, mode, setMode, followerData } = canvasState;
+	const { followerData } = canvasState;
 	setCursor('default');
 
 	switch (mode) {
@@ -63,7 +65,7 @@ export const handleMouseUp = (
 					deviceBeingMoved
 				]);
 			}
-			resetMode();
+			setMode(Mode.Select);
 			save();
 			break;
 		}
@@ -72,7 +74,7 @@ export const handleMouseUp = (
 				setObjectMetaData([...objectMetaData, objectBeingMoved]);
 				setObjectBeingMoved(null);
 			}
-			resetMode();
+			setMode(Mode.Select);
 			save();
 			break;
 		}
@@ -98,7 +100,7 @@ export const handleMouseUp = (
 		}
 		case Mode.Opening: {
 			if (!objectBeingMoved) {
-				resetMode();
+				setMode(Mode.Select);
 				break;
 			}
 			const newObjectBeingMoved = getUpdatedObject(objectBeingMoved);
@@ -106,7 +108,7 @@ export const handleMouseUp = (
 			setObjectBeingMoved(null);
 			setObjectMetaData(updatedObjects);
 			// $('#boxinfo').html('Element added');
-			resetMode();
+			setMode(Mode.Select);
 			save();
 			break;
 		}
@@ -142,7 +144,7 @@ export const handleMouseUp = (
 			} else {
 				setAction(false);
 				// $('#boxinfo').html('Select mode');
-				resetMode();
+				setMode(Mode.Select);
 				setPoint({ x: snap.x, y: snap.y });
 			}
 			break;

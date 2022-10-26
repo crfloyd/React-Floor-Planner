@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 
 import { DeviceMetaData, Mode, Point2D } from '../models/models';
-import { calculateObjectRenderData, pointInPolygon } from '../utils/svgTools';
+import { RootState } from '../store/store';
+import { pointInPolygon } from '../utils/svgTools';
 
 export const useDevices = (
 	mousePosition: Point2D,
-	mode: string,
 	deviceBeingMoved: DeviceMetaData | undefined,
 	setDeviceBeingMoved: React.Dispatch<React.SetStateAction<DeviceMetaData | undefined>>
 ) => {
+	const mode = useSelector((state: RootState) => state.floorPlan.mode);
 	const [devices, setDevices] = useState<DeviceMetaData[]>([]);
 	const [deviceUnderCursor, setDeviceUnderCursor] = useState<DeviceMetaData>();
 
@@ -18,7 +20,6 @@ export const useDevices = (
 	 */
 	useEffect(() => {
 		if (mode !== Mode.Select) return;
-		// console.log('SelectMode - setting device under cursor');
 
 		const nearDevices = devices.filter((d) => {
 			const { width: w, height: h, x, y } = d;
@@ -28,7 +29,6 @@ export const useDevices = (
 				{ x: x + w, y: y + h }, // bottom right
 				{ x: x, y: y + h } // bottom left
 			];
-			console.log(poly);
 			return pointInPolygon({ x: mousePosition.x, y: mousePosition.y }, poly);
 		});
 		setDeviceUnderCursor(nearDevices[0]);
