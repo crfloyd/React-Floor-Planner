@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { DeviceMetaData, Mode, Point2D } from '../models/models';
-import { pointInPolygon } from '../utils/svgTools';
+import { calculateObjectRenderData, pointInPolygon } from '../utils/svgTools';
 
 export const useDevices = (
 	mousePosition: Point2D,
@@ -22,17 +22,16 @@ export const useDevices = (
 
 		const nearDevices = devices.filter((d) => {
 			const { width: w, height: h, x, y } = d;
-			const padding = 5;
 			const poly = [
-				{ x: x - w / 2 - padding, y: y - h / 2 - padding }, // top left
-				{ x: x + w / 2 + padding, y: y - h / 2 - padding }, // top right
-				{ x: x + w / 2 + padding, y: y + h / 2 + padding }, // bottom right
-				{ x: x - w / 2 - padding, y: y + h / 2 + padding } // bottom left
+				{ x, y }, // top left
+				{ x: x + w, y }, // top right
+				{ x: x + w, y: y + h }, // bottom right
+				{ x: x, y: y + h } // bottom left
 			];
+			console.log(poly);
 			return pointInPolygon({ x: mousePosition.x, y: mousePosition.y }, poly);
 		});
-		const underCursor = nearDevices.length > 0 ? nearDevices[0] : undefined;
-		setDeviceUnderCursor(underCursor);
+		setDeviceUnderCursor(nearDevices[0]);
 	}, [devices, mode, mousePosition]);
 
 	/**

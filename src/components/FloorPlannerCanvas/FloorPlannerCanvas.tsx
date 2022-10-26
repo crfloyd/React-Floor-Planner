@@ -31,6 +31,7 @@ import {
 	calculateObjectRenderData,
 	getPolygonVisualCenter,
 	getUpdatedObject,
+	pointInPolygon,
 	polygonize,
 	refreshWalls,
 	renderRooms
@@ -187,8 +188,25 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	useEffect(() => {
 		if (deviceBeingMoved) {
 			canvasState.setMode(Mode.Device);
+		} else {
+			if (canvasState.mode !== Mode.Room) {
+				setRoomUnderCursor(undefined);
+				setSelectedRoomRenderData(undefined);
+			}
+			return;
 		}
-	}, [canvasState, deviceBeingMoved]);
+
+		let targetRoom: RoomMetaData | undefined = undefined;
+		roomMetaData.forEach((room: RoomMetaData) => {
+			if (
+				pointInPolygon({ x: deviceBeingMoved.x, y: deviceBeingMoved.y }, room.coords) &&
+				(targetRoom == null || targetRoom.area >= room.area)
+			) {
+				targetRoom = room;
+			}
+		});
+		setRoomUnderCursor(targetRoom);
+	}, [canvasState, deviceBeingMoved, snapPosition, roomMetaData]);
 
 	useEffect(() => {
 		if (!wallUnderCursor) return;
@@ -316,7 +334,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	// when the room under cursor changes (in ROOM mode), calculate
 	// the path for the highlight box and set to state
 	useEffect(() => {
-		if (canvasState.mode !== Mode.Room) return;
+		if (canvasState.mode !== Mode.Room && !deviceBeingMoved) return;
 
 		if (!roomUnderCursor) {
 			setSelectedRoomRenderData(undefined);
@@ -694,13 +712,24 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					devices
 						.filter((d) => d.id !== deviceBeingMoved?.id)
 						.map((device, idx) => (
-							<image
-								key={device.id + '-device-moving' + idx}
-								href={device.image}
-								width={40}
-								height={40}
-								x={device.x}
-								y={device.y}></image>
+							<g key={device.id + '-device' + idx}>
+								<text
+									x={device.x - device.width / 2}
+									y={device.y - device.height / 2}
+									className="device-name"
+									display={deviceUnderCursor?.id === device.id ? 'block' : 'none'}>
+									{device.name}
+								</text>
+								<rect
+									x={device.x - device.width / 4}
+									y={device.y - device.height / 4}
+									stroke="#333"
+									fillOpacity={0}
+									display={deviceUnderCursor?.id === device.id ? 'block' : 'none'}
+									width={device.width + device.width / 2}
+									height={device.height + device.height / 2}></rect>
+								<image href={device.image} width={40} height={40} x={device.x} y={device.y}></image>
+							</g>
 						))}
 			</g>
 			<g id="boxbind">
