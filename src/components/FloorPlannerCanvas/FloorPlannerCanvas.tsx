@@ -421,18 +421,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			) {
 				objTarget.size = val;
 				objTarget.limit = limits;
-				const { newRenderData, newHeight, newWidth, newRealBbox } = calculateObjectRenderData(
-					objTarget.size,
-					objTarget.thick,
-					objTarget.angle,
-					objTarget.class,
-					objTarget.type,
-					{ x: objTarget.x, y: objTarget.y }
-				);
-				objTarget.renderData = newRenderData;
-				objTarget.height = newHeight;
-				objTarget.width = newWidth;
-				objTarget.realBbox = newRealBbox;
 				const updatedTarget = getUpdatedObject(objTarget);
 				const newObjMetaData = [
 					...objectMetaData.filter((o) => o.id !== objTarget.id),
@@ -447,6 +435,24 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			onOpeningWidthChanged(openingWidth);
 		}
 	}, [openingWidth]);
+
+	// Refresh object render data any time the objects change
+	useEffect(() => {
+		objectMetaData.forEach((o) => {
+			const { newRenderData, newHeight, newWidth, newRealBbox } = calculateObjectRenderData(
+				o.size,
+				o.thick,
+				o.angle,
+				o.class,
+				o.type,
+				{ x: o.x, y: o.y }
+			);
+			o.renderData = newRenderData;
+			o.height = newHeight;
+			o.width = newWidth;
+			o.realBbox = newRealBbox;
+		});
+	}, [objectMetaData]);
 
 	const circleRadius = constants.CIRCLE_BINDER_RADIUS / 1.8;
 

@@ -385,23 +385,26 @@ export const useHandleMouseDown = ({
 
 	const handleMouseDown = useCallback(
 		(event: React.TouchEvent | React.MouseEvent) => {
+			const enterBindMode = () => {
+				dispatch(setMode(Mode.Bind));
+				dispatch(setAction(true));
+			};
 			event.preventDefault();
 
 			switch (mode) {
 				case Mode.Line:
 				case Mode.Partition: {
-					if (!action) {
-						const snap = calculateSnap(event, viewbox);
-						const nearestWallData = findNearestWallInRange(snap, wallMetaData, 12);
-						if (nearestWallData) {
-							const nearestPoint = { x: nearestWallData.x, y: nearestWallData.y };
-							setPoint(nearestPoint);
-							startWallDrawing(nearestPoint);
-						} else {
-							const nearestPoint = { x: snap.x, y: snap.y };
-							setPoint(nearestPoint);
-							startWallDrawing(nearestPoint);
-						}
+					if (action) break;
+					const snap = calculateSnap(event, viewbox);
+					const nearestWallData = findNearestWallInRange(snap, wallMetaData, 12);
+					if (nearestWallData) {
+						const nearestPoint = { x: nearestWallData.x, y: nearestWallData.y };
+						setPoint(nearestPoint);
+						startWallDrawing(nearestPoint);
+					} else {
+						const nearestPoint = { x: snap.x, y: snap.y };
+						setPoint(nearestPoint);
+						startWallDrawing(nearestPoint);
 					}
 					dispatch(setAction(true));
 					break;
@@ -413,14 +416,12 @@ export const useHandleMouseDown = ({
 				}
 				case Mode.Select: {
 					if (deviceUnderCursor) {
-						dispatch(setMode(Mode.Bind));
-						dispatch(setAction(true));
+						enterBindMode();
 						return;
 					}
 
 					if (nodeUnderCursor) {
-						dispatch(setMode(Mode.Bind));
-						dispatch(setAction(true));
+						enterBindMode();
 						setPoint({ ...nodeUnderCursor });
 
 						handleSelectModeNodeClicked(nodeUnderCursor);
@@ -428,17 +429,14 @@ export const useHandleMouseDown = ({
 					}
 
 					if (wallUnderCursor) {
-						dispatch(setMode(Mode.Bind));
-						dispatch(setAction(true));
+						enterBindMode();
 						handleSelectModeSegmentClicked(wallMetaData);
 						return;
 					}
 
 					if (objectUnderCursor) {
 						setObjectBeingMoved(objectUnderCursor);
-						console.log('Object Being Moved');
-						dispatch(setMode(Mode.Bind));
-						dispatch(setAction(true));
+						enterBindMode();
 						return;
 					}
 

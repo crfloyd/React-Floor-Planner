@@ -4,12 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { constants } from '../constants';
-import MyImage from './assets/react.svg';
 import DoorWindowTools from './components/DoorWindowTools';
 import FloorPlannerCanvas from './components/FloorPlannerCanvas/FloorPlannerCanvas';
 import ObjectTools from './components/ObjectTools';
 import WallTools from './components/WallTools';
 import { CanvasState } from './engine';
+import { useWalls } from './hooks';
 import { useCameraTools } from './hooks/useCameraTools';
 import { useHistory } from './hooks/useHistory';
 import { useKeybindings } from './hooks/useKeybindings';
@@ -19,17 +19,14 @@ import {
 	LayerSettings,
 	Mode,
 	ObjectMetaData,
-	Point2D,
 	RoomDisplayData,
 	RoomMetaData,
 	RoomPolygonData,
 	WallMetaData
 } from './models/models';
-import { Wall } from './models/Wall';
 import { setAction, setMode } from './store/floorPlanSlice';
 import { RootState } from './store/store';
 import { renderRooms } from './utils/svgTools';
-import { distanceBetween, findById, intersectionOfEquations } from './utils/utils';
 
 const canvasState = new CanvasState();
 
@@ -68,7 +65,6 @@ function App() {
 	const [enableRedo, setEnableRedo] = useState(false);
 
 	const [showMainPanel, setShowMainPanel] = useState(true);
-	const [wallToolsSeparation, setWallToolsSeparation] = useState(false);
 	const [showConfigureDoorWindowPanel, setShowConfigureDoorWindowPanel] = useState(false);
 	const [showObjectTools, setShowObjectTools] = useState(false);
 	const [showRoomTools, setShowRoomTools] = useState(false);
@@ -99,7 +95,6 @@ function App() {
 		vertex: []
 	});
 	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
-	const [wallMetaData, setWallMetaData] = useState<WallMetaData[]>([]);
 	const [objectMetaData, setObjectMetaData] = useState<ObjectMetaData[]>([]);
 	const [openingWidth, setOpeningWidth] = useState<number | null>(null);
 	const [openingIdBeingEdited, setOpeningIdBeingEdited] = useState<string | undefined>();
@@ -111,6 +106,16 @@ function App() {
 	const { viewbox, scaleValue, handleCameraChange } = useCameraTools(canvasDimensions);
 	const [planToRecover, setPlanToRecover] = useState(false);
 	const [deviceBeingMoved, setDeviceBeingMoved] = useState<DeviceMetaData>();
+
+	const {
+		wallMetaData,
+		setWallMetaData,
+		splitWall,
+		deleteWall,
+		updateWallThickness,
+		makeWallInvisible,
+		makeWallVisible
+	} = useWalls();
 
 	useKeybindings({
 		onSelectMode: () => {
@@ -230,64 +235,23 @@ function App() {
 		setCursor('move');
 		setBoxInfoText('Add an object');
 		// applyMode(Mode.Object, type);
-		setDeviceBeingMoved({
-			id: '123',
-			name: type,
-			height: 40,
-			width: 40,
-			image: MyImage,
-			x: 0,
-			y: 0
-		});
+		// setDeviceBeingMoved({
+		// 	id: '123',
+		// 	name: type,
+		// 	height: 40,
+		// 	width: 40,
+		// 	image: MyImage,
+		// 	x: 0,
+		// 	y: 0
+		// });
 	};
 
 	const applyMode = (mode: Mode, option = '') => {
 		save(wallMetaData, objectMetaData, roomMetaData);
 		setShowSubMenu(false);
 
-		// Reset buttons
-		// $('#rect_mode').removeClass('btn-success');
-		// $('#rect_mode').addClass('btn-default');
-		// $('#select_mode').removeClass('btn-success');
-		// $('#select_mode').addClass('btn-default');
-		// $('#line_mode').removeClass('btn-success');
-		// $('#line_mode').addClass('btn-default');
-		// $('#partition_mode').removeClass('btn-success');
-		// $('#partition_mode').addClass('btn-default');
-		// $('#door_mode').removeClass('btn-success');
-		// $('#door_mode').addClass('btn-default');
-		// $('#node_mode').removeClass('btn-success');
-		// $('#node_mode').addClass('btn-default');
-		// $('#text_mode').removeClass('btn-success');
-		// $('#text_mode').addClass('btn-default');
-		// $('#room_mode').removeClass('btn-success');
-		// $('#room_mode').addClass('btn-default');
-		// $('#distance_mode').removeClass('btn-success');
-		// $('#distance_mode').addClass('btn-default');
-		// $('#object_mode').removeClass('btn-success');
-		// $('#object_mode').addClass('btn-default');
-		// $('#stair_mode').removeClass('btn-success');
-		// $('#stair_mode').addClass('btn-default');
-
 		dispatch(setMode(mode));
 		canvasState.setModeOption(option);
-	};
-
-	const createInvisibleWall = (wall: WallMetaData) => {
-		const wallObjects = wall.getObjects(objectMetaData);
-		if (wallObjects.length != 0) return false;
-		wall.type = 'separate';
-		wall.backUp = wall.thick;
-		wall.thick = 0.07;
-		setWallMetaData([...wallMetaData]);
-		save(wallMetaData, objectMetaData, roomMetaData);
-		return true;
-	};
-
-	const makeWallVisible = (wall: WallMetaData) => {
-		wall.makeVisible();
-		setWallMetaData([...wallMetaData]);
-		save(wallMetaData, objectMetaData, roomMetaData);
 	};
 
 	const initHistory = (type: string) => {
@@ -312,21 +276,10 @@ function App() {
 		if (!selectedWall) {
 			throw new Error('No selectedWall was set!');
 		}
-		const wallMeta = findById(selectedWall.id, wallMetaData);
-		if (!wallMeta) return;
-		wallMeta.thick = value;
-		wallMeta.type = 'normal';
-		setWallMetaData([...wallMetaData]);
-		const objWall = selectedWall.getObjects(objectMetaData);
-		const objMetaCopy = [...objectMetaData];
-		objMetaCopy.forEach((o) => {
-			if (objWall.includes(o)) {
-				o.thick = value;
-				o.update();
-			}
-		});
-		setObjectMetaData(objMetaCopy);
-		// updateMeasurementText(wallMetaData);
+		const objectsUpdated = updateWallThickness(selectedWall, value, objectMetaData);
+		if (objectsUpdated) {
+			setObjectMetaData([...objectMetaData]);
+		}
 	};
 
 	const onWallSplitClicked = () => {
@@ -334,6 +287,7 @@ function App() {
 			throw new Error('No selectedWall was set!');
 		}
 		splitWall(selectedWall);
+		save(wallMetaData, objectMetaData, roomMetaData);
 		dispatch(setMode(Mode.Select));
 	};
 
@@ -341,9 +295,11 @@ function App() {
 		if (!selectedWall) {
 			throw new Error('No selectedWall was set!');
 		}
-		if (!createInvisibleWall(selectedWall)) {
+		if (!makeWallInvisible(selectedWall, objectMetaData)) {
 			setBoxInfoText('Walls containing doors or windows cannot be separated!');
+			return;
 		}
+		save(wallMetaData, objectMetaData, roomMetaData);
 	};
 
 	const onConvertSeparationToWallClicked = () => {
@@ -358,22 +314,7 @@ function App() {
 		if (!selectedWall) {
 			throw new Error('No selectedWall was set!');
 		}
-		const wall = selectedWall;
-		const wallMetaCopy = [...wallMetaData.filter((w) => w.id !== wall.id)];
-		wallMetaCopy.forEach((wall) => {
-			if (wall.child === wall.id) wall.child = null;
-			if (wall.parent === wall.id) {
-				wall.parent = null;
-			}
-		});
-		for (const k in wallMetaCopy) {
-			if (wallMetaCopy[k].child === wall.id) wallMetaCopy[k].child = null;
-			if (wallMetaCopy[k].parent === wall.id) {
-				wallMetaCopy[k].parent = null;
-			}
-		}
-		setWallMetaData(wallMetaCopy);
-
+		deleteWall(selectedWall);
 		setSelectedWall(null);
 		// updateMeasurementText(wallMetaData);
 		dispatch(setMode(Mode.Select));
@@ -471,52 +412,6 @@ function App() {
 		applyMode(Mode.Line);
 	};
 
-	const splitWall = (wallToSplit: WallMetaData) => {
-		const eqWall = wallToSplit.getEquation();
-		const wallToSplitLength = distanceBetween(wallToSplit.start, wallToSplit.end);
-		const newWalls: { distance: number; coords: Point2D }[] = [];
-
-		wallMetaData.forEach((wall) => {
-			const eq = wall.getEquation();
-			const inter = intersectionOfEquations(eqWall, eq);
-			if (inter && wallToSplit.pointInsideWall(inter, true) && wall.pointInsideWall(inter, true)) {
-				const distance = distanceBetween(wallToSplit.start, inter);
-				if (distance > 5 && distance < wallToSplitLength) {
-					newWalls.push({ distance: distance, coords: inter });
-				}
-			}
-		});
-
-		newWalls.sort((a: { distance: number }, b: { distance: number }) => {
-			return a.distance - b.distance;
-		});
-
-		let initCoords = wallToSplit.start;
-		const initThick = wallToSplit.thick;
-
-		// Clear the wall to split from its parents and children
-		const otherWalls = wallMetaData.filter((w) => w.id !== wallToSplit.id);
-		otherWalls.forEach((w) => {
-			w.child = w.child === wallToSplit.id ? null : w.child;
-			w.parent = w.parent === wallToSplit.id ? null : w.parent;
-		});
-
-		// Add each new wall created from the split
-		newWalls.forEach((newWall) => {
-			const wall = new Wall(initCoords, newWall.coords, 'normal', initThick);
-			otherWalls.push(wall);
-			wall.child = otherWalls[otherWalls.length - 1].id;
-			initCoords = newWall.coords;
-		});
-
-		// Add the last wall
-		const wall = new Wall(initCoords, wallToSplit.end, 'normal', initThick);
-		otherWalls.push(wall);
-		setWallMetaData(otherWalls);
-		save(wallMetaData, objectMetaData, roomMetaData);
-		return true;
-	};
-
 	const enterSelectMode = () => {
 		setBoxInfoText('Selection mode');
 		// canvasState.setBinder(null);
@@ -577,8 +472,7 @@ function App() {
 	};
 
 	const handleWallCliked = (wall: WallMetaData) => {
-		const isSeparation = wall.type == 'separation';
-		setWallToolsSeparation(isSeparation);
+		const isSeparation = wall.type == 'separate';
 		setBoxInfoText(`Modify the ${isSeparation ? 'separation' : 'wall'}`);
 		setShowMainPanel(false);
 		setSelectedWall(wall);

@@ -4,6 +4,7 @@ export type {
 	HistorySnapshot,
 	LayerSettings,
 	ObjectMetaData,
+	Point2D,
 	RoomDisplayData,
 	RoomMetaData,
 	RoomPolygonData,

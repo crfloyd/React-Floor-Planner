@@ -115,9 +115,13 @@ export const handleMouseUp = (
 		case Mode.Line:
 		case Mode.Partition: {
 			clearWallHelperState();
-			if (!wallEndConstructionData) return;
-			let sizeWall = distanceBetween(wallEndConstructionData.end, point);
-			sizeWall = sizeWall / constants.METER_SIZE;
+
+			if (!wallEndConstructionData) {
+				console.error('MouseUp in Line/Partition mode but no wallEndConstructionData set!');
+				return;
+			}
+
+			let sizeWall = distanceBetween(wallEndConstructionData.end, point) / constants.METER_SIZE;
 			if (wallEndConstructionData && sizeWall > 0.3) {
 				sizeWall = mode === Mode.Partition ? constants.PARTITION_SIZE : constants.WALL_SIZE;
 				const wall = new Wall(
@@ -129,17 +133,14 @@ export const handleMouseUp = (
 				const updatedWalls = [...wallMetaData, wall];
 				setWallMetaData(updatedWalls);
 
-				if (continuousWallMode && !wallConstructionShouldEnd) {
+				const contiueCreatingWalls = continuousWallMode && !wallConstructionShouldEnd;
+				if (contiueCreatingWalls) {
 					setCursor('validation');
 					setAction(true);
 					startWallDrawing(wallEndConstructionData.end);
-				} else setAction(false);
-				// $('#boxinfo').html(
-				// 	"Wall added <span style='font-size:0.6em'>approx. " +
-				// 		(distanceBetween(point, wallEndConstructionData.end) / 60).toFixed(2) +
-				// 		' m</span>'
-				// );
-				if (wallConstructionShouldEnd) setAction(false);
+				} else {
+					setAction(false);
+				}
 				save();
 			} else {
 				setAction(false);

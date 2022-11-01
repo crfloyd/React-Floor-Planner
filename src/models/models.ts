@@ -128,6 +128,7 @@ export interface WallMetaData {
 	getJunctions(allWalls: WallMetaData[]): WallJunction[];
 	getObjects(objectMeta: ObjectMetaData[]): ObjectMetaData[];
 	makeVisible(): void;
+	makeInvisible(): void;
 }
 
 export interface NodeMoveData {

@@ -250,6 +250,12 @@ export class Wall implements WallMetaData {
 		this.backUp = false;
 	};
 
+	makeInvisible = () => {
+		this.type = 'separate';
+		this.backUp = this.thick;
+		this.thick = 0.07;
+	};
+
 	getEquation = () => {
 		return createEquation(this.start.x, this.start.y, this.end.x, this.end.y);
 	};
