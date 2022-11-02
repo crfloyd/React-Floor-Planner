@@ -103,7 +103,8 @@ function App() {
 
 	const { save, init, undo, redo, historyIndex } = useHistory();
 
-	const { viewbox, scaleValue, handleCameraChange } = useCameraTools(canvasDimensions);
+	const { viewbox, scaleValue, zoomIn, zoomOut, dragCamera, moveCamera, resetCamera } =
+		useCameraTools(canvasDimensions);
 	const [planToRecover, setPlanToRecover] = useState(false);
 	const [deviceBeingMoved, setDeviceBeingMoved] = useState<DeviceMetaData>();
 
@@ -158,21 +159,11 @@ function App() {
 		setSelectedRoomData({ ...selectedRoomData, background: val });
 		const backgroundFill = 'url(#' + val + ')';
 		setSelectedRoomColor(backgroundFill);
-		// console.log('setting color to', backgroundFill);
-		// const svg = canvasState.binder as SVGElement;
-		// svg.setAttribute('fill', backgroundFill);
-		// svg.back
-		// canvasState.binder.background = canvasState.binder.attr({
-		// 	fill: "url(#" + val + ")",
-		// });
 	};
 
 	const onApplySurfaceClicked = () => {
 		setShowRoomTools(false);
 		setShowMainPanel(true);
-
-		// canvasState.binder.remove();
-		// canvasState.setBinder(null);
 
 		const roomMetaCopy = [...roomMetaData];
 		const id = selectedRoomData.roomIndex;
@@ -234,16 +225,6 @@ function App() {
 		setShowDoorList(false);
 		setCursor('move');
 		setBoxInfoText('Add an object');
-		// applyMode(Mode.Object, type);
-		// setDeviceBeingMoved({
-		// 	id: '123',
-		// 	name: type,
-		// 	height: 40,
-		// 	width: 40,
-		// 	image: MyImage,
-		// 	x: 0,
-		// 	y: 0
-		// });
 	};
 
 	const applyMode = (mode: Mode, option = '') => {
@@ -366,8 +347,6 @@ function App() {
 		applyMode(Mode.Select);
 
 		setObjectMetaData([...objectMetaData.filter((o) => o.id !== selectedOpening.id)]);
-		// canvasState.setBinder(null);
-		// updateMeasurementText(wallMetaData);
 	};
 
 	// Door/Window Tools
@@ -408,7 +387,6 @@ function App() {
 	const onWallModeClicked = () => {
 		setCursor('crosshair');
 		setBoxInfoText('Wall creation');
-		dispatch(setAction(false));
 		applyMode(Mode.Line);
 	};
 
@@ -487,13 +465,10 @@ function App() {
 				canvasState={canvasState}
 				applyMode={applyMode}
 				continuousWallMode={continuousWallMode}
-				handleCameraChange={handleCameraChange}
-				showObjectTools={updateObjectTools}
 				startModifyingOpening={showOpeningTools}
 				wallClicked={handleWallCliked}
 				updateRoomDisplayData={updateRoomDisplayData}
 				cursor={cursor}
-				canvasDimensions={canvasDimensions}
 				setCanvasDimensions={setCanvasDimenions}
 				viewbox={viewbox}
 				roomMetaData={roomMetaData}
@@ -510,6 +485,10 @@ function App() {
 				selectedRoomColor={selectedRoomColor}
 				deviceBeingMoved={deviceBeingMoved}
 				setDeviceBeingMoved={setDeviceBeingMoved}
+				zoomCameraIn={zoomIn}
+				zoomCameraOut={zoomOut}
+				dragCamera={dragCamera}
+				defaultRoomColor={'url(#gradientWhite)'}
 			/>
 
 			<div id="areaValue"></div>
@@ -1611,7 +1590,7 @@ function App() {
 							className="btn btn-xs btn-info zoom"
 							data-zoom="zoomtop"
 							style={{ boxShadow: '2px 2px 3px #ccc' }}
-							onClick={() => handleCameraChange('zoomtop', 200, 50)}>
+							onClick={() => moveCamera('up')}>
 							<i className="fa fa-arrow-up" aria-hidden="true"></i>
 						</button>
 					</p>
@@ -1620,21 +1599,21 @@ function App() {
 							className="btn btn-xs btn-info zoom"
 							data-zoom="zoomleft"
 							style={{ boxShadow: '2px 2px 3px #ccc' }}
-							onClick={() => handleCameraChange('zoomleft', 200, 50)}>
+							onClick={() => moveCamera('left')}>
 							<i className="fa fa-arrow-left" aria-hidden="true"></i>
 						</button>
 						<button
 							className="btn btn-xs btn-default zoom"
 							data-zoom="zoomreset"
 							style={{ boxShadow: '2px 2px 3px #ccc' }}
-							onClick={() => handleCameraChange('zoomreset', 200, 50)}>
+							onClick={() => resetCamera()}>
 							<i className="fa fa-bullseye" aria-hidden="true"></i>
 						</button>
 						<button
 							className="btn btn-xs btn-info zoom"
 							data-zoom="zoomright"
 							style={{ boxShadow: '2px 2px 3px #ccc' }}
-							onClick={() => handleCameraChange('zoomright', 200, 50)}>
+							onClick={() => moveCamera('right')}>
 							<i className="fa fa-arrow-right" aria-hidden="true"></i>
 						</button>
 					</p>
@@ -1643,7 +1622,7 @@ function App() {
 							className="btn btn-xs btn-info zoom"
 							data-zoom="zoombottom"
 							style={{ boxShadow: '2px 2px 3px #ccc' }}
-							onClick={() => handleCameraChange('zoombottom', 200, 50)}>
+							onClick={() => moveCamera('down')}>
 							<i className="fa fa-arrow-down" aria-hidden="true"></i>
 						</button>
 					</p>
@@ -1669,14 +1648,14 @@ function App() {
 						className="btn btn btn-default zoom"
 						data-zoom="zoomin"
 						style={{ boxShadow: '2px 2px 3px #ccc' }}
-						onClick={() => handleCameraChange('zoomin', 200, 50)}>
+						onClick={() => zoomIn()}>
 						<i className="fa fa-plus" aria-hidden="true"></i>
 					</button>
 					<button
 						className="btn btn btn-default zoom"
 						data-zoom="zoomout"
 						style={{ boxShadow: '2px 2px 3px #ccc' }}
-						onClick={() => handleCameraChange('zoomout', 200, 50)}>
+						onClick={() => zoomOut()}>
 						<i className="fa fa-minus" aria-hidden="true"></i>
 					</button>
 				</div>

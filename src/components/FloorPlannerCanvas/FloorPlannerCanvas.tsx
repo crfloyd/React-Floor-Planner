@@ -38,14 +38,12 @@ import {
 	polygonize,
 	refreshWalls,
 	renderRooms
-	// setInWallMeasurementText
 } from '../../utils/svgTools';
 import {
 	calculateSnap,
 	computeLimit,
 	getWallsOnPoint,
-	perpendicularEquation,
-	snapPoint
+	perpendicularEquation
 } from '../../utils/utils';
 import { GradientData } from './GradientData';
 import LinearGradient from './LinearGradient';
@@ -60,20 +58,17 @@ interface Props {
 	applyMode: (mode: Mode, option: string) => void;
 	updateRoomDisplayData: (roomData: RoomDisplayData) => void;
 	onMouseMove: () => void;
-	showObjectTools: () => void;
 	startModifyingOpening: (object: ObjectMetaData) => void;
 	wallClicked: (wall: WallMetaData) => void;
-	handleCameraChange: (lens: string, xmove: number, xview: number) => void;
 	cursor: CursorType;
 	setCanvasDimensions: (d: { width: number; height: number }) => void;
-	canvasDimensions: { width: number; height: number };
 	viewbox: ViewboxData;
 	roomPolygonData: RoomPolygonData;
 	setRoomPolygonData: (r: RoomPolygonData) => void;
 	roomMetaData: RoomMetaData[];
 	setRoomMetaData: (r: RoomMetaData[]) => void;
 	objectMetaData: ObjectMetaData[];
-	setObjectMetaData: (o: ObjectMetaData[]) => void;
+	setObjectMetaData: React.Dispatch<React.SetStateAction<ObjectMetaData[]>>;
 	wallMetaData: WallMetaData[];
 	setWallMetaData: (w: WallMetaData[]) => void;
 	openingWidth: number | null;
@@ -81,6 +76,11 @@ interface Props {
 	selectedRoomColor: string | undefined;
 	deviceBeingMoved: DeviceMetaData | undefined;
 	setDeviceBeingMoved: React.Dispatch<React.SetStateAction<DeviceMetaData | undefined>>;
+	zoomCameraIn: () => void;
+	zoomCameraOut: () => void;
+	dragCamera: (distX: number, distY: number) => void;
+	defaultRoomColor: string;
+	textColor?: string | undefined;
 }
 
 interface RoomPathData {
@@ -94,10 +94,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	canvasState,
 	continuousWallMode,
 	updateRoomDisplayData,
-	showObjectTools,
 	startModifyingOpening,
 	wallClicked,
-	handleCameraChange,
 	onMouseMove,
 	setCanvasDimensions,
 	viewbox,
@@ -113,7 +111,12 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	openingIdBeingEdited,
 	selectedRoomColor,
 	deviceBeingMoved,
-	setDeviceBeingMoved
+	setDeviceBeingMoved,
+	zoomCameraIn,
+	zoomCameraOut,
+	dragCamera,
+	defaultRoomColor,
+	textColor
 }) => {
 	const dispatch = useDispatch();
 	const cursor = useSelector((state: RootState) => state.floorPlan.cursor);
@@ -181,9 +184,9 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 
 	useEffect(() => {
 		if (objectBeingMoved) {
-			setObjectMetaData([...objectMetaData]);
+			setObjectMetaData((prev) => [...prev]);
 		}
-	}, [objectBeingMoved]);
+	}, [objectBeingMoved, setObjectMetaData]);
 
 	useEffect(() => {
 		if (deviceBeingMoved) {
@@ -230,22 +233,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 
 	const { save } = useHistory();
 
-	// useEffect(() => {
-	// 	console.log("Binder updated: ", canvasState.binder);
-	// }, [canvasState.binder]);
-
-	// useEffect(() => {
-	// 	console.log("wallUnderCursor updated: ", wallUnderCursor);
-	// }, [wallUnderCursor]);
-
-	// useEffect(() => {
-	// 	// let selectedWallData = {
-	// 	// 	wall: wallUnderCursor,
-	// 	// 	before: wallUnderCursor.start
-	// 	// };
-	// 	if (!wallUnderCursor) return;
-	// }, [selectedWallData]);
-
 	useEffect(() => {
 		switch (cursor) {
 			case 'grab':
@@ -268,10 +255,15 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	}, [cursor]);
 
 	useEffect(() => {
-		if (mode !== Mode.EditRoom) {
+		if (mode === Mode.Line) {
+			dispatch(setAction(false));
+		} else if (mode == Mode.Room) {
+			console.log('ROOM MODE');
+			dispatch(setCursor('default'));
+		} else if (mode !== Mode.EditRoom) {
 			setSelectedRoomRenderData(undefined);
 		}
-	}, [mode]);
+	}, [dispatch, mode]);
 
 	useEffect(() => {
 		// console.log("walls updated", wallMetaData.length);
@@ -372,7 +364,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			selected: false,
 			selectedColor: 'none'
 		});
-	}, [roomPolygonData.polygons, roomUnderCursor, mode]);
+	}, [roomPolygonData.polygons, roomUnderCursor, mode, deviceBeingMoved]);
 
 	useEffect(() => {
 		if (selectedRoomColor) {
@@ -402,9 +394,9 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	const onMouseWheel = (deltaY: number) => {
 		// e.preventDefault();
 		if (deltaY > 0) {
-			handleCameraChange('zoomin', 100, 0);
+			zoomCameraIn();
 		} else {
-			handleCameraChange('zoomout', 100, 0);
+			zoomCameraOut();
 		}
 	};
 
@@ -479,6 +471,16 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		deviceUnderCursor,
 		followerData: canvasState.followerData
 	});
+
+	useEffect(() => {
+		if (dragging) {
+			setCursor('move');
+			const distX = snapPosition.xMouse - point.x;
+			const distY = snapPosition.yMouse - point.y;
+			dragCamera(distX, distY);
+			return;
+		}
+	}, [dragCamera, dragging, point, snapPosition]);
 
 	return (
 		<svg
@@ -569,12 +571,10 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 
 				const snap = calculateSnap(e, viewbox);
 				setSnapPosition(snap);
-
 				handleMouseMove(
 					mode,
 					action,
 					snap,
-					point,
 					canvasState,
 					viewbox,
 					wallMetaData,
@@ -583,7 +583,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					roomMetaData,
 					objectMetaData,
 					setObjectMetaData,
-					handleCameraChange,
 					updateCursor,
 					setWallUnderCursor,
 					setObjectUnderCursor,
@@ -596,7 +595,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					setInWallMeasurementText,
 					objectEquationData,
 					wallEquationData,
-					dragging,
 					deviceBeingMoved,
 					deviceUnderCursor
 				);
@@ -630,7 +628,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 						<path
 							key={i}
 							d={data.path}
-							fill={`url(#${data.room.color})`}
+							fill={data.room.color ? `url(#${data.room.color})` : defaultRoomColor}
 							fillOpacity="1"
 							stroke="none"
 							fillRule="evenodd"
@@ -852,7 +850,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 										fill:
 											data.room.color == 'gradientBlack' || data.room.color == 'gradientBlue'
 												? 'white'
-												: '#343938'
+												: textColor ?? '#343938'
 									}}
 									textAnchor="middle">
 									{data.room.name}
@@ -864,7 +862,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 										fill:
 											data.room.color == 'gradientBlack' || data.room.color == 'gradientBlue'
 												? 'white'
-												: '#343938'
+												: textColor ?? '#343938'
 									}}
 									fontSize="12.5px"
 									fontWeight={data.room.surface ? 'normal' : 'bold'}
@@ -889,7 +887,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 							textAnchor="middle"
 							stroke="#fff"
 							strokeWidth="0.2px"
-							fill="#555"
+							fill={textColor ?? '#555'}
 							fontSize={content < 1 ? '0.73em' : '0.9em'}>
 							{content.toFixed(2)}
 						</text>

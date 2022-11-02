@@ -1648,111 +1648,111 @@ export const nearVertice = (
 	return bestDistance < range ? bestVertice : null;
 };
 
-export const applyPolygonDataToRooms = (
-	roomPolygonData: RoomPolygonData,
-	roomMeta: RoomMetaData[],
-	setRoomMeta: (r: RoomMetaData[]) => void
-) => {
-	if (roomPolygonData.polygons.length == 0) {
-		roomMeta = [];
-	}
-	roomPolygonData.polygons.forEach((roomPoly) => {
-		let foundRoom = false;
-		roomMeta.forEach((room) => {
-			let countCoords = roomPoly.coords.length;
-			const diffCoords = getNumObjectArrayDifferences(roomPoly.coords, room.coords);
-			const differences = getArrayDifferences(roomPoly.way, room.way);
-			if (roomPoly.way.length == room.way.length) {
-				if (differences.length == 0 || diffCoords == 0) {
-					countCoords = 0;
-				}
-			} else if (roomPoly.way.length == room.way.length + 1) {
-				if (differences.length == 1 || diffCoords == 2) {
-					countCoords = 0;
-				}
-			} else if (roomPoly.way.length == room.way.length - 1) {
-				if (differences.length == 1) {
-					countCoords = 0;
-				}
-			}
+// export const applyPolygonDataToRooms = (
+// 	roomPolygonData: RoomPolygonData,
+// 	roomMeta: RoomMetaData[],
+// 	setRoomMeta: (r: RoomMetaData[]) => void
+// ) => {
+// 	if (roomPolygonData.polygons.length == 0) {
+// 		roomMeta = [];
+// 	}
+// 	roomPolygonData.polygons.forEach((roomPoly) => {
+// 		let foundRoom = false;
+// 		roomMeta.forEach((room) => {
+// 			let countCoords = roomPoly.coords.length;
+// 			const diffCoords = getNumObjectArrayDifferences(roomPoly.coords, room.coords);
+// 			const differences = getArrayDifferences(roomPoly.way, room.way);
+// 			if (roomPoly.way.length == room.way.length) {
+// 				if (differences.length == 0 || diffCoords == 0) {
+// 					countCoords = 0;
+// 				}
+// 			} else if (roomPoly.way.length == room.way.length + 1) {
+// 				if (differences.length == 1 || diffCoords == 2) {
+// 					countCoords = 0;
+// 				}
+// 			} else if (roomPoly.way.length == room.way.length - 1) {
+// 				if (differences.length == 1) {
+// 					countCoords = 0;
+// 				}
+// 			}
 
-			if (countCoords == 0) {
-				foundRoom = true;
-				roomMeta = [
-					...roomMeta.filter((r) => r !== room),
-					{
-						...room,
-						area: roomPoly.area,
-						inside: roomPoly.inside ?? [],
-						coords: roomPoly.coords,
-						coordsOutside: roomPoly.coordsOutside,
-						way: roomPoly.way,
-						coordsInside: roomPoly.coordsInside ?? []
-					}
-				];
-				return;
-			}
-		});
+// 			if (countCoords == 0) {
+// 				foundRoom = true;
+// 				roomMeta = [
+// 					...roomMeta.filter((r) => r !== room),
+// 					{
+// 						...room,
+// 						area: roomPoly.area,
+// 						inside: roomPoly.inside ?? [],
+// 						coords: roomPoly.coords,
+// 						coordsOutside: roomPoly.coordsOutside,
+// 						way: roomPoly.way,
+// 						coordsInside: roomPoly.coordsInside ?? []
+// 					}
+// 				];
+// 				return;
+// 			}
+// 		});
 
-		if (!foundRoom) {
-			roomMeta = [
-				...roomMeta,
-				{
-					coords: roomPoly.coords,
-					coordsOutside: roomPoly.coordsOutside,
-					coordsInside: roomPoly.coordsInside ?? [],
-					inside: roomPoly.inside ?? [],
-					way: roomPoly.way,
-					area: roomPoly.area,
-					surface: '',
-					name: '',
-					color: 'gradientWhite',
-					showSurface: true,
-					action: 'add'
-				}
-			];
-		}
-	});
+// 		if (!foundRoom) {
+// 			roomMeta = [
+// 				...roomMeta,
+// 				{
+// 					coords: roomPoly.coords,
+// 					coordsOutside: roomPoly.coordsOutside,
+// 					coordsInside: roomPoly.coordsInside ?? [],
+// 					inside: roomPoly.inside ?? [],
+// 					way: roomPoly.way,
+// 					area: roomPoly.area,
+// 					surface: '',
+// 					name: '',
+// 					color: 'gradientWhite',
+// 					showSurface: true,
+// 					action: 'add'
+// 				}
+// 			];
+// 		}
+// 	});
 
-	const toSplice: number[] = [];
-	roomMeta.forEach((room, idx) => {
-		let found = true;
-		roomPolygonData.polygons.forEach((roomPoly) => {
-			let countRoom = room.coords.length;
-			const numDifferentCoords = getNumObjectArrayDifferences(roomPoly.coords, room.coords);
-			const numDifferences = getArrayDifferences(roomPoly.way, room.way).length;
-			if (roomPoly.way.length == room.way.length) {
-				if (numDifferences == 0 || numDifferentCoords == 0) {
-					countRoom = 0;
-				}
-			} else if (roomPoly.way.length == room.way.length + 1) {
-				if (numDifferences == 1 || numDifferentCoords == 2) {
-					countRoom = 0;
-				}
-			} else if (roomPoly.way.length == room.way.length - 1) {
-				if (numDifferences == 1) {
-					countRoom = 0;
-				}
-			}
+// 	const toSplice: number[] = [];
+// 	roomMeta.forEach((room, idx) => {
+// 		let found = true;
+// 		roomPolygonData.polygons.forEach((roomPoly) => {
+// 			let countRoom = room.coords.length;
+// 			const numDifferentCoords = getNumObjectArrayDifferences(roomPoly.coords, room.coords);
+// 			const numDifferences = getArrayDifferences(roomPoly.way, room.way).length;
+// 			if (roomPoly.way.length == room.way.length) {
+// 				if (numDifferences == 0 || numDifferentCoords == 0) {
+// 					countRoom = 0;
+// 				}
+// 			} else if (roomPoly.way.length == room.way.length + 1) {
+// 				if (numDifferences == 1 || numDifferentCoords == 2) {
+// 					countRoom = 0;
+// 				}
+// 			} else if (roomPoly.way.length == room.way.length - 1) {
+// 				if (numDifferences == 1) {
+// 					countRoom = 0;
+// 				}
+// 			}
 
-			if (countRoom == 0) {
-				found = true;
-				return;
-			} else found = false;
-		});
-		if (!found) toSplice.push(idx);
-	});
+// 			if (countRoom == 0) {
+// 				found = true;
+// 				return;
+// 			} else found = false;
+// 		});
+// 		if (!found) toSplice.push(idx);
+// 	});
 
-	toSplice.sort(function (a, b) {
-		return b - a;
-	});
+// 	toSplice.sort(function (a, b) {
+// 		return b - a;
+// 	});
 
-	for (let ss = 0; ss < toSplice.length; ss++) {
-		roomMeta.splice(toSplice[ss], 1);
-	}
-	setRoomMeta(roomMeta);
-	return roomMeta;
-};
+// 	for (let ss = 0; ss < toSplice.length; ss++) {
+// 		roomMeta.splice(toSplice[ss], 1);
+// 	}
+// 	setRoomMeta(roomMeta);
+// 	return roomMeta;
+// };
 
 export const renderRooms = (
 	roomPolygonData: RoomPolygonData,
@@ -1818,7 +1818,7 @@ export const renderRooms = (
 					area: roomPoly.area,
 					surface: '',
 					name: '',
-					color: 'gradientWhite',
+					color: '',
 					showSurface: true,
 					action: 'add'
 				}

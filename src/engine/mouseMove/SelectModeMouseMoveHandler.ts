@@ -16,17 +16,14 @@ export const handleMouseMoveSelectMode = (
 	snap: SnapData,
 	viewbox: ViewboxData,
 	setCursor: (crsr: CursorType) => void,
-	handleCameraChange: (lens: string, xmove: number, xview: number) => void,
 	wallMeta: WallMetaData[],
 	objectMeta: ObjectMetaData[],
 	setWallUnderCursor: (wall: WallMetaData | null) => void,
 	setObjectUnderCursor: (o: ObjectMetaData | undefined) => void,
-	point: Point2D,
 	objectBeingMoved: ObjectMetaData | null,
 	setObjectBeingMoved: (o: ObjectMetaData | null) => void,
 	setNodeUnderCursor: (p: Point2D | undefined) => void,
 	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void,
-	dragging: boolean,
 	deviceUnderCursor: DeviceMetaData | undefined
 ) => {
 	setWallUnderCursor(null);
@@ -34,14 +31,6 @@ export const handleMouseMoveSelectMode = (
 
 	if (deviceUnderCursor) {
 		setCursor('move');
-		return;
-	}
-
-	if (dragging) {
-		setCursor('move');
-		const distX = (snap.xMouse - point.x) * viewbox.zoomFactor;
-		const distY = (snap.yMouse - point.y) * viewbox.zoomFactor;
-		handleCameraChange('zoomdrag', distX, distY);
 		return;
 	}
 
