@@ -1,14 +1,15 @@
 import './App.scss';
 
 import { useEffect, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { constants } from '../constants';
-import MyImage from './assets/react.svg';
 import DoorWindowTools from './components/DoorWindowTools';
 import FloorPlannerCanvas from './components/FloorPlannerCanvas/FloorPlannerCanvas';
 import ObjectTools from './components/ObjectTools';
 import WallTools from './components/WallTools';
 import { CanvasState } from './engine';
+import { useWalls } from './hooks';
 import { useCameraTools } from './hooks/useCameraTools';
 import { useHistory } from './hooks/useHistory';
 import { useKeybindings } from './hooks/useKeybindings';
@@ -18,19 +19,21 @@ import {
 	LayerSettings,
 	Mode,
 	ObjectMetaData,
-	Point2D,
 	RoomDisplayData,
 	RoomMetaData,
 	RoomPolygonData,
 	WallMetaData
 } from './models/models';
-import { Wall } from './models/Wall';
+import { setAction, setMode } from './store/floorPlanSlice';
+import { RootState } from './store/store';
 import { renderRooms } from './utils/svgTools';
-import { distanceBetween, findById, intersectionOfEquations } from './utils/utils';
 
 const canvasState = new CanvasState();
 
 function App() {
+	const dispatch = useDispatch();
+	const action = useSelector((state: RootState) => state.floorPlan.action);
+	const mode = useSelector((state: RootState) => state.floorPlan.mode);
 	const [cursor, setCursor] = useState<CursorType>('default');
 	const [layerSettings, setLayerSettings] = useState<LayerSettings>({
 		showSurfaces: true,
@@ -62,7 +65,6 @@ function App() {
 	const [enableRedo, setEnableRedo] = useState(false);
 
 	const [showMainPanel, setShowMainPanel] = useState(true);
-	const [wallToolsSeparation, setWallToolsSeparation] = useState(false);
 	const [showConfigureDoorWindowPanel, setShowConfigureDoorWindowPanel] = useState(false);
 	const [showObjectTools, setShowObjectTools] = useState(false);
 	const [showRoomTools, setShowRoomTools] = useState(false);
@@ -93,7 +95,6 @@ function App() {
 		vertex: []
 	});
 	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
-	const [wallMetaData, setWallMetaData] = useState<WallMetaData[]>([]);
 	const [objectMetaData, setObjectMetaData] = useState<ObjectMetaData[]>([]);
 	const [openingWidth, setOpeningWidth] = useState<number | null>(null);
 	const [openingIdBeingEdited, setOpeningIdBeingEdited] = useState<string | undefined>();
@@ -102,9 +103,20 @@ function App() {
 
 	const { save, init, undo, redo, historyIndex } = useHistory();
 
-	const { viewbox, scaleValue, handleCameraChange } = useCameraTools(canvasDimensions);
+	const { viewbox, scaleValue, zoomIn, zoomOut, dragCamera, moveCamera, resetCamera } =
+		useCameraTools(canvasDimensions);
 	const [planToRecover, setPlanToRecover] = useState(false);
 	const [deviceBeingMoved, setDeviceBeingMoved] = useState<DeviceMetaData>();
+
+	const {
+		wallMetaData,
+		setWallMetaData,
+		splitWall,
+		deleteWall,
+		updateWallThickness,
+		makeWallInvisible,
+		makeWallVisible
+	} = useWalls();
 
 	useKeybindings({
 		onSelectMode: () => {
@@ -147,21 +159,11 @@ function App() {
 		setSelectedRoomData({ ...selectedRoomData, background: val });
 		const backgroundFill = 'url(#' + val + ')';
 		setSelectedRoomColor(backgroundFill);
-		// console.log('setting color to', backgroundFill);
-		// const svg = canvasState.binder as SVGElement;
-		// svg.setAttribute('fill', backgroundFill);
-		// svg.back
-		// canvasState.binder.background = canvasState.binder.attr({
-		// 	fill: "url(#" + val + ")",
-		// });
 	};
 
 	const onApplySurfaceClicked = () => {
 		setShowRoomTools(false);
 		setShowMainPanel(true);
-
-		// canvasState.binder.remove();
-		// canvasState.setBinder(null);
 
 		const roomMetaCopy = [...roomMetaData];
 		const id = selectedRoomData.roomIndex;
@@ -223,65 +225,14 @@ function App() {
 		setShowDoorList(false);
 		setCursor('move');
 		setBoxInfoText('Add an object');
-		// applyMode(Mode.Object, type);
-		setDeviceBeingMoved({
-			id: '123',
-			name: type,
-			height: 40,
-			width: 40,
-			image: MyImage,
-			x: 0,
-			y: 0
-		});
 	};
 
-	const applyMode = (mode: string, option = '') => {
+	const applyMode = (mode: Mode, option = '') => {
 		save(wallMetaData, objectMetaData, roomMetaData);
 		setShowSubMenu(false);
 
-		// Reset buttons
-		// $('#rect_mode').removeClass('btn-success');
-		// $('#rect_mode').addClass('btn-default');
-		// $('#select_mode').removeClass('btn-success');
-		// $('#select_mode').addClass('btn-default');
-		// $('#line_mode').removeClass('btn-success');
-		// $('#line_mode').addClass('btn-default');
-		// $('#partition_mode').removeClass('btn-success');
-		// $('#partition_mode').addClass('btn-default');
-		// $('#door_mode').removeClass('btn-success');
-		// $('#door_mode').addClass('btn-default');
-		// $('#node_mode').removeClass('btn-success');
-		// $('#node_mode').addClass('btn-default');
-		// $('#text_mode').removeClass('btn-success');
-		// $('#text_mode').addClass('btn-default');
-		// $('#room_mode').removeClass('btn-success');
-		// $('#room_mode').addClass('btn-default');
-		// $('#distance_mode').removeClass('btn-success');
-		// $('#distance_mode').addClass('btn-default');
-		// $('#object_mode').removeClass('btn-success');
-		// $('#object_mode').addClass('btn-default');
-		// $('#stair_mode').removeClass('btn-success');
-		// $('#stair_mode').addClass('btn-default');
-
-		canvasState.setMode(mode);
+		dispatch(setMode(mode));
 		canvasState.setModeOption(option);
-	};
-
-	const createInvisibleWall = (wall: WallMetaData) => {
-		const wallObjects = wall.getObjects(objectMetaData);
-		if (wallObjects.length != 0) return false;
-		wall.type = 'separate';
-		wall.backUp = wall.thick;
-		wall.thick = 0.07;
-		setWallMetaData([...wallMetaData]);
-		save(wallMetaData, objectMetaData, roomMetaData);
-		return true;
-	};
-
-	const makeWallVisible = (wall: WallMetaData) => {
-		wall.makeVisible();
-		setWallMetaData([...wallMetaData]);
-		save(wallMetaData, objectMetaData, roomMetaData);
 	};
 
 	const initHistory = (type: string) => {
@@ -306,21 +257,10 @@ function App() {
 		if (!selectedWall) {
 			throw new Error('No selectedWall was set!');
 		}
-		const wallMeta = findById(selectedWall.id, wallMetaData);
-		if (!wallMeta) return;
-		wallMeta.thick = value;
-		wallMeta.type = 'normal';
-		setWallMetaData([...wallMetaData]);
-		const objWall = selectedWall.getObjects(objectMetaData);
-		const objMetaCopy = [...objectMetaData];
-		objMetaCopy.forEach((o) => {
-			if (objWall.includes(o)) {
-				o.thick = value;
-				o.update();
-			}
-		});
-		setObjectMetaData(objMetaCopy);
-		// updateMeasurementText(wallMetaData);
+		const objectsUpdated = updateWallThickness(selectedWall, value, objectMetaData);
+		if (objectsUpdated) {
+			setObjectMetaData([...objectMetaData]);
+		}
 	};
 
 	const onWallSplitClicked = () => {
@@ -328,16 +268,19 @@ function App() {
 			throw new Error('No selectedWall was set!');
 		}
 		splitWall(selectedWall);
-		canvasState.setMode(Mode.Select);
+		save(wallMetaData, objectMetaData, roomMetaData);
+		dispatch(setMode(Mode.Select));
 	};
 
 	const onConvertWallToSeparationClicked = () => {
 		if (!selectedWall) {
 			throw new Error('No selectedWall was set!');
 		}
-		if (!createInvisibleWall(selectedWall)) {
+		if (!makeWallInvisible(selectedWall, objectMetaData)) {
 			setBoxInfoText('Walls containing doors or windows cannot be separated!');
+			return;
 		}
+		save(wallMetaData, objectMetaData, roomMetaData);
 	};
 
 	const onConvertSeparationToWallClicked = () => {
@@ -345,32 +288,17 @@ function App() {
 			throw new Error('No selectedWall was set!');
 		}
 		makeWallVisible(selectedWall);
-		canvasState.setMode(Mode.Select);
+		dispatch(setMode(Mode.Select));
 	};
 
 	const onWallTrashClicked = () => {
 		if (!selectedWall) {
 			throw new Error('No selectedWall was set!');
 		}
-		const wall = selectedWall;
-		const wallMetaCopy = [...wallMetaData.filter((w) => w.id !== wall.id)];
-		wallMetaCopy.forEach((wall) => {
-			if (wall.child === wall.id) wall.child = null;
-			if (wall.parent === wall.id) {
-				wall.parent = null;
-			}
-		});
-		for (const k in wallMetaCopy) {
-			if (wallMetaCopy[k].child === wall.id) wallMetaCopy[k].child = null;
-			if (wallMetaCopy[k].parent === wall.id) {
-				wallMetaCopy[k].parent = null;
-			}
-		}
-		setWallMetaData(wallMetaCopy);
-
+		deleteWall(selectedWall);
 		setSelectedWall(null);
 		// updateMeasurementText(wallMetaData);
-		canvasState.setMode(Mode.Select);
+		dispatch(setMode(Mode.Select));
 		setShowMainPanel(true);
 	};
 
@@ -419,8 +347,6 @@ function App() {
 		applyMode(Mode.Select);
 
 		setObjectMetaData([...objectMetaData.filter((o) => o.id !== selectedOpening.id)]);
-		// canvasState.setBinder(null);
-		// updateMeasurementText(wallMetaData);
 	};
 
 	// Door/Window Tools
@@ -461,54 +387,7 @@ function App() {
 	const onWallModeClicked = () => {
 		setCursor('crosshair');
 		setBoxInfoText('Wall creation');
-		canvasState.setAction(false);
 		applyMode(Mode.Line);
-	};
-
-	const splitWall = (wallToSplit: WallMetaData) => {
-		const eqWall = wallToSplit.getEquation();
-		const wallToSplitLength = distanceBetween(wallToSplit.start, wallToSplit.end);
-		const newWalls: { distance: number; coords: Point2D }[] = [];
-
-		wallMetaData.forEach((wall) => {
-			const eq = wall.getEquation();
-			const inter = intersectionOfEquations(eqWall, eq);
-			if (inter && wallToSplit.pointInsideWall(inter, true) && wall.pointInsideWall(inter, true)) {
-				const distance = distanceBetween(wallToSplit.start, inter);
-				if (distance > 5 && distance < wallToSplitLength) {
-					newWalls.push({ distance: distance, coords: inter });
-				}
-			}
-		});
-
-		newWalls.sort((a: { distance: number }, b: { distance: number }) => {
-			return a.distance - b.distance;
-		});
-
-		let initCoords = wallToSplit.start;
-		const initThick = wallToSplit.thick;
-
-		// Clear the wall to split from its parents and children
-		const otherWalls = wallMetaData.filter((w) => w.id !== wallToSplit.id);
-		otherWalls.forEach((w) => {
-			w.child = w.child === wallToSplit.id ? null : w.child;
-			w.parent = w.parent === wallToSplit.id ? null : w.parent;
-		});
-
-		// Add each new wall created from the split
-		newWalls.forEach((newWall) => {
-			const wall = new Wall(initCoords, newWall.coords, 'normal', initThick);
-			otherWalls.push(wall);
-			wall.child = otherWalls[otherWalls.length - 1].id;
-			initCoords = newWall.coords;
-		});
-
-		// Add the last wall
-		const wall = new Wall(initCoords, wallToSplit.end, 'normal', initThick);
-		otherWalls.push(wall);
-		setWallMetaData(otherWalls);
-		save(wallMetaData, objectMetaData, roomMetaData);
-		return true;
 	};
 
 	const enterSelectMode = () => {
@@ -519,11 +398,8 @@ function App() {
 	};
 
 	const cancelWallCreation = () => {
-		if (
-			(canvasState.mode == Mode.Line || canvasState.mode == Mode.Partition) &&
-			canvasState.action
-		) {
-			canvasState.setAction(false);
+		if ((mode == Mode.Line || mode == Mode.Partition) && action) {
+			dispatch(setAction(false));
 		}
 	};
 
@@ -574,8 +450,7 @@ function App() {
 	};
 
 	const handleWallCliked = (wall: WallMetaData) => {
-		const isSeparation = wall.type == 'separation';
-		setWallToolsSeparation(isSeparation);
+		const isSeparation = wall.type == 'separate';
 		setBoxInfoText(`Modify the ${isSeparation ? 'separation' : 'wall'}`);
 		setShowMainPanel(false);
 		setSelectedWall(wall);
@@ -590,14 +465,10 @@ function App() {
 				canvasState={canvasState}
 				applyMode={applyMode}
 				continuousWallMode={continuousWallMode}
-				handleCameraChange={handleCameraChange}
-				showObjectTools={updateObjectTools}
 				startModifyingOpening={showOpeningTools}
 				wallClicked={handleWallCliked}
 				updateRoomDisplayData={updateRoomDisplayData}
 				cursor={cursor}
-				setCursor={setCursor}
-				canvasDimensions={canvasDimensions}
 				setCanvasDimensions={setCanvasDimenions}
 				viewbox={viewbox}
 				roomMetaData={roomMetaData}
@@ -614,6 +485,10 @@ function App() {
 				selectedRoomColor={selectedRoomColor}
 				deviceBeingMoved={deviceBeingMoved}
 				setDeviceBeingMoved={setDeviceBeingMoved}
+				zoomCameraIn={zoomIn}
+				zoomCameraOut={zoomOut}
+				dragCamera={dragCamera}
+				defaultRoomColor={'url(#gradientWhite)'}
 			/>
 
 			<div id="areaValue"></div>
@@ -1715,7 +1590,7 @@ function App() {
 							className="btn btn-xs btn-info zoom"
 							data-zoom="zoomtop"
 							style={{ boxShadow: '2px 2px 3px #ccc' }}
-							onClick={() => handleCameraChange('zoomtop', 200, 50)}>
+							onClick={() => moveCamera('up')}>
 							<i className="fa fa-arrow-up" aria-hidden="true"></i>
 						</button>
 					</p>
@@ -1724,21 +1599,21 @@ function App() {
 							className="btn btn-xs btn-info zoom"
 							data-zoom="zoomleft"
 							style={{ boxShadow: '2px 2px 3px #ccc' }}
-							onClick={() => handleCameraChange('zoomleft', 200, 50)}>
+							onClick={() => moveCamera('left')}>
 							<i className="fa fa-arrow-left" aria-hidden="true"></i>
 						</button>
 						<button
 							className="btn btn-xs btn-default zoom"
 							data-zoom="zoomreset"
 							style={{ boxShadow: '2px 2px 3px #ccc' }}
-							onClick={() => handleCameraChange('zoomreset', 200, 50)}>
+							onClick={() => resetCamera()}>
 							<i className="fa fa-bullseye" aria-hidden="true"></i>
 						</button>
 						<button
 							className="btn btn-xs btn-info zoom"
 							data-zoom="zoomright"
 							style={{ boxShadow: '2px 2px 3px #ccc' }}
-							onClick={() => handleCameraChange('zoomright', 200, 50)}>
+							onClick={() => moveCamera('right')}>
 							<i className="fa fa-arrow-right" aria-hidden="true"></i>
 						</button>
 					</p>
@@ -1747,7 +1622,7 @@ function App() {
 							className="btn btn-xs btn-info zoom"
 							data-zoom="zoombottom"
 							style={{ boxShadow: '2px 2px 3px #ccc' }}
-							onClick={() => handleCameraChange('zoombottom', 200, 50)}>
+							onClick={() => moveCamera('down')}>
 							<i className="fa fa-arrow-down" aria-hidden="true"></i>
 						</button>
 					</p>
@@ -1773,14 +1648,14 @@ function App() {
 						className="btn btn btn-default zoom"
 						data-zoom="zoomin"
 						style={{ boxShadow: '2px 2px 3px #ccc' }}
-						onClick={() => handleCameraChange('zoomin', 200, 50)}>
+						onClick={() => zoomIn()}>
 						<i className="fa fa-plus" aria-hidden="true"></i>
 					</button>
 					<button
 						className="btn btn btn-default zoom"
 						data-zoom="zoomout"
 						style={{ boxShadow: '2px 2px 3px #ccc' }}
-						onClick={() => handleCameraChange('zoomout', 200, 50)}>
+						onClick={() => zoomOut()}>
 						<i className="fa fa-minus" aria-hidden="true"></i>
 					</button>
 				</div>

@@ -20,8 +20,9 @@ import { handleMouseMoveRoomMode } from './RoomModeMoveHandler';
 import { handleMouseMoveSelectMode } from './SelectModeMouseMoveHandler';
 
 export const handleMouseMove = (
+	mode: Mode,
+	action: boolean,
 	snap: SnapData,
-	point: Point2D,
 	canvasState: CanvasState,
 	viewbox: ViewboxData,
 	wallMetaData: WallMetaData[],
@@ -30,7 +31,6 @@ export const handleMouseMove = (
 	roomMetaData: RoomMetaData[],
 	objectMetaData: ObjectMetaData[],
 	setObjectMetaData: (o: ObjectMetaData[]) => void,
-	handleCameraChange: (lens: string, xmove: number, xview: number) => void,
 	setCursor: (crsr: CursorType) => void,
 	setWallUnderCursor: (wall: WallMetaData | null) => void,
 	setObjectUnderCursor: (o: ObjectMetaData | undefined) => void,
@@ -43,7 +43,6 @@ export const handleMouseMove = (
 	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void,
 	objectEquationData: ObjectEquationData[],
 	wallEquationData: WallEquationGroup,
-	dragging: boolean,
 	deviceBeingMoved: DeviceMetaData | undefined,
 	deviceUnderCursor: DeviceMetaData | undefined
 ) => {
@@ -57,10 +56,10 @@ export const handleMouseMove = (
 			Mode.Line,
 			Mode.Partition,
 			Mode.Bind
-		].includes(canvasState.mode)
+		].includes(mode)
 	)
 		return;
-	switch (canvasState.mode) {
+	switch (mode) {
 		case Mode.Object: {
 			handleMouseMoveObjectMode(
 				snap,
@@ -91,17 +90,14 @@ export const handleMouseMove = (
 				snap,
 				viewbox,
 				setCursor,
-				handleCameraChange,
 				wallMetaData,
 				objectMetaData,
 				setWallUnderCursor,
 				setObjectUnderCursor,
-				point,
 				objectBeingMoved,
 				setObjectBeingMoved,
 				setNodeUnderCursor,
 				setInWallMeasurementText,
-				dragging,
 				deviceUnderCursor
 			);
 			break;
@@ -112,6 +108,7 @@ export const handleMouseMove = (
 		case Mode.Bind: {
 			handleMouseMoveBindMode(
 				snap,
+				action,
 				setCursor,
 				canvasState,
 				wallMetaData,

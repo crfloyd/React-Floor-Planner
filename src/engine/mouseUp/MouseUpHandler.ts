@@ -22,10 +22,12 @@ import { handleMouseUpBindMode } from './BindModeMouseUpHandler';
 
 export const handleMouseUp = (
 	snap: SnapData,
+	mode: Mode,
+	setMode: (m: Mode) => void,
+	setAction: (a: boolean) => void,
 	point: Point2D,
 	setPoint: (p: Point2D) => void,
 	canvasState: CanvasState,
-	resetMode: () => string,
 	save: () => void,
 	updateRoomDisplayData: (data: RoomDisplayData) => void,
 	continuousWallMode: boolean,
@@ -52,7 +54,7 @@ export const handleMouseUp = (
 	setDeviceBeingMoved: (d: DeviceMetaData | undefined) => void,
 	setDevices: React.Dispatch<React.SetStateAction<DeviceMetaData[]>>
 ) => {
-	const { setAction, mode, setMode, followerData } = canvasState;
+	const { followerData } = canvasState;
 	setCursor('default');
 
 	switch (mode) {
@@ -63,7 +65,7 @@ export const handleMouseUp = (
 					deviceBeingMoved
 				]);
 			}
-			resetMode();
+			setMode(Mode.Select);
 			save();
 			break;
 		}
@@ -72,7 +74,7 @@ export const handleMouseUp = (
 				setObjectMetaData([...objectMetaData, objectBeingMoved]);
 				setObjectBeingMoved(null);
 			}
-			resetMode();
+			setMode(Mode.Select);
 			save();
 			break;
 		}
@@ -98,7 +100,7 @@ export const handleMouseUp = (
 		}
 		case Mode.Opening: {
 			if (!objectBeingMoved) {
-				resetMode();
+				setMode(Mode.Select);
 				break;
 			}
 			const newObjectBeingMoved = getUpdatedObject(objectBeingMoved);
@@ -106,16 +108,20 @@ export const handleMouseUp = (
 			setObjectBeingMoved(null);
 			setObjectMetaData(updatedObjects);
 			// $('#boxinfo').html('Element added');
-			resetMode();
+			setMode(Mode.Select);
 			save();
 			break;
 		}
 		case Mode.Line:
 		case Mode.Partition: {
 			clearWallHelperState();
-			if (!wallEndConstructionData) return;
-			let sizeWall = distanceBetween(wallEndConstructionData.end, point);
-			sizeWall = sizeWall / constants.METER_SIZE;
+
+			if (!wallEndConstructionData) {
+				console.error('MouseUp in Line/Partition mode but no wallEndConstructionData set!');
+				return;
+			}
+
+			let sizeWall = distanceBetween(wallEndConstructionData.end, point) / constants.METER_SIZE;
 			if (wallEndConstructionData && sizeWall > 0.3) {
 				sizeWall = mode === Mode.Partition ? constants.PARTITION_SIZE : constants.WALL_SIZE;
 				const wall = new Wall(
@@ -127,22 +133,19 @@ export const handleMouseUp = (
 				const updatedWalls = [...wallMetaData, wall];
 				setWallMetaData(updatedWalls);
 
-				if (continuousWallMode && !wallConstructionShouldEnd) {
+				const contiueCreatingWalls = continuousWallMode && !wallConstructionShouldEnd;
+				if (contiueCreatingWalls) {
 					setCursor('validation');
 					setAction(true);
 					startWallDrawing(wallEndConstructionData.end);
-				} else setAction(false);
-				// $('#boxinfo').html(
-				// 	"Wall added <span style='font-size:0.6em'>approx. " +
-				// 		(distanceBetween(point, wallEndConstructionData.end) / 60).toFixed(2) +
-				// 		' m</span>'
-				// );
-				if (wallConstructionShouldEnd) setAction(false);
+				} else {
+					setAction(false);
+				}
 				save();
 			} else {
 				setAction(false);
 				// $('#boxinfo').html('Select mode');
-				resetMode();
+				setMode(Mode.Select);
 				setPoint({ x: snap.x, y: snap.y });
 			}
 			break;

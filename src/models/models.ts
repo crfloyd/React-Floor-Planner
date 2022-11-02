@@ -9,24 +9,43 @@ export interface PointDistance {
 	distance: number;
 }
 
-export const Mode = {
-	Select: 'select_mode',
-	Text: 'text_mode',
-	EditText: 'edit_text_mode',
-	EditRoom: 'edit_room_mode',
-	Object: 'object_mode',
-	Device: 'device_mode',
-	Distance: 'distance_mode',
-	Room: 'room_mode',
-	Node: 'node_mode',
-	Opening: 'door_mode',
-	Line: 'line_mode',
-	Partition: 'partition_mode',
-	EditWall: 'edit_wall_mode',
-	EditDoor: 'edit_door_mode',
-	EditBoundingBox: 'edit_boundingBox_mode',
-	Bind: 'bind_mode'
-};
+export enum Mode {
+	Select,
+	Text,
+	EditText,
+	EditRoom,
+	Object,
+	Device,
+	Distance,
+	Room,
+	Node,
+	Opening,
+	Line,
+	Partition,
+	EditWall,
+	EditDoor,
+	EditBoundingBox,
+	Bind
+}
+
+// export const Mode = {
+// 	Select: 'select_mode',
+// 	Text: 'text_mode',
+// 	EditText: 'edit_text_mode',
+// 	EditRoom: 'edit_room_mode',
+// 	Object: 'object_mode',
+// 	Device: 'device_mode',
+// 	Distance: 'distance_mode',
+// 	Room: 'room_mode',
+// 	Node: 'node_mode',
+// 	Opening: 'door_mode',
+// 	Line: 'line_mode',
+// 	Partition: 'partition_mode',
+// 	EditWall: 'edit_wall_mode',
+// 	EditDoor: 'edit_door_mode',
+// 	EditBoundingBox: 'edit_boundingBox_mode',
+// 	Bind: 'bind_mode'
+// };
 
 export interface RoomMetaData {
 	coords: Point2D[];
@@ -109,6 +128,7 @@ export interface WallMetaData {
 	getJunctions(allWalls: WallMetaData[]): WallJunction[];
 	getObjects(objectMeta: ObjectMetaData[]): ObjectMetaData[];
 	makeVisible(): void;
+	makeInvisible(): void;
 }
 
 export interface NodeMoveData {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { WallMetaData } from '../models/models';
+import { WallMetaData } from '../models';
 
 interface Props {
 	wall?: WallMetaData | null;

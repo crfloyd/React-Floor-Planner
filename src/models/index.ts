@@ -1,8 +1,10 @@
 export type {
 	CursorType,
+	DeviceMetaData,
 	HistorySnapshot,
 	LayerSettings,
 	ObjectMetaData,
+	Point2D,
 	RoomDisplayData,
 	RoomMetaData,
 	RoomPolygonData,

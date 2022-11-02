@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
 
 import { constants } from '../../constants';
 import {
@@ -9,6 +10,7 @@ import {
 	SvgPathMetaData,
 	WallMetaData
 } from '../models/models';
+import { setCursor } from '../store/floorPlanSlice';
 import { angleBetweenPoints, createWallGuideLine, findNearestWallInRange } from '../utils/svgTools';
 import { distanceBetween, getMidPoint, getNearestWallNode } from '../utils/utils';
 
@@ -34,11 +36,11 @@ interface WallEndConstructionData {
 export const useDrawWalls = (
 	snapPosition: SnapData,
 	wallMetaData: WallMetaData[],
-	mode: string,
+	mode: Mode,
 	continuousWallMode: boolean,
-	setCursor: (c: CursorType) => void,
 	updatePoint: (c: Point2D) => void
 ) => {
+	const dispatch = useDispatch();
 	const [wallHelperPathInfo, setWallHelperPathInfo] = useState<WallHelperPathData | null>(null);
 	const [wallHelperTextData, setWallHelperTextData] = useState<WallHelperTextData | null>(null);
 	const [wallHelperNodeCircle, setWallHelperNodeCircle] = useState<Point2D | null>();
@@ -129,7 +131,7 @@ export const useDrawWalls = (
 			}
 
 			// updatePoint(startPoint);
-			setCursor(cursor);
+			dispatch(setCursor(cursor));
 			return;
 		}
 
@@ -247,7 +249,7 @@ export const useDrawWalls = (
 		setWallStartPoint(startPoint);
 		setWallEndPoint(endPoint);
 		setShouldWallConstructionEnd(shouldDrawingEnd);
-		setCursor(cursor);
+		dispatch(setCursor(cursor));
 		// canvasState.setWallEndConstruc(shouldEndWall);
 
 		setWallEndConstructionData({

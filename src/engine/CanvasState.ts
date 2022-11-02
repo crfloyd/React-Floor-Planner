@@ -1,11 +1,11 @@
 import { Mode, Point2D, WallEquation, WallMetaData } from '../models/models';
 
 export default class CanvasState {
-	mode = Mode.Select;
-	setMode = (val: string) => {
-		this.mode = val;
-		return this.mode;
-	};
+	// mode = Mode.Select;
+	// setMode = (val: Mode) => {
+	// 	this.mode = val;
+	// 	return this.mode;
+	// };
 
 	modeOption = '';
 	setModeOption = (val: string) => {
@@ -13,11 +13,11 @@ export default class CanvasState {
 		return this.modeOption;
 	};
 
-	action = false;
-	setAction = (a: boolean) => {
-		this.action = a;
-		return this.action;
-	};
+	// action = false;
+	// setAction = (a: boolean) => {
+	// 	this.action = a;
+	// 	return this.action;
+	// };
 
 	followerData: {
 		equations: { wall: WallMetaData; eq: WallEquation; type: string }[];

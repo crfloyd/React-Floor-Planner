@@ -283,8 +283,7 @@ export const computeLimit = (equation: WallEquation, size: number, coords: Point
 
 export const calculateSnap = (
 	event: React.TouchEvent | React.MouseEvent,
-	viewbox: ViewboxData,
-	state = 'off'
+	viewbox: ViewboxData
 ): SnapData => {
 	let eY = 0;
 	let eX = 0;
@@ -298,17 +297,14 @@ export const calculateSnap = (
 	} else {
 		throw new Error('Unknown input event');
 	}
-	const x_mouse = eX * viewbox.zoomFactor + viewbox.originX;
-	const y_mouse = eY * viewbox.zoomFactor + viewbox.originY;
+	return snapPoint({ x: eX, y: eY }, viewbox);
+};
 
-	if (state == 'on') {
-		return {
-			x: Math.round(x_mouse / constants.GRID_SIZE) * constants.GRID_SIZE,
-			y: Math.round(y_mouse / constants.GRID_SIZE) * constants.GRID_SIZE,
-			xMouse: x_mouse,
-			yMouse: y_mouse
-		};
-	}
+export const snapPoint = (point: Point2D, viewbox: ViewboxData): SnapData => {
+	const { x, y } = point;
+	const x_mouse = x * viewbox.zoomFactor + viewbox.originX;
+	const y_mouse = y * viewbox.zoomFactor + viewbox.originY;
+
 	return {
 		x: x_mouse,
 		y: y_mouse,
