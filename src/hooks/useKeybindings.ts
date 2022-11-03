@@ -1,29 +1,15 @@
 import { useEffect } from 'react';
 
-interface Props {
-	onSelectMode: () => void;
-	onWallMode: () => void;
-}
-
-export const useKeybindings = ({ onSelectMode, onWallMode }: Props) => {
+export const useKeybindings = (bindings: Map<string, () => void>) => {
 	useEffect(() => {
 		const onKeyPress = (e: KeyboardEvent) => {
-			switch (e.key) {
-				case 'Escape':
-				case 's':
-					onSelectMode();
-					break;
-				case 'w':
-					onWallMode();
-					break;
-
-				default:
-					break;
+			if (bindings.has(e.key)) {
+				bindings.get(e.key)?.();
 			}
 		};
 		document.addEventListener('keydown', onKeyPress);
 		return () => {
 			document.removeEventListener('keydown', onKeyPress);
 		};
-	}, [onSelectMode, onWallMode]);
+	}, [bindings]);
 };

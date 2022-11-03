@@ -118,16 +118,6 @@ function App() {
 		makeWallVisible
 	} = useWalls();
 
-	useKeybindings({
-		onSelectMode: () => {
-			cancelWallCreation();
-			enterSelectMode();
-		},
-		onWallMode: () => {
-			onWallModeClicked();
-		}
-	});
-
 	const modalRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -402,6 +392,14 @@ function App() {
 			dispatch(setAction(false));
 		}
 	};
+
+	useKeybindings(
+		new Map([
+			['s', enterSelectMode],
+			['w', onWallModeClicked],
+			['r', () => applyMode(Mode.Room)]
+		])
+	);
 
 	const updateRoomDisplayData = (roomData: RoomDisplayData) => {
 		setSelectedRoomData(roomData);

@@ -224,7 +224,7 @@ export const useHistory = () => {
 						area: 270400,
 						surface: '',
 						name: '',
-						color: 'gradientWhite',
+						color: '',
 						showSurface: true,
 						action: 'add'
 					}
@@ -410,7 +410,7 @@ export const useHistory = () => {
 						area: 330478,
 						surface: '',
 						name: '',
-						color: 'gradientWhite',
+						color: '',
 						showSurface: true,
 						action: 'add'
 					}
