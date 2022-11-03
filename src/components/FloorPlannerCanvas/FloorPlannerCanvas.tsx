@@ -81,6 +81,7 @@ interface Props {
 	dragCamera: (distX: number, distY: number) => void;
 	defaultRoomColor: string;
 	textColor?: string | undefined;
+	wallColor?: string | undefined;
 }
 
 interface RoomPathData {
@@ -116,7 +117,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	zoomCameraOut,
 	dragCamera,
 	defaultRoomColor,
-	textColor
+	textColor,
+	wallColor
 }) => {
 	const dispatch = useDispatch();
 	const cursor = useSelector((state: RootState) => state.floorPlan.cursor);
@@ -628,7 +630,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 						<path
 							key={i}
 							d={data.path}
-							fill={data.room.color ? `url(#${data.room.color})` : defaultRoomColor}
+							fill={data.room.color ? `${data.room.color}` : defaultRoomColor}
 							fillOpacity="1"
 							stroke="none"
 							fillRule="evenodd"
@@ -642,7 +644,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 							key={wall.id + i}
 							d={wall.dPath ?? ''}
 							stroke="none"
-							fill={constants.COLOR_WALL}
+							fill={wallColor ?? constants.COLOR_WALL}
 							strokeWidth={1}
 							strokeLinecap="butt"
 							strokeLinejoin="miter"
