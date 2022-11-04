@@ -41,7 +41,6 @@ export const useDevices = (
 	 */
 	useEffect(() => {
 		if (!deviceUnderCursor || mode !== Mode.Bind || deviceBeingMoved) return;
-		// console.log('BindMode - setting deviceBeingMoved');
 		setDeviceBeingMoved(deviceUnderCursor);
 	}, [mode, deviceUnderCursor, setDeviceBeingMoved, deviceBeingMoved]);
 
@@ -53,7 +52,6 @@ export const useDevices = (
 	useEffect(() => {
 		setDeviceBeingMoved((prev) => {
 			if (!prev) return prev;
-			// console.log('updating deviceBeingMoved position');
 			return { ...prev, x: mousePosition.x - prev.width / 2, y: mousePosition.y - prev.height / 2 };
 		});
 	}, [setDeviceBeingMoved, mousePosition]);

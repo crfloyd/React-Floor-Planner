@@ -18,7 +18,6 @@ export const useCameraTools = (canvasDimensions: { width: number; height: number
 	});
 
 	useEffect(() => {
-		console.log('canvasDimensions changed', canvasDimensions);
 		setViewBox((prev) => ({
 			...prev,
 			width: canvasDimensions.width,

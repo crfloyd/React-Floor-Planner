@@ -24,7 +24,7 @@ import {
 	RoomPolygonData,
 	WallMetaData
 } from './models/models';
-import { setAction, setMode } from './store/floorPlanSlice';
+import { setAction, setDoorType, setMode, setObjectType } from './store/floorPlanSlice';
 import { RootState } from './store/store';
 import { renderRooms } from './utils/svgTools';
 
@@ -196,10 +196,11 @@ function App() {
 		}
 	};
 
-	const onDoorTypeClicked = (type: string) => {
+	const onDoorTypeClicked = (type: 'simple' | 'opening' | 'double') => {
 		setCursor('crosshair');
 		setBoxInfoText('Add a door');
-		applyMode(Mode.Opening, type);
+		dispatch(setDoorType(type));
+		applyMode(Mode.Opening);
 	};
 
 	const onWindowTypeClicked = (type: string) => {
@@ -207,22 +208,22 @@ function App() {
 		setBoxInfoText('Add a window');
 		setShowDoorList(false);
 		setShowWindowList(false);
-		applyMode(Mode.Opening, type);
+		dispatch(setDoorType('fix'));
+		applyMode(Mode.Opening);
 	};
 
 	const onObjectTypeClicked = (type: string) => {
 		setShowSubMenu(false);
 		setShowDoorList(false);
 		setCursor('move');
+		dispatch(setObjectType(type));
 		setBoxInfoText('Add an object');
 	};
 
-	const applyMode = (mode: Mode, option = '') => {
+	const applyMode = (mode: Mode) => {
 		save(wallMetaData, objectMetaData, roomMetaData);
 		setShowSubMenu(false);
-
 		dispatch(setMode(mode));
-		canvasState.setModeOption(option);
 	};
 
 	const initHistory = (type: string) => {
@@ -461,7 +462,6 @@ function App() {
 			<FloorPlannerCanvas
 				layerSettings={layerSettings}
 				canvasState={canvasState}
-				applyMode={applyMode}
 				continuousWallMode={continuousWallMode}
 				startModifyingOpening={showOpeningTools}
 				wallClicked={handleWallCliked}
@@ -1155,14 +1155,14 @@ function App() {
 									}}>
 									Double
 								</button>
-								<button
+								{/* <button
 									className="btn btn-default fully door"
 									id="pocket"
 									onClick={() => {
 										onDoorTypeClicked('pocket');
 									}}>
 									Pocket
-								</button>
+								</button> */}
 							</div>
 						)}
 						<li>
@@ -1245,10 +1245,10 @@ function App() {
 								className="btn btn-default fully object"
 								id="stair_mode"
 								onClick={() => {
-									onDoorTypeClicked('stair_mode');
+									onObjectTypeClicked('stair_mode');
 									setCursor('move');
 									setBoxInfoText('Add a staircase');
-									applyMode(Mode.Object, 'simpleStair');
+									applyMode(Mode.Object);
 								}}>
 								STAIR
 							</button>

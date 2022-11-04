@@ -156,7 +156,6 @@ export const handleMouseMoveBindMode = (
 				) {
 					objectMeta = [...objectMeta.filter((o) => o.id !== objTarget.id), updatedTargetObject];
 				}
-				// console.log('target bbox - after:', objTarget?.realBbox);
 			}
 			setObjectBeingMoved(objectBeingMoved);
 		}

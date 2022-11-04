@@ -7,11 +7,11 @@ export default class CanvasState {
 	// 	return this.mode;
 	// };
 
-	modeOption = '';
-	setModeOption = (val: string) => {
-		this.modeOption = val;
-		return this.modeOption;
-	};
+	// modeOption = '';
+	// setModeOption = (val: string) => {
+	// 	this.modeOption = val;
+	// 	return this.modeOption;
+	// };
 
 	// action = false;
 	// setAction = (a: boolean) => {

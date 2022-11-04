@@ -443,7 +443,6 @@ export const useHandleMouseDown = ({
 					dispatch(setAction(false));
 					setDragging(true);
 					const snap = calculateSnap(event, viewbox);
-					console.log(snap);
 					setPoint({ x: snap.xMouse, y: snap.yMouse });
 				}
 			}

@@ -24,6 +24,8 @@ export const handleMouseMove = (
 	action: boolean,
 	snap: SnapData,
 	canvasState: CanvasState,
+	openingType: string,
+	objectType: string,
 	viewbox: ViewboxData,
 	wallMetaData: WallMetaData[],
 	wallUnderCursor: WallMetaData | null,
@@ -63,7 +65,7 @@ export const handleMouseMove = (
 		case Mode.Object: {
 			handleMouseMoveObjectMode(
 				snap,
-				canvasState,
+				objectType,
 				viewbox,
 				wallMetaData,
 				objectBeingMoved,
@@ -77,7 +79,7 @@ export const handleMouseMove = (
 		case Mode.Opening: {
 			handleMouseMoveOpeningMode(
 				snap,
-				canvasState,
+				openingType,
 				viewbox,
 				wallMetaData,
 				objectBeingMoved,

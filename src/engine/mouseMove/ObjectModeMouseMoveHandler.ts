@@ -20,44 +20,44 @@ import { CanvasState } from '../';
 
 export const handleMouseMoveObjectMode = (
 	snap: SnapData,
-	{ modeOption }: CanvasState,
+	objectType: string,
 	viewbox: ViewboxData,
 	wallMetaData: WallMetaData[],
 	objectBeingMoved: ObjectMetaData | null,
 	setObjectBeingMoved: (o: ObjectMetaData) => void
 ) => {
 	if (objectBeingMoved == null) {
-		if (modeOption == 'simpleStair') {
-			const stairs = new Object2D(
-				'free',
-				constants.OBJECT_CLASSES.STAIR,
-				'simpleStair',
-				snap,
-				0,
-				false,
-				0,
-				'normal',
-				0,
-				15,
-				viewbox
-			);
-			setObjectBeingMoved(getUpdatedObject(stairs));
-		} else {
-			const device = new Object2D(
-				'free',
-				constants.OBJECT_CLASSES.ENERGY,
-				modeOption,
-				snap,
-				0,
-				false,
-				0,
-				'normal',
-				0,
-				0,
-				viewbox
-			);
-			setObjectBeingMoved(getUpdatedObject(device));
-		}
+		// if (modeOption == 'simpleStair') {
+		// 	const stairs = new Object2D(
+		// 		'free',
+		// 		constants.OBJECT_CLASSES.STAIR,
+		// 		'simpleStair',
+		// 		snap,
+		// 		0,
+		// 		false,
+		// 		0,
+		// 		'normal',
+		// 		0,
+		// 		15,
+		// 		viewbox
+		// 	);
+		// 	setObjectBeingMoved(getUpdatedObject(stairs));
+		// } else {
+		const device = new Object2D(
+			'free',
+			constants.OBJECT_CLASSES.ENERGY,
+			objectType,
+			snap,
+			0,
+			false,
+			0,
+			'normal',
+			0,
+			0,
+			viewbox
+		);
+		setObjectBeingMoved(getUpdatedObject(device));
+		// }
 		return;
 	}
 

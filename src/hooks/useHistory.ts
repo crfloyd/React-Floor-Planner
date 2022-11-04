@@ -29,7 +29,6 @@ export const useHistory = () => {
 		if (historyIndex < history.length) {
 			history = history.slice(0, historyIndex);
 		}
-		// console.log(objectMeta);
 		history = [
 			...history,
 			{

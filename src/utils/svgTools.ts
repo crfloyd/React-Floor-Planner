@@ -38,6 +38,7 @@ export const carpentryCalc = (
 	thickness: number,
 	divider: any = 10
 ): SVGCreationData => {
+	// console.trace('cc:', classType, type, size, thickness, divider);
 	const construc: SVGData[] = [];
 	const result: SVGCreationData = {
 		construc: construc,
@@ -750,7 +751,6 @@ export const calculateDPath = (
 		comparePointEnd.y - comparePointStart.y,
 		comparePointEnd.x - comparePointStart.x
 	);
-	// console.log("2 - prevStart:", comparePointStart);
 	const halfThick = thickness / 2;
 	const compareThickX = halfThick * Math.sin(comparisonAngle);
 	const compareThickY = halfThick * Math.cos(comparisonAngle);
@@ -1759,10 +1759,6 @@ export const renderRooms = (
 	roomMeta: RoomMetaData[],
 	setRoomMeta: (r: RoomMetaData[]) => void
 ) => {
-	// console.log("before room reander:", roomMeta.length);
-	// roomMeta = applyPolygonDataToRooms(roomPolygonData, roomMeta, setRoomMeta);
-	// console.log("after room render", roomMeta.length);
-
 	if (roomPolygonData.polygons.length == 0) {
 		roomMeta = [];
 	}
@@ -2010,7 +2006,6 @@ export const calculateObjectRenderData = (
 		{ x: sinCos(newBbox[3]), y: cosSin(newBbox[3]) }
 	];
 
-	// console.log('2 - Updated object realBbox', newRealBbox[0], newRealBbox[3], className);
 	return {
 		newWidth,
 		newHeight,

@@ -55,7 +55,6 @@ interface Props {
 	layerSettings: LayerSettings;
 	canvasState: CanvasState;
 	continuousWallMode: boolean;
-	applyMode: (mode: Mode, option: string) => void;
 	updateRoomDisplayData: (roomData: RoomDisplayData) => void;
 	onMouseMove: () => void;
 	startModifyingOpening: (object: ObjectMetaData) => void;
@@ -123,6 +122,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	const dispatch = useDispatch();
 	const cursor = useSelector((state: RootState) => state.floorPlan.cursor);
 	const action = useSelector((state: RootState) => state.floorPlan.action);
+	const openingType = useSelector((state: RootState) => state.floorPlan.doorType);
+	const objectType = useSelector((state: RootState) => state.floorPlan.objectType);
 
 	const [dragging, setDragging] = useState(false);
 	const [cursorImg, setCursorImg] = useState('default');
@@ -229,7 +230,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	}, [wallUnderCursor, objectMetaData, wallEquationData]);
 
 	const { inWallMeasurementRenderData, measurementRenderData, setInWallMeasurementText } =
-		useWallMeasurements(wallMetaData);
+		useWallMeasurements(wallMetaData, objectBeingMoved);
 
 	const { scaleBoxDisplayData } = useDrawScaleBox(wallMetaData);
 
@@ -260,7 +261,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		if (mode === Mode.Line) {
 			dispatch(setAction(false));
 		} else if (mode == Mode.Room) {
-			console.log('ROOM MODE');
 			dispatch(setCursor('default'));
 		} else if (mode !== Mode.EditRoom) {
 			setSelectedRoomRenderData(undefined);
@@ -268,8 +268,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	}, [dispatch, mode]);
 
 	useEffect(() => {
-		// console.log("walls updated", wallMetaData.length);
-		// console.log("Rendering all walls");
 		refreshWalls(wallMetaData, wallEquationData);
 		setRenderWalls(wallMetaData);
 
@@ -543,7 +541,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					setNodeBeingMoved,
 					roomUnderCursor,
 					() => {
-						console.log('setting room selected render data', selectedRoomRenderData);
 						setSelectedRoomRenderData((prev) => {
 							return prev ? { ...prev, selected: true } : undefined;
 						});
@@ -558,7 +555,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			onMouseMove={(e) => {
 				const throttleMs = 17;
 				if (!shouldUpdateMouseMove) {
-					// console.log("Not Ready:");
 					return;
 				}
 
@@ -578,6 +574,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					action,
 					snap,
 					canvasState,
+					openingType,
+					objectType,
 					viewbox,
 					wallMetaData,
 					wallUnderCursor,
@@ -898,7 +896,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					inWallMeasurementRenderData &&
 					inWallMeasurementRenderData.map(({ start, shift, angle, content }) => (
 						<text
-							key={`${start.x}-${start.y}-measurement-outside`}
+							key={`${start.x}-${start.y}-measurement-inside`}
 							x={start.x}
 							y={start.y + shift}
 							transform={`rotate(${angle} ${start.x},${start.y})`}

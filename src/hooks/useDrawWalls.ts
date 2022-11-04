@@ -124,7 +124,6 @@ export const useDrawWalls = (
 			if (nearestWallData) {
 				// startPoint = nearestWallData.bestPoint;
 				cursor = 'grab';
-				console.log('nearest wall', nearestWallData);
 				setWallHelperNodeCircle(nearestWallData.bestPoint);
 			} else {
 				setWallHelperNodeCircle(null);
@@ -134,8 +133,6 @@ export const useDrawWalls = (
 			dispatch(setCursor(cursor));
 			return;
 		}
-
-		// console.log("Drawing started");
 
 		let startPoint = { ...wallStartPoint };
 		let cursor: CursorType = 'crosshair';
@@ -177,7 +174,6 @@ export const useDrawWalls = (
 		// and snap endpoint to it.
 		const nearestPointOnWall = findNearestWallInRange(snapPosition, wallMetaData, 12);
 		if (nearestPointOnWall) {
-			// console.log("Wall Should End:", nearestPointOnWall);
 			shouldDrawingEnd = true;
 			// TO SNAP SEGMENT TO FINALIZE X2Y2
 			endPoint = { x: nearestPointOnWall.x, y: nearestPointOnWall.y };

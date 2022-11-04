@@ -3,11 +3,10 @@ import { ObjectMetaData, Point2D, ViewboxData, WallMetaData } from '../../models
 import { Object2D } from '../../models/Object2D';
 import { findNearestWallInRange, getAngle, getUpdatedObject } from '../../utils/svgTools';
 import { computeLimit, getMidPoint, vectorDeter, vectorXY } from '../../utils/utils';
-import { CanvasState } from '../';
 
 export const handleMouseMoveOpeningMode = (
 	snap: Point2D,
-	{ modeOption }: CanvasState,
+	openingType: string,
 	viewbox: ViewboxData,
 	wallMetaData: WallMetaData[],
 	openingBeingMoved: ObjectMetaData | null,
@@ -68,7 +67,7 @@ export const handleMouseMoveOpeningMode = (
 	const newObj = new Object2D(
 		'inWall',
 		constants.OBJECT_CLASSES.DOOR_WINDOW,
-		modeOption,
+		openingType,
 		nearestWall,
 		0,
 		false,

@@ -22,7 +22,10 @@ export interface WallMeasurementRenderData {
 	insideWall: boolean;
 }
 
-export const useWallMeasurements = (walls: WallMetaData[]) => {
+export const useWallMeasurements = (
+	walls: WallMetaData[],
+	objectBeingMoved: ObjectMetaData | null
+) => {
 	const [measurementRenderData, setMeasurementRenderData] = useState<WallMeasurementRenderData[]>(
 		[]
 	);
@@ -182,9 +185,11 @@ export const useWallMeasurements = (walls: WallMetaData[]) => {
 	);
 
 	useEffect(() => {
-		setInWallMeasurementRenderData(undefined);
+		if (!objectBeingMoved) {
+			setInWallMeasurementRenderData(undefined);
+		}
 		setMeasurementRenderData(buildWallMeasurementData(walls));
-	}, [walls, buildWallMeasurementData]);
+	}, [walls, buildWallMeasurementData, objectBeingMoved]);
 
 	const createWallRenderData = (
 		measureData: WallMeasurementData[],

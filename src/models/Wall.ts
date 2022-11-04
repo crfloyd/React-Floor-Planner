@@ -203,20 +203,6 @@ export class Wall implements WallMetaData {
 			down: eqWallDw,
 			base: eqWallBase
 		};
-		// console.log(
-		// 	"id:",
-		// 	this.id,
-		// 	"2 - prevStart:",
-		// 	previousWallStart,
-		// 	"start:",
-		// 	this.start,
-		// 	"end:",
-		// 	this.end,
-		// 	"parent",
-		// 	this.parent,
-		// 	"child",
-		// 	this.child
-		// );
 
 		const dWay = calculateDPath(
 			this,
