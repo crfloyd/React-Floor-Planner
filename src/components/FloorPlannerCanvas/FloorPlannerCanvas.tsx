@@ -723,13 +723,14 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 									x={device.x - device.width / 2}
 									y={device.y - device.height / 2}
 									className="device-name"
+									style={{ fill: textColor ?? '' }}
 									display={deviceUnderCursor?.id === device.id ? 'block' : 'none'}>
 									{device.name}
 								</text>
 								<rect
 									x={device.x - device.width / 4}
 									y={device.y - device.height / 4}
-									stroke="#333"
+									stroke={textColor ?? '#333'}
 									fillOpacity={0}
 									display={deviceUnderCursor?.id === device.id ? 'block' : 'none'}
 									width={device.width + device.width / 2}
