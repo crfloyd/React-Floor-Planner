@@ -205,14 +205,14 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		let targetRoom: RoomMetaData | undefined = undefined;
 		roomMetaData.forEach((room: RoomMetaData) => {
 			if (
-				pointInPolygon({ x: deviceBeingMoved.x, y: deviceBeingMoved.y }, room.coords) &&
+				pointInPolygon({ x: snapPosition.x, y: snapPosition.y }, room.coords) &&
 				(targetRoom == null || targetRoom.area >= room.area)
 			) {
 				targetRoom = room;
 			}
 		});
 		setRoomUnderCursor(targetRoom);
-	}, [canvasState, deviceBeingMoved, snapPosition, roomMetaData]);
+	}, [deviceBeingMoved, roomMetaData, dispatch]);
 
 	useEffect(() => {
 		if (!wallUnderCursor) return;
@@ -706,13 +706,23 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			</g>
 			<g id="boxEnergy" visibility={layerSettings.showDevices ? 'visible' : 'hidden'}>
 				{deviceBeingMoved && (
-					<image
-						key={deviceBeingMoved.id + '-device-moving'}
-						href={deviceBeingMoved.image}
-						width={40}
-						height={40}
-						x={deviceBeingMoved.x}
-						y={deviceBeingMoved.y}></image>
+					<g>
+						<rect
+							x={deviceBeingMoved.x - deviceBeingMoved.width / 4}
+							y={deviceBeingMoved.y - deviceBeingMoved.height / 4}
+							stroke={textColor ?? '#333'}
+							fillOpacity={0}
+							display={'block'}
+							width={deviceBeingMoved.width + deviceBeingMoved.width / 2}
+							height={deviceBeingMoved.height + deviceBeingMoved.height / 2}></rect>
+						<image
+							key={deviceBeingMoved.id + '-device-moving'}
+							href={deviceBeingMoved.image}
+							width={40}
+							height={40}
+							x={deviceBeingMoved.x}
+							y={deviceBeingMoved.y}></image>
+					</g>
 				)}
 				{devices &&
 					devices
