@@ -390,13 +390,13 @@ function App() {
 		}
 	};
 
-	useKeybindings(
-		new Map([
+	useKeybindings({
+		keyDown: new Map([
 			['s', enterSelectMode],
 			['w', onWallModeClicked],
 			['r', () => applyMode(Mode.Room)]
 		])
-	);
+	});
 
 	const updateRoomDisplayData = (roomData: RoomDisplayData) => {
 		setSelectedRoomData(roomData);

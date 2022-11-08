@@ -1,15 +1,27 @@
 import { useEffect } from 'react';
 
-export const useKeybindings = (bindings: Map<string, () => void>) => {
+interface Props {
+	keyDown?: Map<string, () => void>;
+	keyUp?: Map<string, () => void>;
+}
+
+export const useKeybindings = ({ keyDown, keyUp }: Props) => {
 	useEffect(() => {
-		const onKeyPress = (e: KeyboardEvent) => {
-			if (bindings.has(e.key)) {
-				bindings.get(e.key)?.();
+		const onKeyDown = (e: KeyboardEvent) => {
+			if (keyDown?.has(e.key)) {
+				keyDown?.get(e.key)?.();
 			}
 		};
-		document.addEventListener('keydown', onKeyPress);
-		return () => {
-			document.removeEventListener('keydown', onKeyPress);
+		const onKeyUp = (e: KeyboardEvent) => {
+			if (keyUp?.has(e.key)) {
+				keyUp?.get(e.key)?.();
+			}
 		};
-	}, [bindings]);
+		document.addEventListener('keydown', onKeyDown);
+		document.addEventListener('keyup', onKeyUp);
+		return () => {
+			document.removeEventListener('keydown', onKeyDown);
+			document.removeEventListener('keyup', onKeyUp);
+		};
+	}, [keyDown, keyUp]);
 };

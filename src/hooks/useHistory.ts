@@ -225,7 +225,8 @@ export const useHistory = () => {
 						name: '',
 						color: '',
 						showSurface: true,
-						action: 'add'
+						action: 'add',
+						id: uuid()
 					}
 				]
 			};
@@ -377,6 +378,7 @@ export const useHistory = () => {
 				],
 				roomData: [
 					{
+						id: uuid(),
 						coords: [
 							{ x: 447, y: 744 },
 							{ x: 1347, y: 744 },

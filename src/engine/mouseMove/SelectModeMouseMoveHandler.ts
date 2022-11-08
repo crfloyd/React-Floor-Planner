@@ -18,7 +18,7 @@ export const handleMouseMoveSelectMode = (
 	setCursor: (crsr: CursorType) => void,
 	wallMeta: WallMetaData[],
 	objectMeta: ObjectMetaData[],
-	setWallUnderCursor: (wall: WallMetaData | null) => void,
+	setWallUnderCursor: (wall: WallMetaData | undefined) => void,
 	setObjectUnderCursor: (o: ObjectMetaData | undefined) => void,
 	objectBeingMoved: ObjectMetaData | null,
 	setObjectBeingMoved: (o: ObjectMetaData | null) => void,
@@ -26,7 +26,7 @@ export const handleMouseMoveSelectMode = (
 	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void,
 	deviceUnderCursor: DeviceMetaData | undefined
 ) => {
-	setWallUnderCursor(null);
+	setWallUnderCursor(undefined);
 	setObjectUnderCursor(undefined);
 
 	if (deviceUnderCursor) {

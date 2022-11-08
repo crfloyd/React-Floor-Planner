@@ -62,7 +62,7 @@ interface Props {
 	// setRoomDisplayData: (r: RoomDisplayData[]) => void;
 	roomClicked: (roomData: RoomDisplayData) => void;
 	selectedRoomData: RoomDisplayData | undefined;
-	onMouseMove: () => void;
+	onMouseMove: (p: Point2D) => void;
 	startModifyingOpening: (object: ObjectMetaData) => void;
 	wallClicked: (wall: WallMetaData) => void;
 	cursor: CursorType;
@@ -72,6 +72,8 @@ interface Props {
 	setObjectMetaData: React.Dispatch<React.SetStateAction<ObjectMetaData[]>>;
 	wallMetaData: WallMetaData[];
 	setWallMetaData: (w: WallMetaData[]) => void;
+	wallUnderCursor: WallMetaData | undefined;
+	setWallUnderCursor: (w: WallMetaData | undefined) => void;
 	openingWidth: number | null;
 	openingIdBeingEdited: string | undefined;
 	selectedRoomColor: string | undefined;
@@ -106,6 +108,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	setObjectMetaData,
 	wallMetaData,
 	setWallMetaData,
+	wallUnderCursor,
+	setWallUnderCursor,
 	openingWidth,
 	openingIdBeingEdited,
 	selectedRoomColor,
@@ -137,7 +141,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	});
 	const [point, setPoint] = useState<Point2D>({ x: 0, y: 0 });
 	const [selectedWallData, setSelectedWallData] = useState<SelectedWallData>();
-	const [wallUnderCursor, setWallUnderCursor] = useState<WallMetaData | null>(null);
 	const [nodeUnderCursor, setNodeUnderCursor] = useState<Point2D | undefined>();
 	const [objectUnderCursor, setObjectUnderCursor] = useState<ObjectMetaData | undefined>();
 	const [nodeBeingMoved, setNodeBeingMoved] = useState<NodeMoveData | undefined>();
@@ -576,10 +579,9 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 
 				e.preventDefault();
 
-				onMouseMove();
-
 				const snap = calculateSnap(e, viewbox);
 				setSnapPosition(snap);
+				onMouseMove(snap);
 				handleMouseMove(
 					mode,
 					action,

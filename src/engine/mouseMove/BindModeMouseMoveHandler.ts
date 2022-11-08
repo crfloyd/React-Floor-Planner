@@ -36,7 +36,7 @@ export const handleMouseMoveBindMode = (
 	setCursor: (crsr: CursorType) => void,
 	canvasState: CanvasState,
 	wallMeta: WallMetaData[],
-	wallUnderCursor: WallMetaData | null,
+	wallUnderCursor: WallMetaData | undefined,
 	objectMeta: ObjectMetaData[],
 	setObjectMeta: (o: ObjectMetaData[]) => void,
 	setWallMeta: (w: WallMetaData[]) => void,

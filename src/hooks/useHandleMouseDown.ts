@@ -30,7 +30,7 @@ interface Props {
 	viewbox: ViewboxData;
 	wallMetaData: WallMetaData[];
 	setWallMetaData: (w: WallMetaData[]) => void;
-	wallUnderCursor: WallMetaData | null;
+	wallUnderCursor: WallMetaData | undefined;
 	objectMetaData: ObjectMetaData[];
 	startWallDrawing: (startPoint: Point2D) => void;
 	setSelectedWallData: (data: SelectedWallData) => void;
@@ -355,7 +355,8 @@ export const useHandleMouseDown = ({
 				if (
 					wallMeta[k].child == null &&
 					pointInPolygon(wallMeta[k].end, wall.coords) &&
-					!isObjectsEquals(wall, wallMeta[k])
+					// !isObjectsEquals(wall, wallMeta[k])
+					wall.id !== wallMeta[k].id
 				) {
 					followerData.equations.push({
 						wall: wallMeta[k],
@@ -366,7 +367,8 @@ export const useHandleMouseDown = ({
 				if (
 					wallMeta[k].parent == null &&
 					pointInPolygon(wallMeta[k].start, wall.coords) &&
-					!isObjectsEquals(wall, wallMeta[k])
+					// !isObjectsEquals(wall, wallMeta[k])
+					wall.id !== wallMeta[k].id
 				) {
 					followerData.equations.push({
 						wall: wallMeta[k],
