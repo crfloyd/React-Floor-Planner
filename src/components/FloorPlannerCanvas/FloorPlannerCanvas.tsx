@@ -45,6 +45,7 @@ import {
 import {
 	calculateSnap,
 	computeLimit,
+	findById,
 	getWallsOnPoint,
 	perpendicularEquation
 } from '../../utils/utils';
@@ -85,6 +86,7 @@ interface Props {
 	defaultRoomColor: string;
 	textColor?: string | undefined;
 	wallColor?: string | undefined;
+	showDebugData?: boolean | undefined;
 }
 
 export interface SelectedWallData {
@@ -120,7 +122,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	dragCamera,
 	defaultRoomColor,
 	textColor,
-	wallColor
+	wallColor,
+	showDebugData
 }) => {
 	const dispatch = useDispatch();
 	const cursor = useSelector((state: RootState) => state.floorPlan.cursor);
@@ -651,16 +654,18 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			<g id="boxwall">
 				{renderWalls &&
 					renderWalls.map((wall, i) => (
-						<path
-							key={wall.id + i}
-							d={wall.dPath ?? ''}
-							stroke="none"
-							fill={wallColor ?? constants.COLOR_WALL}
-							strokeWidth={1}
-							strokeLinecap="butt"
-							strokeLinejoin="miter"
-							strokeMiterlimit={4}
-							fillRule="nonzero"></path>
+						<g key={wall.id + i} className="canvas-wall">
+							<path
+								key={wall.id + i}
+								d={wall.dPath ?? ''}
+								stroke="none"
+								fill={wallColor ?? constants.COLOR_WALL}
+								strokeWidth={1}
+								strokeLinecap="butt"
+								strokeLinejoin="miter"
+								strokeMiterlimit={4}
+								fillRule="nonzero"></path>
+						</g>
 					))}
 			</g>
 			<g id="boxcarpentry">
@@ -779,6 +784,38 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 				)}
 				{wallUnderCursor && (
 					<g>
+						{showDebugData &&
+							wallUnderCursor.parent &&
+							[findById(wallUnderCursor.parent, wallMetaData)].map((w) =>
+								w ? (
+									<line
+										key={'wallUnderCursor-parent'}
+										x1={w.start.x}
+										y1={w.start.y}
+										x2={w.end.x}
+										y2={w.end.y}
+										strokeWidth={5}
+										stroke="#b856d6"></line>
+								) : (
+									<></>
+								)
+							)}
+						{showDebugData &&
+							wallUnderCursor.child &&
+							[findById(wallUnderCursor.child, wallMetaData)].map((w) =>
+								w ? (
+									<line
+										key={'wallUnderCursor-child'}
+										x1={w.start.x}
+										y1={w.start.y}
+										x2={w.end.x}
+										y2={w.end.y}
+										strokeWidth={5}
+										stroke="#30a6d9"></line>
+								) : (
+									<></>
+								)
+							)}
 						<line
 							x1={wallUnderCursor.start.x}
 							y1={wallUnderCursor.start.y}
@@ -788,11 +825,13 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 							stroke="#5cba79"></line>
 						<circle
 							className="circle_css"
+							fill={showDebugData ? '#228524' : '#5cba79'}
 							cx={wallUnderCursor.start.x}
 							cy={wallUnderCursor.start.y}
 							r={circleRadius}></circle>
 						<circle
 							className="circle_css"
+							fill={showDebugData ? '#c72b26' : '#5cba79'}
 							cx={wallUnderCursor.end.x}
 							cy={wallUnderCursor.end.y}
 							r={circleRadius}></circle>

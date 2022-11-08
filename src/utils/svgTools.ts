@@ -689,10 +689,9 @@ export const getWallNodes = (
 };
 
 const clearParentsAndChildren = (wallMeta: WallMetaData[]) => {
-	for (let i = 0; i < wallMeta.length; i++) {
-		const wall = wallMeta[i];
+	wallMeta.forEach((wall) => {
 		const parentId = wall.parent;
-		if (parentId != null) {
+		if (parentId) {
 			const parent = findById(parentId, wallMeta);
 			if (
 				!parent ||
@@ -704,16 +703,15 @@ const clearParentsAndChildren = (wallMeta: WallMetaData[]) => {
 
 		const childId = wall.child;
 		if (childId) {
-			const child = findById(childId ?? '', wallMeta);
+			const child = findById(childId, wallMeta);
 			if (
 				!child ||
-				// (child.start !== wall.end && child.end !== wall.end)
 				(!pointsAreEqual(child.start, wall.end) && !pointsAreEqual(child.end, wall.end))
 			) {
 				wall.child = null;
 			}
 		}
-	}
+	});
 };
 
 export const calculateDPath = (
