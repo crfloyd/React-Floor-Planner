@@ -5,12 +5,15 @@ import { constants } from '../../../constants';
 import { CanvasState } from '../../engine';
 import { handleMouseMove } from '../../engine/mouseMove/MouseMoveHandler';
 import { handleMouseUp } from '../../engine/mouseUp/MouseUpHandler';
-import { useDevices } from '../../hooks/useDevices';
-import { useDrawScaleBox } from '../../hooks/useDrawScaleBox';
-import { useDrawWalls } from '../../hooks/useDrawWalls';
-import { useHandleMouseDown } from '../../hooks/useHandleMouseDown';
-import { useHistory } from '../../hooks/useHistory';
-import { useWallMeasurements } from '../../hooks/useWallMeasurements';
+import {
+	useDevices,
+	useDrawScaleBox,
+	useDrawWalls,
+	useHandleMouseDown,
+	useHistory,
+	useRooms,
+	useWallMeasurements
+} from '../../hooks';
 import {
 	CursorType,
 	DeviceMetaData,
@@ -21,9 +24,6 @@ import {
 	ObjectMetaData,
 	Point2D,
 	RoomDisplayData,
-	RoomMetaData,
-	RoomPathData,
-	RoomPolygonData,
 	SnapData,
 	ViewboxData,
 	WallEquationGroup,
@@ -33,14 +33,9 @@ import { setAction, setCursor, setMode } from '../../store/floorPlanSlice';
 import { RootState } from '../../store/store';
 import {
 	calculateObjectRenderData,
-	calculateRoomBorderPathData,
-	calculateRoomPathData,
-	getPolygonVisualCenter,
 	getUpdatedObject,
-	pointInPolygon,
 	polygonize,
-	refreshWalls,
-	renderRooms
+	refreshWalls
 } from '../../utils/svgTools';
 import {
 	calculateSnap,
@@ -52,6 +47,8 @@ import {
 import { GradientData } from './GradientData';
 import LinearGradient from './LinearGradient';
 import Patterns from './Patterns';
+import RoomAreaText from './RoomAreaText';
+import WallMeasurementText from './WallMeasurementText';
 
 let shouldUpdateMouseMove = true;
 
@@ -59,8 +56,6 @@ interface Props {
 	layerSettings: LayerSettings;
 	canvasState: CanvasState;
 	continuousWallMode: boolean;
-	// roomDisplayData: RoomDisplayData[];
-	// setRoomDisplayData: (r: RoomDisplayData[]) => void;
 	roomClicked: (roomData: RoomDisplayData) => void;
 	selectedRoomData: RoomDisplayData | undefined;
 	onMouseMove: (p: Point2D) => void;
@@ -133,7 +128,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 
 	const [dragging, setDragging] = useState(false);
 	const [cursorImg, setCursorImg] = useState('default');
-	const [roomPathInfo, setRoomPathInfo] = useState<RoomPathData[]>([]);
 	const [renderWalls, setRenderWalls] = useState<WallMetaData[]>([]);
 	const [objectsToRender, setObjectsToRender] = useState<ObjectMetaData[]>([]);
 	const [snapPosition, setSnapPosition] = useState<SnapData>({
@@ -148,21 +142,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	const [objectUnderCursor, setObjectUnderCursor] = useState<ObjectMetaData | undefined>();
 	const [nodeBeingMoved, setNodeBeingMoved] = useState<NodeMoveData | undefined>();
 	const [objectBeingMoved, setObjectBeingMoved] = useState<ObjectMetaData | null>(null);
-	const [roomUnderCursor, setRoomUnderCursor] = useState<RoomMetaData | undefined>();
-	const [selectedRoomRenderData, setSelectedRoomRenderData] = useState<
-		{ path: string; selected: boolean; selectedColor: string | undefined } | undefined
-	>();
-	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
-	const [roomPolygonData, setRoomPolygonData] = useState<RoomPolygonData>({
-		polygons: [],
-		vertex: []
-	});
 	const [objectEquationData, setObjectEquationData] = useState<ObjectEquationData[]>([]);
-
-	const [roomsToRender, setRoomsToRender] = useState<{
-		roomData: RoomMetaData[];
-		polygonData: RoomPolygonData;
-	}>({ roomData: [], polygonData: { polygons: [], vertex: [] } });
 
 	const gradientData = useMemo<{ id: string; color1: string; color2: string }[]>(
 		() => GradientData,
@@ -209,35 +189,15 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		}
 	}, [objectBeingMoved, setObjectMetaData]);
 
-	/**
-	 * If there is a device being moved and the device is inside
-	 * of a room, also set that room as the roomUnderCursor
-	 */
-	useEffect(() => {
-		if (!deviceBeingMoved) return;
-
-		let targetRoom: RoomMetaData | undefined = undefined;
-		roomsToRender.roomData.forEach((room: RoomMetaData) => {
-			if (
-				pointInPolygon({ x: snapPosition.x, y: snapPosition.y }, room.coords) &&
-				(targetRoom == null || targetRoom.area >= room.area)
-			) {
-				targetRoom = room;
-			}
-		});
-		setRoomUnderCursor(targetRoom);
-	}, [deviceBeingMoved, dispatch, roomsToRender.roomData, snapPosition.x, snapPosition.y]);
-
-	/**
-	 * If there is not device being moved and not in room mode
-	 * then reset both roomUnderCursor and selectedRoomRenderData
-	 */
-	useEffect(() => {
-		if (mode !== Mode.Room && mode !== Mode.EditRoom && !deviceBeingMoved) {
-			setRoomUnderCursor(undefined);
-			setSelectedRoomRenderData(undefined);
-		}
-	}, [deviceBeingMoved, mode]);
+	const {
+		roomsToRender,
+		roomPathData,
+		setRoomPolygonData,
+		setSelectedRoomRenderData,
+		selectedRoomRenderData,
+		roomUnderCursor,
+		setRoomUnderCursor
+	} = useRooms(selectedRoomData, selectedRoomColor, deviceBeingMoved, snapPosition);
 
 	/**
 	 * If there is a wall under the cursor and that wall has
@@ -315,86 +275,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		const updatedPolygons = polygonize(wallMetaData);
 		setRoomPolygonData(updatedPolygons);
 	}, [wallMetaData, setRoomPolygonData]);
-
-	/**
-	 * Whenever the room polygon data changes, calculate the
-	 * render data and set to state
-	 */
-	useEffect(() => {
-		setRoomMetaData((prev) => {
-			return renderRooms(roomPolygonData, prev);
-		});
-	}, [roomPolygonData]);
-
-	/**
-	 * Whenever the selected room data changes, update that room's
-	 * render data accordingly
-	 */
-	useEffect(() => {
-		if (!selectedRoomData) return;
-		setRoomsToRender((prev) => {
-			const selectedRoomMeta = prev.roomData.filter((r) => r.id === selectedRoomData.roomId)[0];
-			if (selectedRoomMeta) {
-				selectedRoomMeta.color = selectedRoomData.background;
-				selectedRoomMeta.name = selectedRoomData.name;
-			}
-			return { ...prev };
-		});
-		setRoomMetaData((prev) => {
-			const selectedRoomMeta = prev.filter((r) => r.id === selectedRoomData.roomId)[0];
-			if (selectedRoomMeta) {
-				selectedRoomMeta.color = selectedRoomData.background;
-				selectedRoomMeta.name = selectedRoomData.name;
-			}
-			return [...prev];
-		});
-	}, [selectedRoomData]);
-
-	useEffect(() => {
-		const updatedRoomData = renderRooms(roomPolygonData, roomMetaData);
-		setRoomsToRender({ roomData: updatedRoomData, polygonData: roomPolygonData });
-	}, [roomMetaData, roomPolygonData]);
-
-	/**
-	 * Calculate and set the svg path data for rooms whenever the
-	 * room polygon data or roomMetaData is updated
-	 */
-	useEffect(() => {
-		const pathData = calculateRoomPathData(roomsToRender.roomData, roomsToRender.polygonData);
-		setRoomPathInfo(pathData);
-		// console.log('re-rendered rooms', roomsToRender);
-	}, [roomsToRender]);
-
-	/** Calculate the path for the highlight box and set to state
-	 * whenever the room under cursor changes (in ROOM mode)
-	 */
-	useEffect(() => {
-		if (mode !== Mode.Room && !deviceBeingMoved) return;
-
-		if (!roomUnderCursor) {
-			setSelectedRoomRenderData(undefined);
-			return;
-		}
-
-		const highlightPath = calculateRoomBorderPathData(roomUnderCursor, roomPolygonData);
-		console.log('initiated');
-		setSelectedRoomRenderData({
-			path: highlightPath,
-			selected: false,
-			selectedColor: 'none'
-		});
-	}, [deviceBeingMoved, mode, roomPolygonData, roomUnderCursor]);
-
-	useEffect(() => {
-		if (selectedRoomColor) {
-			setSelectedRoomRenderData((prev) => {
-				console.log('updating to', prev ? selectedRoomColor : undefined);
-				return prev ? { ...prev, selectedColor: selectedRoomColor } : undefined;
-			});
-		} else {
-			setSelectedRoomRenderData(undefined);
-		}
-	}, [selectedRoomColor]);
 
 	useEffect(() => {
 		setObjectsToRender(objectMetaData);
@@ -626,8 +506,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			</g>
 			{/* <g id="boxpath"></g> */}
 			<g id="boxSurface">
-				{roomPathInfo &&
-					roomPathInfo.map((data, i) => (
+				{roomPathData &&
+					roomPathData.map((data, i) => (
 						<path
 							key={i}
 							d={data.path}
@@ -639,8 +519,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					))}
 			</g>
 			<g id="boxRoom" visibility={layerSettings.showTexture ? 'visible' : 'hidden'}>
-				{roomPathInfo &&
-					roomPathInfo.map((data, i) => (
+				{roomPathData &&
+					roomPathData.map((data, i) => (
 						<path
 							key={i}
 							d={data.path}
@@ -901,76 +781,36 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 				)}
 			</g>
 			<g id="boxArea" visibility={layerSettings.showSurfaces ? 'visible' : 'hidden'}>
-				{roomPathInfo &&
-					roomPathInfo
+				{roomPathData &&
+					roomPathData
 						.filter((d) => d.centerPoint)
 						.map((data, i) => (
-							<React.Fragment key={i + 'room-name'}>
-								<text
-									x={data.centerPoint.x}
-									y={data.centerPoint.y}
-									style={{
-										fill:
-											data.room.color == 'gradientBlack' || data.room.color == 'gradientBlue'
-												? 'white'
-												: textColor ?? '#343938'
-									}}
-									textAnchor="middle">
-									{data.room.name}
-								</text>
-								<text
-									x={data.centerPoint.x}
-									y={data.room.name ? data.centerPoint.y + 20 : data.centerPoint.y}
-									style={{
-										fill:
-											data.room.color == 'gradientBlack' || data.room.color == 'gradientBlue'
-												? 'white'
-												: textColor ?? '#343938'
-									}}
-									fontSize="12.5px"
-									fontWeight={data.room.surface ? 'normal' : 'bold'}
-									textAnchor="middle">
-									{data.room.surface
-										? data.room.surface + ' m²'
-										: (data.room.area / (constants.METER_SIZE * constants.METER_SIZE)).toFixed(2) +
-										  ' m²'}
-								</text>
+							<React.Fragment key={`${data.room.id}-room-area`}>
+								<RoomAreaText
+									room={data.room}
+									centerPoint={data.centerPoint}
+									textColor={textColor}
+								/>
 							</React.Fragment>
 						))}
 			</g>
 			<g id="boxRib" visibility={layerSettings.showMeasurements ? 'visible' : 'hidden'}>
-				{!wallUnderCursor &&
-					measurementRenderData &&
-					measurementRenderData.map(({ start, shift, angle, content }) => (
-						<text
-							key={`${start.x}-${start.y}-measurement-outside`}
-							x={start.x}
-							y={start.y + shift}
-							transform={`rotate(${angle} ${start.x},${start.y})`}
-							textAnchor="middle"
-							stroke="#fff"
-							strokeWidth="0.2px"
-							fill={textColor ?? '#555'}
-							fontSize={content < 1 ? '0.73em' : '0.9em'}>
-							{content.toFixed(2)}
-						</text>
-					))}
-				{wallUnderCursor &&
-					inWallMeasurementRenderData &&
-					inWallMeasurementRenderData.map(({ start, shift, angle, content }) => (
-						<text
-							key={`${start.x}-${start.y}-measurement-inside`}
-							x={start.x}
-							y={start.y + shift}
-							transform={`rotate(${angle} ${start.x},${start.y})`}
-							textAnchor="middle"
-							stroke="#fff"
-							strokeWidth="0.27px"
-							fill="#666"
-							fontSize={content < 1 ? '0.8em' : '1em'}>
-							{content.toFixed(2)}
-						</text>
-					))}
+				{!wallUnderCursor && measurementRenderData && (
+					<WallMeasurementText
+						data={measurementRenderData}
+						fill={textColor ?? '#555'}
+						fontSize={(content) => (content < 1 ? '0.73em' : '0.9em')}
+						strokeWidth="0.2px"
+					/>
+				)}
+				{wallUnderCursor && inWallMeasurementRenderData && (
+					<WallMeasurementText
+						data={inWallMeasurementRenderData}
+						fill="#666"
+						fontSize={(content) => (content < 1 ? '0.8em' : '1em')}
+						strokeWidth="0.27px"
+					/>
+				)}
 			</g>
 			<g id="boxScale" visibility={layerSettings.showMeasurements ? 'visible' : 'hidden'}>
 				{layerSettings.showMeasurements && scaleBoxDisplayData && wallMetaData.length > 2 && (
