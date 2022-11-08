@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
+import { SelectedWallData } from '../components/FloorPlannerCanvas/FloorPlannerCanvas';
 import { DeviceMetaData, ObjectMetaData, ViewboxData, WallMetaData } from '../models';
 import {
 	Mode,
@@ -32,11 +33,10 @@ interface Props {
 	wallUnderCursor: WallMetaData | null;
 	objectMetaData: ObjectMetaData[];
 	startWallDrawing: (startPoint: Point2D) => void;
-	setSelectedWallData: (data: { wall: WallMetaData; before: Point2D }) => void;
+	setSelectedWallData: (data: SelectedWallData) => void;
 	setObjectBeingMoved: (o: ObjectMetaData | null) => void;
 	nodeUnderCursor: Point2D | undefined;
 	setNodeBeingMoved: (n: NodeMoveData | undefined) => void;
-	setWallEquationData: (e: WallEquationGroup) => void;
 	setDragging: (d: boolean) => void;
 	objectUnderCursor: ObjectMetaData | undefined;
 	deviceUnderCursor: DeviceMetaData | undefined;
@@ -57,7 +57,6 @@ export const useHandleMouseDown = ({
 	nodeUnderCursor,
 	setNodeBeingMoved,
 	wallUnderCursor,
-	setWallEquationData,
 	setDragging,
 	objectUnderCursor,
 	setObjectBeingMoved,
@@ -377,10 +376,13 @@ export const useHandleMouseDown = ({
 				}
 			}
 			setWallMetaData(wallMeta);
-			setSelectedWallData(selectedWallData);
-			setWallEquationData(wallEquations);
+			setSelectedWallData({
+				wall: selectedWallData.wall,
+				before: selectedWallData.before,
+				equationData: wallEquations
+			});
 		},
-		[followerData, setSelectedWallData, setWallEquationData, setWallMetaData, wallUnderCursor]
+		[followerData, setSelectedWallData, setWallMetaData, wallUnderCursor]
 	);
 
 	const handleMouseDown = useCallback(

@@ -1,19 +1,14 @@
-import {
-	Mode,
-	ObjectMetaData,
-	Point2D,
-	WallEquationGroup,
-	WallMetaData
-} from '../../models/models';
+import { SelectedWallData } from '../../components/FloorPlannerCanvas/FloorPlannerCanvas';
+import { Mode, ObjectMetaData, WallMetaData } from '../../models/models';
 
 export const handleMouseUpBindMode = (
 	objectMetaData: ObjectMetaData[],
 	startModifyingOpening: (object: ObjectMetaData) => void,
-	selectedWallData: { wall: WallMetaData; before: Point2D } | null,
+	selectedWallData: SelectedWallData | undefined,
 	wallClicked: (wall: WallMetaData) => void,
-	resetEquationData: () => void,
 	objectBeingMoved: ObjectMetaData | null,
-	setObjectBeingMoved: (o: ObjectMetaData | null) => void
+	setObjectBeingMoved: (o: ObjectMetaData | null) => void,
+	resetEquationData: () => void
 ): {
 	updatedMode: Mode;
 	updatedObjectMeta: ObjectMetaData[];
@@ -52,20 +47,8 @@ export const handleMouseUpBindMode = (
 			wallClicked(selectedWallData.wall);
 			// mode = Mode.EditWall;
 		}
-
 		resetEquationData();
 	}
-
-	// if (!binder)
-	// 	return {
-	// 		updatedBinder: binder,
-	// 		updatedMode: mode,
-	// 		updatedObjectMeta: objectMetaData
-	// 	};
-
-	// if (mode == Mode.Bind) {
-	// 	binder = null;
-	// }
 
 	return {
 		updatedMode: mode,

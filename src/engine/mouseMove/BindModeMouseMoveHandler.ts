@@ -46,7 +46,7 @@ export const handleMouseMoveBindMode = (
 	setNodeBeingMoved: (n: NodeMoveData | undefined) => void,
 	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void,
 	objectEquationData: ObjectEquationData[],
-	wallEquations: WallEquationGroup,
+	wallEquations: WallEquationGroup | undefined,
 	deviceUnderCursor: DeviceMetaData | undefined
 ) => {
 	const { followerData } = canvasState;
@@ -255,6 +255,7 @@ export const handleMouseMoveBindMode = (
 	} else if (
 		wallUnderCursor &&
 		action &&
+		wallEquations &&
 		wallEquations.equation1 &&
 		wallEquations.equation2 &&
 		wallEquations.equation3

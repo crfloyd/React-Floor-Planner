@@ -1,3 +1,4 @@
+import { SelectedWallData } from '../../components/FloorPlannerCanvas/FloorPlannerCanvas';
 import {
 	CursorType,
 	DeviceMetaData,
@@ -9,7 +10,6 @@ import {
 	RoomMetaData,
 	SnapData,
 	ViewboxData,
-	WallEquationGroup,
 	WallMetaData
 } from '../../models/models';
 import { CanvasState } from '../';
@@ -44,9 +44,9 @@ export const handleMouseMove = (
 	setRoomUnderCursor: (r: RoomMetaData | undefined) => void,
 	setInWallMeasurementText: (wall: WallMetaData, objects: ObjectMetaData[]) => void,
 	objectEquationData: ObjectEquationData[],
-	wallEquationData: WallEquationGroup,
 	deviceBeingMoved: DeviceMetaData | undefined,
-	deviceUnderCursor: DeviceMetaData | undefined
+	deviceUnderCursor: DeviceMetaData | undefined,
+	selectedWallData: SelectedWallData | undefined
 ) => {
 	if (
 		![
@@ -124,7 +124,7 @@ export const handleMouseMove = (
 				setNodeBeingMoved,
 				setInWallMeasurementText,
 				objectEquationData,
-				wallEquationData,
+				selectedWallData?.equationData,
 				deviceBeingMoved
 			);
 			break;

@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { constants } from '../../../constants';
+import { SelectedWallData } from '../../components/FloorPlannerCanvas/FloorPlannerCanvas';
 import {
 	CursorType,
 	DeviceMetaData,
@@ -11,7 +12,6 @@ import {
 	RoomDisplayData,
 	RoomMetaData,
 	SnapData,
-	WallEquationGroup,
 	WallMetaData
 } from '../../models/models';
 import { Wall } from '../../models/Wall';
@@ -29,7 +29,7 @@ export const handleMouseUp = (
 	setPoint: (p: Point2D) => void,
 	canvasState: CanvasState,
 	save: () => void,
-	updateRoomDisplayData: (data: RoomDisplayData) => void,
+	roomClicked: (data: RoomDisplayData) => void,
 	continuousWallMode: boolean,
 	startModifyingOpening: (object: ObjectMetaData) => void,
 	wallClicked: (wall: WallMetaData) => void,
@@ -42,16 +42,14 @@ export const handleMouseUp = (
 	wallEndConstructionData: { start: Point2D; end: Point2D } | null,
 	wallConstructionShouldEnd: boolean,
 	startWallDrawing: (startPoint: Point2D) => void,
-	selectedWallData: { wall: WallMetaData; before: Point2D } | null,
+	selectedWallData: SelectedWallData | undefined,
 	objectBeingMoved: ObjectMetaData | null,
 	setObjectBeingMoved: (o: ObjectMetaData | null) => void,
 	setNodeBeingMoved: (n: NodeMoveData | undefined) => void,
 	roomUnderCursor: RoomMetaData | undefined,
 	selectRoomUnderCursor: () => void,
 	clearWallHelperState: () => void,
-	wallEquations: WallEquationGroup,
 	deviceBeingMoved: DeviceMetaData | undefined,
-	setDeviceBeingMoved: (d: DeviceMetaData | undefined) => void,
 	setDevices: React.Dispatch<React.SetStateAction<DeviceMetaData[]>>
 ) => {
 	const { followerData } = canvasState;
@@ -84,7 +82,8 @@ export const handleMouseUp = (
 			}
 			const area = roomUnderCursor.area / 3600;
 			selectRoomUnderCursor();
-			updateRoomDisplayData({
+			roomClicked({
+				roomId: roomUnderCursor.id,
 				size: area.toFixed(2),
 				roomIndex: roomMetaData.indexOf(roomUnderCursor),
 				surface: roomUnderCursor.surface,
@@ -156,14 +155,16 @@ export const handleMouseUp = (
 				startModifyingOpening,
 				selectedWallData,
 				wallClicked,
-				() => {
-					wallEquations.equation1 = null;
-					wallEquations.equation2 = null;
-					wallEquations.equation3 = null;
-					followerData.intersection = null;
-				},
 				objectBeingMoved,
-				setObjectBeingMoved
+				setObjectBeingMoved,
+				() => {
+					if (selectedWallData) {
+						selectedWallData.equationData.equation1 = null;
+						selectedWallData.equationData.equation2 = null;
+						selectedWallData.equationData.equation3 = null;
+						followerData.intersection = null;
+					}
+				}
 			);
 			setMode(updatedMode);
 			setObjectMetaData(updatedObjectMeta);

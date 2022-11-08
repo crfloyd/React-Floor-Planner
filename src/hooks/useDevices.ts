@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { DeviceMetaData, Mode, Point2D } from '../models/models';
+import { setMode } from '../store/floorPlanSlice';
 import { RootState } from '../store/store';
 import { pointInPolygon } from '../utils/svgTools';
 
@@ -13,6 +14,8 @@ export const useDevices = (
 	const mode = useSelector((state: RootState) => state.floorPlan.mode);
 	const [devices, setDevices] = useState<DeviceMetaData[]>([]);
 	const [deviceUnderCursor, setDeviceUnderCursor] = useState<DeviceMetaData>();
+
+	const dispatch = useDispatch();
 
 	/**
 	 * Whenever the mouse position changes in Select Mode,
@@ -40,9 +43,9 @@ export const useDevices = (
 	 * `deviceBeingMoved`.
 	 */
 	useEffect(() => {
-		if (!deviceUnderCursor || mode !== Mode.Bind || deviceBeingMoved) return;
+		if (!deviceUnderCursor || mode !== Mode.Bind) return;
 		setDeviceBeingMoved(deviceUnderCursor);
-	}, [mode, deviceUnderCursor, setDeviceBeingMoved, deviceBeingMoved]);
+	}, [mode, deviceUnderCursor, setDeviceBeingMoved]);
 
 	/**
 	 * Whenever the mouse position changes and there is,
@@ -64,6 +67,15 @@ export const useDevices = (
 			setDeviceBeingMoved(undefined);
 		}
 	}, [mode, setDeviceBeingMoved]);
+
+	/**
+	 * If there is a device being moved, change to Device mode
+	 */
+	useEffect(() => {
+		if (deviceBeingMoved) {
+			dispatch(setMode(Mode.Device));
+		}
+	}, [deviceBeingMoved, dispatch]);
 
 	return { devices, setDevices, deviceUnderCursor };
 };

@@ -47,7 +47,14 @@ export enum Mode {
 // 	Bind: 'bind_mode'
 // };
 
+export interface RoomPathData {
+	room: RoomMetaData;
+	path: string;
+	centerPoint: Point2D;
+}
+
 export interface RoomMetaData {
+	id: string;
 	coords: Point2D[];
 	coordsOutside: Point2D[];
 	coordsInside: Point2D[];
@@ -62,6 +69,7 @@ export interface RoomMetaData {
 }
 
 export interface RoomDisplayData {
+	roomId: string;
 	size: string;
 	roomIndex: number;
 	surface: string;

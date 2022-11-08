@@ -22,6 +22,7 @@ import {
 	Point2D,
 	RoomDisplayData,
 	RoomMetaData,
+	RoomPathData,
 	RoomPolygonData,
 	SnapData,
 	ViewboxData,
@@ -32,6 +33,8 @@ import { setAction, setCursor, setMode } from '../../store/floorPlanSlice';
 import { RootState } from '../../store/store';
 import {
 	calculateObjectRenderData,
+	calculateRoomBorderPathData,
+	calculateRoomPathData,
 	getPolygonVisualCenter,
 	getUpdatedObject,
 	pointInPolygon,
@@ -55,17 +58,16 @@ interface Props {
 	layerSettings: LayerSettings;
 	canvasState: CanvasState;
 	continuousWallMode: boolean;
-	updateRoomDisplayData: (roomData: RoomDisplayData) => void;
+	// roomDisplayData: RoomDisplayData[];
+	// setRoomDisplayData: (r: RoomDisplayData[]) => void;
+	roomClicked: (roomData: RoomDisplayData) => void;
+	selectedRoomData: RoomDisplayData | undefined;
 	onMouseMove: () => void;
 	startModifyingOpening: (object: ObjectMetaData) => void;
 	wallClicked: (wall: WallMetaData) => void;
 	cursor: CursorType;
 	setCanvasDimensions: (d: { width: number; height: number }) => void;
 	viewbox: ViewboxData;
-	roomPolygonData: RoomPolygonData;
-	setRoomPolygonData: (r: RoomPolygonData) => void;
-	roomMetaData: RoomMetaData[];
-	setRoomMetaData: (r: RoomMetaData[]) => void;
 	objectMetaData: ObjectMetaData[];
 	setObjectMetaData: React.Dispatch<React.SetStateAction<ObjectMetaData[]>>;
 	wallMetaData: WallMetaData[];
@@ -83,26 +85,23 @@ interface Props {
 	wallColor?: string | undefined;
 }
 
-interface RoomPathData {
-	room: RoomMetaData;
-	path: string;
-	centerPoint: Point2D;
+export interface SelectedWallData {
+	wall: WallMetaData;
+	before: Point2D;
+	equationData: WallEquationGroup;
 }
 
 const FloorPlannerCanvas: React.FC<Props> = ({
 	layerSettings,
 	canvasState,
 	continuousWallMode,
-	updateRoomDisplayData,
+	roomClicked,
 	startModifyingOpening,
 	wallClicked,
 	onMouseMove,
 	setCanvasDimensions,
 	viewbox,
-	roomPolygonData,
-	setRoomPolygonData,
-	roomMetaData,
-	setRoomMetaData,
+	selectedRoomData,
 	objectMetaData,
 	setObjectMetaData,
 	wallMetaData,
@@ -137,10 +136,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		yMouse: 0
 	});
 	const [point, setPoint] = useState<Point2D>({ x: 0, y: 0 });
-	const [selectedWallData, setSelectedWallData] = useState<{
-		wall: WallMetaData;
-		before: Point2D;
-	} | null>(null);
+	const [selectedWallData, setSelectedWallData] = useState<SelectedWallData>();
 	const [wallUnderCursor, setWallUnderCursor] = useState<WallMetaData | null>(null);
 	const [nodeUnderCursor, setNodeUnderCursor] = useState<Point2D | undefined>();
 	const [objectUnderCursor, setObjectUnderCursor] = useState<ObjectMetaData | undefined>();
@@ -150,27 +146,34 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	const [selectedRoomRenderData, setSelectedRoomRenderData] = useState<
 		{ path: string; selected: boolean; selectedColor: string | undefined } | undefined
 	>();
-	const [objectEquationData, setObjectEquationData] = useState<ObjectEquationData[]>([]);
-	const [wallEquationData, setWallEquationData] = useState<WallEquationGroup>({
-		equation1: null,
-		equation2: null,
-		equation3: null
+	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
+	const [roomPolygonData, setRoomPolygonData] = useState<RoomPolygonData>({
+		polygons: [],
+		vertex: []
 	});
+	const [objectEquationData, setObjectEquationData] = useState<ObjectEquationData[]>([]);
+
+	const [roomsToRender, setRoomsToRender] = useState<{
+		roomData: RoomMetaData[];
+		polygonData: RoomPolygonData;
+	}>({ roomData: [], polygonData: { polygons: [], vertex: [] } });
 
 	const gradientData = useMemo<{ id: string; color1: string; color2: string }[]>(
 		() => GradientData,
 		[]
 	);
 
+	const { save } = useHistory();
+
 	const canvasRef = useRef<SVGSVGElement>(null);
+
+	const mode = useSelector((state: RootState) => state.floorPlan.mode);
 
 	const { devices, setDevices, deviceUnderCursor } = useDevices(
 		snapPosition,
 		deviceBeingMoved,
 		setDeviceBeingMoved
 	);
-
-	const mode = useSelector((state: RootState) => state.floorPlan.mode);
 
 	const {
 		startWallDrawing,
@@ -185,25 +188,30 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		setPoint(newPoint)
 	);
 
+	const { inWallMeasurementRenderData, measurementRenderData, setInWallMeasurementText } =
+		useWallMeasurements(wallMetaData, objectBeingMoved);
+
+	const { scaleBoxDisplayData } = useDrawScaleBox(wallMetaData);
+
+	/**
+	 * If there is an objectBeingMoved, refresh the
+	 * objectMetaData state to trigger render
+	 */
 	useEffect(() => {
 		if (objectBeingMoved) {
 			setObjectMetaData((prev) => [...prev]);
 		}
 	}, [objectBeingMoved, setObjectMetaData]);
 
+	/**
+	 * If there is a device being moved and the device is inside
+	 * of a room, also set that room as the roomUnderCursor
+	 */
 	useEffect(() => {
-		if (deviceBeingMoved) {
-			dispatch(setMode(Mode.Device));
-		} else {
-			if (mode !== Mode.Room) {
-				setRoomUnderCursor(undefined);
-				setSelectedRoomRenderData(undefined);
-			}
-			return;
-		}
+		if (!deviceBeingMoved) return;
 
 		let targetRoom: RoomMetaData | undefined = undefined;
-		roomMetaData.forEach((room: RoomMetaData) => {
+		roomsToRender.roomData.forEach((room: RoomMetaData) => {
 			if (
 				pointInPolygon({ x: snapPosition.x, y: snapPosition.y }, room.coords) &&
 				(targetRoom == null || targetRoom.area >= room.area)
@@ -212,8 +220,24 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			}
 		});
 		setRoomUnderCursor(targetRoom);
-	}, [deviceBeingMoved, roomMetaData, dispatch]);
+	}, [deviceBeingMoved, dispatch, roomsToRender.roomData, snapPosition.x, snapPosition.y]);
 
+	/**
+	 * If there is not device being moved and not in room mode
+	 * then reset both roomUnderCursor and selectedRoomRenderData
+	 */
+	useEffect(() => {
+		if (mode !== Mode.Room && mode !== Mode.EditRoom && !deviceBeingMoved) {
+			setRoomUnderCursor(undefined);
+			setSelectedRoomRenderData(undefined);
+		}
+	}, [deviceBeingMoved, mode]);
+
+	/**
+	 * If there is a wall under the cursor and that wall has
+	 * objects (doors, windows) then calculate the equation
+	 * data for those objects and set to state
+	 */
 	useEffect(() => {
 		if (!wallUnderCursor) return;
 		const objectsOnWall = wallUnderCursor.getObjects(objectMetaData);
@@ -221,21 +245,17 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			obj: objTarget,
 			wall: wallUnderCursor,
 			eq: perpendicularEquation(
-				wallEquationData.equation2 ?? { A: 0, B: 0 },
+				selectedWallData?.equationData.equation2 ?? { A: 0, B: 0 },
 				objTarget.x,
 				objTarget.y
 			)
 		}));
 		setObjectEquationData(newEqData);
-	}, [wallUnderCursor, objectMetaData, wallEquationData]);
+	}, [wallUnderCursor, objectMetaData, selectedWallData?.equationData.equation2]);
 
-	const { inWallMeasurementRenderData, measurementRenderData, setInWallMeasurementText } =
-		useWallMeasurements(wallMetaData, objectBeingMoved);
-
-	const { scaleBoxDisplayData } = useDrawScaleBox(wallMetaData);
-
-	const { save } = useHistory();
-
+	/**
+	 * Update the cursor image whenever the cursor type changes
+	 */
 	useEffect(() => {
 		switch (cursor) {
 			case 'grab':
@@ -267,64 +287,81 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		}
 	}, [dispatch, mode]);
 
+	/**
+	 * When the wall data or the selected wall's equation data changes,
+	 * refresh all the wall coordinates and re-render the walls
+	 */
 	useEffect(() => {
-		refreshWalls(wallMetaData, wallEquationData);
+		const equationData = selectedWallData?.equationData ?? {
+			equation1: null,
+			equation2: null,
+			equation3: null
+		};
+		refreshWalls(wallMetaData, equationData);
 		setRenderWalls(wallMetaData);
+	}, [selectedWallData?.equationData, wallMetaData]);
 
+	/**
+	 * Whenever the walls change, convert them to
+	 * polygons and update room polygon data
+	 */
+	useEffect(() => {
 		const updatedPolygons = polygonize(wallMetaData);
 		setRoomPolygonData(updatedPolygons);
+	}, [wallMetaData, setRoomPolygonData]);
 
-		renderRooms(updatedPolygons, roomMetaData, setRoomMetaData);
-	}, [wallMetaData, wallEquationData]);
+	/**
+	 * Whenever the room polygon data changes, calculate the
+	 * render data and set to state
+	 */
+	useEffect(() => {
+		setRoomMetaData((prev) => {
+			return renderRooms(roomPolygonData, prev);
+		});
+	}, [roomPolygonData]);
+
+	/**
+	 * Whenever the selected room data changes, update that room's
+	 * render data accordingly
+	 */
+	useEffect(() => {
+		if (!selectedRoomData) return;
+		setRoomsToRender((prev) => {
+			const selectedRoomMeta = prev.roomData.filter((r) => r.id === selectedRoomData.roomId)[0];
+			if (selectedRoomMeta) {
+				selectedRoomMeta.color = selectedRoomData.background;
+				selectedRoomMeta.name = selectedRoomData.name;
+			}
+			return { ...prev };
+		});
+		setRoomMetaData((prev) => {
+			const selectedRoomMeta = prev.filter((r) => r.id === selectedRoomData.roomId)[0];
+			if (selectedRoomMeta) {
+				selectedRoomMeta.color = selectedRoomData.background;
+				selectedRoomMeta.name = selectedRoomData.name;
+			}
+			return [...prev];
+		});
+	}, [selectedRoomData]);
 
 	useEffect(() => {
-		let globalArea = 0;
-		const pathData: RoomPathData[] = [];
-		roomMetaData.forEach((room) => {
-			if (room.action == 'add') globalArea = globalArea + room.area;
-			const pathSurface = room.coords;
-			// var pathCreate = "M" + pathSurface[0].x + "," + pathSurface[0].y;
-			const data: RoomPathData = {
-				room: room,
-				path: 'M' + pathSurface[0].x + ',' + pathSurface[0].y,
-				centerPoint: getPolygonVisualCenter(room, roomMetaData)
-			};
-			pathData.push(data);
-			for (let p = 1; p < pathSurface.length; p++) {
-				data.path = data.path + ' ' + 'L' + pathSurface[p].x + ',' + pathSurface[p].y;
-			}
-			if (room.inside.length > 0) {
-				for (let ins = 0; ins < room.inside.length; ins++) {
-					data.path =
-						data.path +
-						' M' +
-						roomPolygonData.polygons[room.inside[ins]].coords[
-							roomPolygonData.polygons[room.inside[ins]].coords.length - 1
-						].x +
-						',' +
-						roomPolygonData.polygons[room.inside[ins]].coords[
-							roomPolygonData.polygons[room.inside[ins]].coords.length - 1
-						].y;
-					for (
-						let free = roomPolygonData.polygons[room.inside[ins]].coords.length - 2;
-						free > -1;
-						free--
-					) {
-						data.path =
-							data.path +
-							' L' +
-							roomPolygonData.polygons[room.inside[ins]].coords[free].x +
-							',' +
-							roomPolygonData.polygons[room.inside[ins]].coords[free].y;
-					}
-				}
-			}
-		});
-		setRoomPathInfo(pathData);
-	}, [roomMetaData]);
+		const updatedRoomData = renderRooms(roomPolygonData, roomMetaData);
+		setRoomsToRender({ roomData: updatedRoomData, polygonData: roomPolygonData });
+	}, [roomMetaData, roomPolygonData]);
 
-	// when the room under cursor changes (in ROOM mode), calculate
-	// the path for the highlight box and set to state
+	/**
+	 * Calculate and set the svg path data for rooms whenever the
+	 * room polygon data or roomMetaData is updated
+	 */
+	useEffect(() => {
+		const pathData = calculateRoomPathData(roomsToRender.roomData, roomsToRender.polygonData);
+		setRoomPathInfo(pathData);
+		// console.log('re-rendered rooms', roomsToRender);
+	}, [roomsToRender]);
+
+	/** Calculate the path for the highlight box and set to state
+	 * whenever the room under cursor changes (in ROOM mode)
+	 */
 	useEffect(() => {
 		if (mode !== Mode.Room && !deviceBeingMoved) return;
 
@@ -333,44 +370,21 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			return;
 		}
 
-		const pathSurface = roomUnderCursor.coords;
-		let highlightPath = 'M' + pathSurface[0].x + ',' + pathSurface[0].y;
-		for (let p = 1; p < pathSurface.length - 1; p++) {
-			highlightPath = highlightPath + ' ' + 'L' + pathSurface[p].x + ',' + pathSurface[p].y;
-		}
-		highlightPath = highlightPath + 'Z';
-		if (roomUnderCursor.inside.length > 0) {
-			for (let ins = 0; ins < roomUnderCursor.inside.length; ins++) {
-				const targetPolygon = roomPolygonData.polygons[roomUnderCursor.inside[ins]];
-				const numCoords = targetPolygon.coords.length - 1;
-				highlightPath =
-					highlightPath +
-					' M' +
-					targetPolygon.coords[numCoords].x +
-					',' +
-					targetPolygon.coords[numCoords].y;
-				for (let free = targetPolygon.coords.length - 2; free > -1; free--) {
-					highlightPath =
-						highlightPath +
-						' L' +
-						targetPolygon.coords[free].x +
-						',' +
-						targetPolygon.coords[free].y;
-				}
-			}
-		}
+		const highlightPath = calculateRoomBorderPathData(roomUnderCursor, roomPolygonData);
+		console.log('initiated');
 		setSelectedRoomRenderData({
 			path: highlightPath,
 			selected: false,
 			selectedColor: 'none'
 		});
-	}, [roomPolygonData.polygons, roomUnderCursor, mode, deviceBeingMoved]);
+	}, [deviceBeingMoved, mode, roomPolygonData, roomUnderCursor]);
 
 	useEffect(() => {
 		if (selectedRoomColor) {
-			setSelectedRoomRenderData((prev) =>
-				prev ? { ...prev, selectedColor: selectedRoomColor } : undefined
-			);
+			setSelectedRoomRenderData((prev) => {
+				console.log('updating to', prev ? selectedRoomColor : undefined);
+				return prev ? { ...prev, selectedColor: selectedRoomColor } : undefined;
+			});
 		} else {
 			setSelectedRoomRenderData(undefined);
 		}
@@ -464,7 +478,6 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		nodeUnderCursor,
 		setNodeBeingMoved,
 		wallUnderCursor,
-		setWallEquationData,
 		setDragging,
 		objectUnderCursor,
 		setObjectBeingMoved,
@@ -521,13 +534,13 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					point,
 					setPoint,
 					canvasState,
-					() => save(wallMetaData, objectMetaData, roomMetaData),
-					updateRoomDisplayData,
+					() => save(wallMetaData, objectMetaData, roomsToRender.roomData),
+					roomClicked,
 					continuousWallMode,
 					startModifyingOpening,
 					wallClicked,
 					updateCursor,
-					roomMetaData,
+					roomsToRender.roomData,
 					objectMetaData,
 					setObjectMetaData,
 					wallMetaData,
@@ -546,9 +559,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 						});
 					},
 					clearWallHelperState,
-					wallEquationData,
 					deviceBeingMoved,
-					setDeviceBeingMoved,
 					setDevices
 				);
 			}}
@@ -580,7 +591,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					wallMetaData,
 					wallUnderCursor,
 					setWallMetaData,
-					roomMetaData,
+					roomsToRender.roomData,
 					objectMetaData,
 					setObjectMetaData,
 					updateCursor,
@@ -594,9 +605,9 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 					setRoomUnderCursor,
 					setInWallMeasurementText,
 					objectEquationData,
-					wallEquationData,
 					deviceBeingMoved,
-					deviceUnderCursor
+					deviceUnderCursor,
+					selectedWallData
 				);
 			}}>
 			<defs>

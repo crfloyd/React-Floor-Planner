@@ -1,9 +1,12 @@
+import { v4 as uuid } from 'uuid';
+
 import { constants } from '../../constants';
 import {
 	ObjectMetaData,
 	Point2D,
 	Polygon,
 	RoomMetaData,
+	RoomPathData,
 	RoomPolygonData,
 	SVGCreationData,
 	SVGData,
@@ -20,10 +23,9 @@ import {
 	distanceBetween,
 	findById,
 	getArrayDifferences,
-	getMidPoint,
 	getNumObjectArrayDifferences,
 	intersectionOfEquations,
-	intersectionOfSideEquations,
+	isObjectsEquals,
 	pDistance,
 	perpendicularEquation,
 	pointsAreEqual,
@@ -934,6 +936,81 @@ const calculateRoomArea = (vertex: WallVertex[], coords: number[]) => {
 	return Math.abs(+realArea.toFixed(2));
 };
 
+export const calculateRoomPathData = (
+	roomMetaData: RoomMetaData[],
+	roomPolygonData: RoomPolygonData
+): RoomPathData[] => {
+	const pathData: RoomPathData[] = [];
+	roomMetaData.forEach((room) => {
+		const pathSurface = room.coords;
+		const data: RoomPathData = {
+			room: room,
+			path: 'M' + pathSurface[0].x + ',' + pathSurface[0].y,
+			centerPoint: getPolygonVisualCenter(room, roomMetaData)
+		};
+		pathData.push(data);
+		for (let p = 1; p < pathSurface.length; p++) {
+			data.path = data.path + ' ' + 'L' + pathSurface[p].x + ',' + pathSurface[p].y;
+		}
+		if (room.inside.length > 0) {
+			for (let ins = 0; ins < room.inside.length; ins++) {
+				data.path =
+					data.path +
+					' M' +
+					roomPolygonData.polygons[room.inside[ins]].coords[
+						roomPolygonData.polygons[room.inside[ins]].coords.length - 1
+					].x +
+					',' +
+					roomPolygonData.polygons[room.inside[ins]].coords[
+						roomPolygonData.polygons[room.inside[ins]].coords.length - 1
+					].y;
+				for (
+					let free = roomPolygonData.polygons[room.inside[ins]].coords.length - 2;
+					free > -1;
+					free--
+				) {
+					data.path =
+						data.path +
+						' L' +
+						roomPolygonData.polygons[room.inside[ins]].coords[free].x +
+						',' +
+						roomPolygonData.polygons[room.inside[ins]].coords[free].y;
+				}
+			}
+		}
+	});
+	return pathData;
+};
+
+export const calculateRoomBorderPathData = (
+	room: RoomMetaData,
+	polygonData: RoomPolygonData
+): string => {
+	const pathSurface = room.coords;
+	let highlightPath = 'M' + pathSurface[0].x + ',' + pathSurface[0].y;
+	for (let p = 1; p < pathSurface.length - 1; p++) {
+		highlightPath = highlightPath + ' ' + 'L' + pathSurface[p].x + ',' + pathSurface[p].y;
+	}
+	highlightPath = highlightPath + 'Z';
+	if (room.inside.length > 0) {
+		for (let ins = 0; ins < room.inside.length; ins++) {
+			const targetPolygon = polygonData.polygons[room.inside[ins]];
+			const numCoords = targetPolygon.coords.length - 1;
+			highlightPath =
+				highlightPath +
+				' M' +
+				targetPolygon.coords[numCoords].x +
+				',' +
+				targetPolygon.coords[numCoords].y;
+			for (let free = targetPolygon.coords.length - 2; free > -1; free--) {
+				highlightPath =
+					highlightPath + ' L' + targetPolygon.coords[free].x + ',' + targetPolygon.coords[free].y;
+			}
+		}
+	}
+	return highlightPath;
+};
+
 // Point in polygon algorithm
 export const pointInPolygon = (point: Point2D, polygon: Point2D[]) => {
 	let inside = false;
@@ -1166,7 +1243,9 @@ export const vertexList = (junction: WallJunction[]) => {
 	return verticies;
 };
 
-export const polygonize = (walls: WallMetaData[]) => {
+export const polygonize = (
+	walls: WallMetaData[]
+): { polygons: Polygon[]; vertex: WallVertex[] } => {
 	let junction: WallJunction[] = [];
 	walls.forEach((wall, idx) => {
 		const wallJunctions = wall
@@ -1648,124 +1727,14 @@ export const nearVertice = (
 	return bestDistance < range ? bestVertice : null;
 };
 
-// export const applyPolygonDataToRooms = (
-// 	roomPolygonData: RoomPolygonData,
-// 	roomMeta: RoomMetaData[],
-// 	setRoomMeta: (r: RoomMetaData[]) => void
-// ) => {
-// 	if (roomPolygonData.polygons.length == 0) {
-// 		roomMeta = [];
-// 	}
-// 	roomPolygonData.polygons.forEach((roomPoly) => {
-// 		let foundRoom = false;
-// 		roomMeta.forEach((room) => {
-// 			let countCoords = roomPoly.coords.length;
-// 			const diffCoords = getNumObjectArrayDifferences(roomPoly.coords, room.coords);
-// 			const differences = getArrayDifferences(roomPoly.way, room.way);
-// 			if (roomPoly.way.length == room.way.length) {
-// 				if (differences.length == 0 || diffCoords == 0) {
-// 					countCoords = 0;
-// 				}
-// 			} else if (roomPoly.way.length == room.way.length + 1) {
-// 				if (differences.length == 1 || diffCoords == 2) {
-// 					countCoords = 0;
-// 				}
-// 			} else if (roomPoly.way.length == room.way.length - 1) {
-// 				if (differences.length == 1) {
-// 					countCoords = 0;
-// 				}
-// 			}
-
-// 			if (countCoords == 0) {
-// 				foundRoom = true;
-// 				roomMeta = [
-// 					...roomMeta.filter((r) => r !== room),
-// 					{
-// 						...room,
-// 						area: roomPoly.area,
-// 						inside: roomPoly.inside ?? [],
-// 						coords: roomPoly.coords,
-// 						coordsOutside: roomPoly.coordsOutside,
-// 						way: roomPoly.way,
-// 						coordsInside: roomPoly.coordsInside ?? []
-// 					}
-// 				];
-// 				return;
-// 			}
-// 		});
-
-// 		if (!foundRoom) {
-// 			roomMeta = [
-// 				...roomMeta,
-// 				{
-// 					coords: roomPoly.coords,
-// 					coordsOutside: roomPoly.coordsOutside,
-// 					coordsInside: roomPoly.coordsInside ?? [],
-// 					inside: roomPoly.inside ?? [],
-// 					way: roomPoly.way,
-// 					area: roomPoly.area,
-// 					surface: '',
-// 					name: '',
-// 					color: 'gradientWhite',
-// 					showSurface: true,
-// 					action: 'add'
-// 				}
-// 			];
-// 		}
-// 	});
-
-// 	const toSplice: number[] = [];
-// 	roomMeta.forEach((room, idx) => {
-// 		let found = true;
-// 		roomPolygonData.polygons.forEach((roomPoly) => {
-// 			let countRoom = room.coords.length;
-// 			const numDifferentCoords = getNumObjectArrayDifferences(roomPoly.coords, room.coords);
-// 			const numDifferences = getArrayDifferences(roomPoly.way, room.way).length;
-// 			if (roomPoly.way.length == room.way.length) {
-// 				if (numDifferences == 0 || numDifferentCoords == 0) {
-// 					countRoom = 0;
-// 				}
-// 			} else if (roomPoly.way.length == room.way.length + 1) {
-// 				if (numDifferences == 1 || numDifferentCoords == 2) {
-// 					countRoom = 0;
-// 				}
-// 			} else if (roomPoly.way.length == room.way.length - 1) {
-// 				if (numDifferences == 1) {
-// 					countRoom = 0;
-// 				}
-// 			}
-
-// 			if (countRoom == 0) {
-// 				found = true;
-// 				return;
-// 			} else found = false;
-// 		});
-// 		if (!found) toSplice.push(idx);
-// 	});
-
-// 	toSplice.sort(function (a, b) {
-// 		return b - a;
-// 	});
-
-// 	for (let ss = 0; ss < toSplice.length; ss++) {
-// 		roomMeta.splice(toSplice[ss], 1);
-// 	}
-// 	setRoomMeta(roomMeta);
-// 	return roomMeta;
-// };
-
-export const renderRooms = (
-	roomPolygonData: RoomPolygonData,
-	roomMeta: RoomMetaData[],
-	setRoomMeta: (r: RoomMetaData[]) => void
-) => {
+export const renderRooms = (roomPolygonData: RoomPolygonData, roomMeta: RoomMetaData[]) => {
+	let updatedRoomData = [...roomMeta];
 	if (roomPolygonData.polygons.length == 0) {
-		roomMeta = [];
+		updatedRoomData = [];
 	}
 	for (let pp = 0; pp < roomPolygonData.polygons.length; pp++) {
 		let foundRoom = false;
 		const roomPoly = roomPolygonData.polygons[pp];
-		// for (let rr = 0; rr < roomMeta.length; rr++) {
 		roomMeta.forEach((room) => {
 			let countCoords = roomPoly.coords.length;
 			const numDifferentCoords = getNumObjectArrayDifferences(roomPoly.coords, room.coords);
@@ -1786,8 +1755,8 @@ export const renderRooms = (
 
 			if (countCoords == 0) {
 				foundRoom = true;
-				roomMeta = [
-					...roomMeta.filter((r) => r !== room),
+				updatedRoomData = [
+					...updatedRoomData.filter((r) => r.id !== room.id),
 					{
 						...room,
 						area: roomPoly.area,
@@ -1801,11 +1770,11 @@ export const renderRooms = (
 				return;
 			}
 		});
-		// }
 		if (!foundRoom) {
-			roomMeta = [
+			updatedRoomData = [
 				...roomMeta,
 				{
+					id: uuid(),
 					coords: roomPoly.coords,
 					coordsOutside: roomPoly.coordsOutside,
 					coordsInside: roomPoly.coordsInside ?? [],
@@ -1823,9 +1792,9 @@ export const renderRooms = (
 	}
 
 	const toSplice = [];
-	for (let rr = 0; rr < roomMeta.length; rr++) {
+	for (let rr = 0; rr < updatedRoomData.length; rr++) {
 		let found = true;
-		const roomData = roomMeta[rr];
+		const roomData = updatedRoomData[rr];
 		for (let pp = 0; pp < roomPolygonData.polygons.length; pp++) {
 			let countRoom = roomData.coords.length;
 			const roomPoly = roomPolygonData.polygons[pp];
@@ -1859,9 +1828,10 @@ export const renderRooms = (
 	});
 
 	for (let ss = 0; ss < toSplice.length; ss++) {
-		roomMeta.splice(toSplice[ss], 1);
+		console.log('*** SPLICING ');
+		updatedRoomData.splice(toSplice[ss], 1);
 	}
-	setRoomMeta([...roomMeta]);
+	return updatedRoomData;
 };
 
 export const getPolygonVisualCenter = (room: RoomMetaData, allRooms: RoomMetaData[]) => {

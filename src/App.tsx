@@ -26,7 +26,6 @@ import {
 } from './models/models';
 import { setAction, setDoorType, setMode, setObjectType } from './store/floorPlanSlice';
 import { RootState } from './store/store';
-import { renderRooms } from './utils/svgTools';
 
 const canvasState = new CanvasState();
 
@@ -69,6 +68,7 @@ function App() {
 	const [showObjectTools, setShowObjectTools] = useState(false);
 	const [showRoomTools, setShowRoomTools] = useState(false);
 	const [selectedRoomData, setSelectedRoomData] = useState<RoomDisplayData>({
+		roomId: '',
 		size: '',
 		roomIndex: 0,
 		surface: '',
@@ -89,10 +89,6 @@ function App() {
 	const [canvasDimensions, setCanvasDimenions] = useState({
 		width: 0,
 		height: 0
-	});
-	const [roomPolygonData, setRoomPolygonData] = useState<RoomPolygonData>({
-		polygons: [],
-		vertex: []
 	});
 	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
 	const [objectMetaData, setObjectMetaData] = useState<ObjectMetaData[]>([]);
@@ -155,19 +151,19 @@ function App() {
 		setShowRoomTools(false);
 		setShowMainPanel(true);
 
-		const roomMetaCopy = [...roomMetaData];
-		const id = selectedRoomData.roomIndex;
+		// const roomMetaCopy = [...roomMetaData];
+		// const id = selectedRoomData.roomIndex;
 
-		const roomMeta = roomMetaCopy[id];
-		if (!roomMeta) return;
+		// const roomMeta = roomMetaCopy[id];
+		// if (!roomMeta) return;
 
-		roomMeta.color = selectedRoomData.background;
-		roomMeta.name = selectedRoomData.name;
-		roomMeta.surface = selectedRoomData.surface;
-		roomMeta.showSurface = selectedRoomData.showSurface;
+		// roomMeta.color = selectedRoomData.background;
+		// roomMeta.name = selectedRoomData.name;
+		// roomMeta.surface = selectedRoomData.surface;
+		// roomMeta.showSurface = selectedRoomData.showSurface;
 
-		setRoomMetaData(roomMetaCopy);
-		renderRooms(roomPolygonData, roomMetaCopy, setRoomMetaData);
+		// setRoomMetaData(roomMetaCopy);
+
 		setSelectedRoomColor(undefined);
 
 		setBoxInfoText('Room modified');
@@ -465,14 +461,13 @@ function App() {
 				continuousWallMode={continuousWallMode}
 				startModifyingOpening={showOpeningTools}
 				wallClicked={handleWallCliked}
-				updateRoomDisplayData={updateRoomDisplayData}
+				roomClicked={updateRoomDisplayData}
 				cursor={cursor}
 				setCanvasDimensions={setCanvasDimenions}
 				viewbox={viewbox}
-				roomMetaData={roomMetaData}
-				setRoomMetaData={setRoomMetaData}
-				roomPolygonData={roomPolygonData}
-				setRoomPolygonData={setRoomPolygonData}
+				// roomMetaData={roomMetaData}
+				// setRoomMetaData={setRoomMetaData}
+				selectedRoomData={selectedRoomData}
 				objectMetaData={objectMetaData}
 				setObjectMetaData={setObjectMetaData}
 				wallMetaData={wallMetaData}
