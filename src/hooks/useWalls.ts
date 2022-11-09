@@ -63,22 +63,26 @@ export const useWalls = () => {
 
 	const deleteWall = useCallback(
 		(wall: WallMetaData) => {
-			const filteredWalls = [...wallMetaData.filter((w) => w.id !== wall.id)];
-			filteredWalls.forEach((wall) => {
+			const otherWalls = [...wallMetaData.filter((w) => w.id !== wall.id)];
+			otherWalls.forEach((wall) => {
 				if (wall.child === wall.id) wall.child = null;
 				if (wall.parent === wall.id) {
 					wall.parent = null;
 				}
 			});
-			for (const k in filteredWalls) {
-				if (filteredWalls[k].child === wall.id) filteredWalls[k].child = null;
-				if (filteredWalls[k].parent === wall.id) {
-					filteredWalls[k].parent = null;
+			for (const k in otherWalls) {
+				if (otherWalls[k].child === wall.id) otherWalls[k].child = null;
+				if (otherWalls[k].parent === wall.id) {
+					otherWalls[k].parent = null;
 				}
 			}
-			setWallMetaData(filteredWalls);
+			setWallMetaData(otherWalls);
+
+			// Remove any objects that were on the wall
+			const objectsOnWall = wall.getObjects(objectMetaData).map((o) => o.id);
+			setObjectMetaData(objectMetaData.filter((o) => !objectsOnWall.includes(o.id)));
 		},
-		[wallMetaData, setWallMetaData]
+		[wallMetaData, setWallMetaData, objectMetaData, setObjectMetaData]
 	);
 
 	const updateWallThickness = useCallback(
