@@ -1,11 +1,13 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useContext } from 'react';
 
-import { ObjectMetaData, Point2D, WallMetaData } from '../models';
+import { FloorPlanContext } from '../context/FloorPlanContext';
+import { Point2D, WallMetaData } from '../models';
 import { Wall } from '../models/Wall';
 import { distanceBetween, intersectionOfEquations } from '../utils/utils';
 
 export const useWalls = () => {
-	const [wallMetaData, setWallMetaData] = useState<WallMetaData[]>([]);
+	const { wallMetaData, setWallMetaData, objectMetaData, setObjectMetaData } =
+		useContext(FloorPlanContext);
 
 	const splitWall = useCallback(
 		(wallToSplit: WallMetaData) => {
@@ -56,7 +58,7 @@ export const useWalls = () => {
 			setWallMetaData(otherWalls);
 			// save(wallMetaData, objectMetaData, roomMetaData);
 		},
-		[wallMetaData]
+		[wallMetaData, setWallMetaData]
 	);
 
 	const deleteWall = useCallback(
@@ -76,32 +78,34 @@ export const useWalls = () => {
 			}
 			setWallMetaData(filteredWalls);
 		},
-		[wallMetaData]
+		[wallMetaData, setWallMetaData]
 	);
 
 	const updateWallThickness = useCallback(
-		(wall: WallMetaData, value: number, allObjects: ObjectMetaData[]) => {
+		(wall: WallMetaData, value: number) => {
 			wall.thick = value;
 			wall.type = 'normal';
 			setWallMetaData([...wallMetaData]);
 
-			const wallObjects = wall.getObjects(allObjects);
+			const wallObjects = wall.getObjects(objectMetaData);
 			wallObjects.forEach((o) => {
 				o.thick = value;
 			});
-			return wallObjects;
+			if (wallObjects) {
+				setObjectMetaData([...objectMetaData]);
+			}
 		},
-		[wallMetaData]
+		[setWallMetaData, wallMetaData, objectMetaData, setObjectMetaData]
 	);
 
 	const makeWallInvisible = useCallback(
-		(wall: WallMetaData, allObjects: ObjectMetaData[]) => {
-			if (wall.getObjects(allObjects).length != 0) return false;
+		(wall: WallMetaData) => {
+			if (wall.getObjects(objectMetaData).length != 0) return false;
 			wall.makeInvisible();
 			setWallMetaData([...wallMetaData]);
 			return true;
 		},
-		[wallMetaData]
+		[objectMetaData, setWallMetaData, wallMetaData]
 	);
 
 	const makeWallVisible = useCallback(
@@ -109,12 +113,10 @@ export const useWalls = () => {
 			wall.makeVisible();
 			setWallMetaData([...wallMetaData]);
 		},
-		[wallMetaData]
+		[setWallMetaData, wallMetaData]
 	);
 
 	return {
-		wallMetaData,
-		setWallMetaData,
 		splitWall,
 		deleteWall,
 		updateWallThickness,

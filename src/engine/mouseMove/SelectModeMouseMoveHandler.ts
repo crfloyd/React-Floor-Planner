@@ -1,10 +1,9 @@
-import { constants } from '../../../constants';
+import { constants } from '../../constants';
 import {
 	CursorType,
 	DeviceMetaData,
 	ObjectMetaData,
 	Point2D,
-	SnapData,
 	ViewboxData,
 	WallMetaData
 } from '../../models/models';
@@ -13,7 +12,7 @@ import { pointInPolygon } from '../../utils/svgTools';
 import { getNearestWallNode, getWallsOnPoint } from '../../utils/utils';
 
 export const handleMouseMoveSelectMode = (
-	snap: SnapData,
+	snap: Point2D,
 	viewbox: ViewboxData,
 	setCursor: (crsr: CursorType) => void,
 	wallMeta: WallMetaData[],

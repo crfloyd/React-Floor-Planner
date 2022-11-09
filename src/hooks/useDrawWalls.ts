@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 
-import { constants } from '../../constants';
+import { constants } from '../constants';
 import {
 	CursorType,
 	Mode,

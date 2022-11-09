@@ -1,13 +1,14 @@
 import './App.scss';
 
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { constants } from '../constants';
+import { constants } from './constants';
 import DoorWindowTools from './components/DoorWindowTools';
 import FloorPlannerCanvas from './components/FloorPlannerCanvas/FloorPlannerCanvas';
 import ObjectTools from './components/ObjectTools';
 import WallTools from './components/WallTools';
+import { FloorPlanContext } from './context/FloorPlanContext';
 import { CanvasState } from './engine';
 import { useWalls } from './hooks';
 import { useCameraTools } from './hooks/useCameraTools';
@@ -21,7 +22,6 @@ import {
 	ObjectMetaData,
 	RoomDisplayData,
 	RoomMetaData,
-	RoomPolygonData,
 	WallMetaData
 } from './models/models';
 import { setAction, setDoorType, setMode, setObjectType } from './store/floorPlanSlice';
@@ -91,7 +91,6 @@ function App() {
 		height: 0
 	});
 	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
-	const [objectMetaData, setObjectMetaData] = useState<ObjectMetaData[]>([]);
 	const [openingWidth, setOpeningWidth] = useState<number | null>(null);
 	const [openingIdBeingEdited, setOpeningIdBeingEdited] = useState<string | undefined>();
 
@@ -104,15 +103,11 @@ function App() {
 	const [planToRecover, setPlanToRecover] = useState(false);
 	const [deviceBeingMoved, setDeviceBeingMoved] = useState<DeviceMetaData>();
 
-	const {
-		wallMetaData,
-		setWallMetaData,
-		splitWall,
-		deleteWall,
-		updateWallThickness,
-		makeWallInvisible,
-		makeWallVisible
-	} = useWalls();
+	const { wallMetaData, objectMetaData, setWallMetaData, setObjectMetaData } =
+		useContext(FloorPlanContext);
+
+	const { splitWall, deleteWall, updateWallThickness, makeWallInvisible, makeWallVisible } =
+		useWalls();
 
 	const modalRef = useRef<HTMLDivElement>(null);
 
@@ -244,10 +239,10 @@ function App() {
 		if (!selectedWall) {
 			throw new Error('No selectedWall was set!');
 		}
-		const objectsUpdated = updateWallThickness(selectedWall, value, objectMetaData);
-		if (objectsUpdated) {
-			setObjectMetaData([...objectMetaData]);
-		}
+		updateWallThickness(selectedWall, value);
+		// if (objectsUpdated) {
+		// 	setObjectMetaData([...objectMetaData]);
+		// }
 	};
 
 	const onWallSplitClicked = () => {
@@ -263,7 +258,7 @@ function App() {
 		if (!selectedWall) {
 			throw new Error('No selectedWall was set!');
 		}
-		if (!makeWallInvisible(selectedWall, objectMetaData)) {
+		if (!makeWallInvisible(selectedWall)) {
 			setBoxInfoText('Walls containing doors or windows cannot be separated!');
 			return;
 		}
@@ -468,10 +463,6 @@ function App() {
 				// roomMetaData={roomMetaData}
 				// setRoomMetaData={setRoomMetaData}
 				selectedRoomData={selectedRoomData}
-				objectMetaData={objectMetaData}
-				setObjectMetaData={setObjectMetaData}
-				wallMetaData={wallMetaData}
-				setWallMetaData={setWallMetaData}
 				onMouseMove={() => setShowSubMenu(false)}
 				openingWidth={openingWidth}
 				openingIdBeingEdited={openingIdBeingEdited}

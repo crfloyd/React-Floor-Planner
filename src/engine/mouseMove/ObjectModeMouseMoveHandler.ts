@@ -1,12 +1,5 @@
-import { constants } from '../../../constants';
-import {
-	BoundingBox,
-	ObjectMetaData,
-	Point2D,
-	SnapData,
-	ViewboxData,
-	WallMetaData
-} from '../../models/models';
+import { constants } from '../../constants';
+import { ObjectMetaData, Point2D, ViewboxData, WallMetaData } from '../../models/models';
 import { Object2D } from '../../models/Object2D';
 import {
 	createEquation,
@@ -15,11 +8,10 @@ import {
 	nearPointOnEquation,
 	nearVertice
 } from '../../utils/svgTools';
-import { getWallsOnPoint, pointIsBetween, vectorDeter, vectorXY } from '../../utils/utils';
-import { CanvasState } from '../';
+import { pointIsBetween, vectorDeter, vectorXY } from '../../utils/utils';
 
 export const handleMouseMoveObjectMode = (
-	snap: SnapData,
+	snap: Point2D,
 	objectType: string,
 	viewbox: ViewboxData,
 	wallMetaData: WallMetaData[],
@@ -27,22 +19,6 @@ export const handleMouseMoveObjectMode = (
 	setObjectBeingMoved: (o: ObjectMetaData) => void
 ) => {
 	if (objectBeingMoved == null) {
-		// if (modeOption == 'simpleStair') {
-		// 	const stairs = new Object2D(
-		// 		'free',
-		// 		constants.OBJECT_CLASSES.STAIR,
-		// 		'simpleStair',
-		// 		snap,
-		// 		0,
-		// 		false,
-		// 		0,
-		// 		'normal',
-		// 		0,
-		// 		15,
-		// 		viewbox
-		// 	);
-		// 	setObjectBeingMoved(getUpdatedObject(stairs));
-		// } else {
 		const device = new Object2D(
 			'free',
 			constants.OBJECT_CLASSES.ENERGY,
@@ -90,25 +66,8 @@ export const handleMouseMoveObjectMode = (
 	setObjectBeingMoved(getUpdatedObject(objectBeingMoved));
 };
 
-const pointsWithBoundingBox = (bbox: BoundingBox, wallMetaData: WallMetaData[]): boolean => {
-	let found = false;
-	const points = [
-		{ x: bbox.left, y: bbox.top },
-		{ x: bbox.left, y: bbox.bottom },
-		{ x: bbox.right, y: bbox.top },
-		{ x: bbox.right, y: bbox.bottom }
-	];
-	points.forEach((point) => {
-		if (getWallsOnPoint(point, wallMetaData)) {
-			found = true;
-			return;
-		}
-	});
-	return found;
-};
-
 const stickOnWall = (
-	snap: SnapData,
+	snap: Point2D,
 	wallMeta: WallMetaData[]
 ): { wall: WallMetaData; point: Point2D; distance: number } | null => {
 	if (wallMeta.length == 0) return null;

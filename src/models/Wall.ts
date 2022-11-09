@@ -23,7 +23,6 @@ export class Wall implements WallMetaData {
 	child: string | null;
 	angle = 0;
 	equations: WallSideEquations;
-	graph: any;
 	coords: Point2D[] = [];
 	backUp: any = false;
 	dPath: string | null = null;
@@ -31,7 +30,7 @@ export class Wall implements WallMetaData {
 	constructor(
 		public start: Point2D,
 		public end: Point2D,
-		public type: string,
+		public type: 'normal' | 'separate' | 'new',
 		public thick: number,
 		init?: Partial<Wall>
 	) {
@@ -43,7 +42,6 @@ export class Wall implements WallMetaData {
 			down: { A: 0, B: 0 },
 			base: { A: 0, B: 0 }
 		};
-		this.graph = {};
 		Object.assign(this, init);
 	}
 
@@ -54,7 +52,6 @@ export class Wall implements WallMetaData {
 		newWall.child = from.child;
 		newWall.angle = from.angle;
 		newWall.equations = from.equations;
-		newWall.graph = from.graph;
 		newWall.coords = from.coords;
 		newWall.backUp = from.backUp;
 		newWall.dPath = from.dPath;

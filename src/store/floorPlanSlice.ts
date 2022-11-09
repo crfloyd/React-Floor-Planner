@@ -2,7 +2,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import { type } from 'os';
 
-import { CursorType, Mode } from '../models';
+import { CursorType, Mode, ObjectMetaData, WallMetaData } from '../models';
 
 type DoorType = 'simple' | 'opening' | 'double' | 'fix';
 

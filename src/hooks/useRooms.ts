@@ -1,4 +1,3 @@
-import { RootState } from '@/store/store';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 
@@ -9,14 +8,13 @@ import {
 	RoomDisplayData,
 	RoomMetaData,
 	RoomPathData,
-	RoomPolygonData,
-	WallMetaData
+	RoomPolygonData
 } from '../models/models';
+import { RootState } from '../store/store';
 import {
 	calculateRoomBorderPathData,
 	calculateRoomPathData,
 	pointInPolygon,
-	polygonize,
 	renderRooms
 } from '../utils/svgTools';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { constants } from '../../../constants';
+import { constants } from '../../constants';
 import { Point2D, RoomMetaData } from '../../models/models';
 
 interface Props {

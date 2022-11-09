@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { constants } from '../../constants';
+import { constants } from '../constants';
 import { WallMetaData } from '../models';
 import { ObjectMetaData, Point2D } from '../models/models';
 import { nearPointOnEquation, pointInPolygon } from '../utils/svgTools';

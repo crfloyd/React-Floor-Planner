@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 
-import { constants } from '../../constants';
+import { constants } from '../constants';
 import { calculateObjectRenderData, carpentryCalc } from '../utils/svgTools';
 import { BoundingBox, ObjectMetaData, Point2D, SVGCreationData, ViewboxData } from './models';
 

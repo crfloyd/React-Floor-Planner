@@ -1,14 +1,15 @@
-import { useCallback } from 'react';
+import { useCallback, useContext } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { SelectedWallData } from '../components/FloorPlannerCanvas/FloorPlannerCanvas';
+import { FloorPlanContext } from '../context/FloorPlanContext';
 import { DeviceMetaData, ObjectMetaData, ViewboxData, WallMetaData } from '../models';
 import {
+	FollowerData,
 	Mode,
 	NodeMoveData,
 	NodeWallObjectData,
 	Point2D,
-	WallEquation,
+	SelectedWallData,
 	WallEquationGroup
 } from '../models/models';
 import { Wall } from '../models/Wall';
@@ -28,10 +29,6 @@ import {
 interface Props {
 	setPoint: (p: Point2D) => void;
 	viewbox: ViewboxData;
-	wallMetaData: WallMetaData[];
-	setWallMetaData: (w: WallMetaData[]) => void;
-	wallUnderCursor: WallMetaData | undefined;
-	objectMetaData: ObjectMetaData[];
 	startWallDrawing: (startPoint: Point2D) => void;
 	setSelectedWallData: (data: SelectedWallData) => void;
 	setObjectBeingMoved: (o: ObjectMetaData | null) => void;
@@ -40,23 +37,16 @@ interface Props {
 	setDragging: (d: boolean) => void;
 	objectUnderCursor: ObjectMetaData | undefined;
 	deviceUnderCursor: DeviceMetaData | undefined;
-	followerData: {
-		equations: { wall: WallMetaData; eq: WallEquation; type: string }[];
-		intersection: Point2D | null;
-	};
+	followerData: FollowerData;
 }
 
-export const useHandleMouseDown = ({
+export const useHandleCanvasMouseDown = ({
 	setPoint,
 	viewbox,
-	wallMetaData,
-	setWallMetaData,
-	objectMetaData,
 	startWallDrawing,
 	setSelectedWallData,
 	nodeUnderCursor,
 	setNodeBeingMoved,
-	wallUnderCursor,
 	setDragging,
 	objectUnderCursor,
 	setObjectBeingMoved,
@@ -66,6 +56,8 @@ export const useHandleMouseDown = ({
 	const dispatch = useDispatch();
 	const mode = useSelector((state: RootState) => state.floorPlan.mode);
 	const action = useSelector((state: RootState) => state.floorPlan.action);
+	const { wallMetaData, setWallMetaData, objectMetaData, wallUnderCursor } =
+		useContext(FloorPlanContext);
 
 	const handleSelectModeNodeClicked = useCallback(
 		(point: Point2D) => {
@@ -384,7 +376,7 @@ export const useHandleMouseDown = ({
 				equationData: wallEquations
 			});
 		},
-		[followerData, setSelectedWallData, setWallMetaData, wallUnderCursor]
+		[wallUnderCursor, followerData, setWallMetaData, setSelectedWallData]
 	);
 
 	const handleMouseDown = useCallback(

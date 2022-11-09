@@ -84,6 +84,11 @@ export interface RoomPolygonData {
 	vertex: WallVertex[];
 }
 
+export interface FollowerData {
+	equations: { wall: WallMetaData; eq: WallEquation; type: string }[];
+	intersection?: Point2D;
+}
+
 export interface WallEquation {
 	A: number | 'h' | 'v';
 	B: number;
@@ -113,17 +118,21 @@ export interface WallVertex {
 	child?: { id: number; angle: number }[];
 	removed?: number[];
 }
+export interface SelectedWallData {
+	wall: WallMetaData;
+	before: Point2D;
+	equationData: WallEquationGroup;
+}
 
 export interface WallMetaData {
 	id: string;
 	thick: number;
 	start: Point2D;
 	end: Point2D;
-	type: string;
+	type: 'normal' | 'separate' | 'new';
 	angle: number;
 	equations: WallSideEquations;
 	coords: Point2D[];
-	graph: any;
 	parent: string | null;
 	child: string | null;
 	dPath: string | null;

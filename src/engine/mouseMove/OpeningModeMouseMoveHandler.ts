@@ -1,4 +1,4 @@
-import { constants } from '../../../constants';
+import { constants } from '../../constants';
 import { ObjectMetaData, Point2D, ViewboxData, WallMetaData } from '../../models/models';
 import { Object2D } from '../../models/Object2D';
 import { findNearestWallInRange, getAngle, getUpdatedObject } from '../../utils/svgTools';

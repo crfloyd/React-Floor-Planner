@@ -8,4 +8,4 @@ export { useWallMeasurements } from './useWallMeasurements';
 export { useWalls } from './useWalls';
 export { useHistory } from './useHistory';
 export { useNoRenderRef } from './useNoRenderRef';
-export { useHandleMouseDown } from './useHandleMouseDown';
+export { useHandleCanvasMouseDown } from './useHandleCanvasMouseDown';

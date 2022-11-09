@@ -1,11 +1,11 @@
 import {
 	CursorType,
 	DeviceMetaData,
+	FollowerData,
 	NodeMoveData,
 	ObjectEquationData,
 	ObjectMetaData,
 	Point2D,
-	SnapData,
 	WallEquationGroup,
 	WallMetaData
 } from '../../models/models';
@@ -28,13 +28,12 @@ import {
 	vectorDeter,
 	vectorXY
 } from '../../utils/utils';
-import { CanvasState } from '../';
 
 export const handleMouseMoveBindMode = (
-	snap: SnapData,
+	snap: Point2D,
 	action: boolean,
 	setCursor: (crsr: CursorType) => void,
-	canvasState: CanvasState,
+	followerData: FollowerData,
 	wallMeta: WallMetaData[],
 	wallUnderCursor: WallMetaData | undefined,
 	objectMeta: ObjectMetaData[],
@@ -49,8 +48,6 @@ export const handleMouseMoveBindMode = (
 	wallEquations: WallEquationGroup | undefined,
 	deviceUnderCursor: DeviceMetaData | undefined
 ) => {
-	const { followerData } = canvasState;
-
 	if (deviceUnderCursor) {
 		return;
 	}
@@ -338,7 +335,8 @@ export const handleMouseMoveBindMode = (
 		// EQ FOLLOWERS WALL MOVING
 		for (let i = 0; i < followerData.equations.length; i++) {
 			const equation = followerData.equations[i];
-			followerData.intersection = intersectionOfEquations(equation.eq, wallEquations.equation2);
+			followerData.intersection =
+				intersectionOfEquations(equation.eq, wallEquations.equation2) ?? undefined;
 			if (
 				followerData.intersection &&
 				wallUnderCursor.pointInsideWall(followerData.intersection, true)

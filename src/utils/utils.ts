@@ -1,4 +1,4 @@
-import { constants } from '../../constants';
+import { constants } from '../constants';
 import { Point2D, SnapData, ViewboxData, WallEquation, WallMetaData } from '../models/models';
 import { pointInPolygon } from './svgTools';
 
@@ -144,7 +144,7 @@ export const vectorDeter = (p1: Point2D, p2: Point2D) => {
 };
 
 export const getNearestWallNode = (
-	snap: SnapData,
+	snap: Point2D,
 	wallMeta: WallMetaData[],
 	range = Infinity,
 	except: WallMetaData[] = []
