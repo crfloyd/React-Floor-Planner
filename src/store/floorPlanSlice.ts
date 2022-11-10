@@ -2,7 +2,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import { type } from 'os';
 
-import { CursorType, Mode, ObjectMetaData, WallMetaData } from '../models';
+import { CursorType, LayerSettings, Mode, ObjectMetaData, WallMetaData } from '../models';
 
 type DoorType = 'simple' | 'opening' | 'double' | 'fix';
 
@@ -12,6 +12,7 @@ interface FloorPlanState {
 	doorType: DoorType;
 	objectType: string;
 	action: boolean;
+	layerSettings: LayerSettings;
 }
 
 const initialState: FloorPlanState = {
@@ -19,7 +20,14 @@ const initialState: FloorPlanState = {
 	mode: Mode.Select,
 	doorType: 'simple',
 	objectType: '',
-	action: false
+	action: false,
+	layerSettings: {
+		showSurfaces: true,
+		showDevices: true,
+		showMeasurements: true,
+		showTexture: true,
+		showGrid: true
+	}
 };
 
 export const floorPlanSlice = createSlice({
@@ -40,10 +48,14 @@ export const floorPlanSlice = createSlice({
 		},
 		setAction: (state, action: PayloadAction<boolean>) => {
 			state.action = action.payload;
+		},
+		setLayerSettings: (state, action: PayloadAction<LayerSettings>) => {
+			state.layerSettings = action.payload;
 		}
 	}
 });
 
-export const { setCursor, setMode, setAction, setDoorType, setObjectType } = floorPlanSlice.actions;
+export const { setCursor, setMode, setAction, setDoorType, setObjectType, setLayerSettings } =
+	floorPlanSlice.actions;
 
 export default floorPlanSlice.reducer;

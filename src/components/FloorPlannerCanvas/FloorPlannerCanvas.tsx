@@ -52,7 +52,6 @@ import WallMeasurementText from './WallMeasurementText';
 let shouldUpdateMouseMove = true;
 
 interface Props {
-	layerSettings: LayerSettings;
 	canvasState: CanvasState;
 	continuousWallMode: boolean;
 	roomClicked: (roomData: RoomDisplayData) => void;
@@ -78,7 +77,6 @@ interface Props {
 }
 
 const FloorPlannerCanvas: React.FC<Props> = ({
-	layerSettings,
 	canvasState,
 	continuousWallMode,
 	roomClicked,
@@ -105,6 +103,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	const cursor = useSelector((state: RootState) => state.floorPlan.cursor);
 	const openingType = useSelector((state: RootState) => state.floorPlan.doorType);
 	const objectType = useSelector((state: RootState) => state.floorPlan.objectType);
+	const layerSettings = useSelector((state: RootState) => state.floorPlan.layerSettings);
 
 	const { wallMetaData, objectMetaData, setObjectMetaData, wallUnderCursor } =
 		useContext(FloorPlanContext);
@@ -442,11 +441,14 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 				<Patterns />
 			</defs>
 			<g id="boxgrid">
-				<rect width="8000" height="5000" x="-3500" y="-2000" fill="url(#grid)" />
+				{layerSettings.showGrid && (
+					<rect width="8000" height="5000" x="-3500" y="-2000" fill="url(#grid)" />
+				)}
 			</g>
 			{/* <g id="boxpath"></g> */}
 			<g id="boxSurface">
 				{roomPathData &&
+					layerSettings.showSurfaces &&
 					roomPathData.map((data, i) => (
 						<path
 							key={i}
@@ -460,6 +462,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			</g>
 			<g id="boxRoom" visibility={layerSettings.showTexture ? 'visible' : 'hidden'}>
 				{roomPathData &&
+					layerSettings.showSurfaces &&
 					roomPathData.map((data, i) => (
 						<path
 							key={i}

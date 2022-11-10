@@ -293,6 +293,7 @@ export interface LayerSettings {
 	showMeasurements: boolean;
 	showTexture: boolean;
 	showDevices: boolean;
+	showGrid: boolean;
 }
 
 export interface SnapData {
