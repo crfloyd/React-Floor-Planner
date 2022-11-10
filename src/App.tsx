@@ -3,11 +3,11 @@ import './App.scss';
 import { useContext, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { constants } from './constants';
 import DoorWindowTools from './components/DoorWindowTools';
 import FloorPlannerCanvas from './components/FloorPlannerCanvas/FloorPlannerCanvas';
 import ObjectTools from './components/ObjectTools';
 import WallTools from './components/WallTools';
+import { constants } from './constants';
 import { FloorPlanContext } from './context/FloorPlanContext';
 import { CanvasState } from './engine';
 import { useWalls } from './hooks';
@@ -24,7 +24,14 @@ import {
 	RoomMetaData,
 	WallMetaData
 } from './models/models';
-import { setAction, setCursor, setDoorType, setMode, setObjectType } from './store/floorPlanSlice';
+import {
+	setAction,
+	setCursor,
+	setDoorType,
+	setLayerSettings,
+	setMode,
+	setObjectType
+} from './store/floorPlanSlice';
 import { RootState } from './store/store';
 
 const canvasState = new CanvasState();
@@ -33,12 +40,7 @@ function App() {
 	const dispatch = useDispatch();
 	const action = useSelector((state: RootState) => state.floorPlan.action);
 	const mode = useSelector((state: RootState) => state.floorPlan.mode);
-	const [layerSettings, setLayerSettings] = useState<LayerSettings>({
-		showSurfaces: true,
-		showDevices: true,
-		showMeasurements: true,
-		showTexture: true
-	});
+	const layerSettings = useSelector((state: RootState) => state.floorPlan.layerSettings);
 
 	const [selectedObject, setSelectedObject] = useState({
 		minWidth: 0,
@@ -450,13 +452,11 @@ function App() {
 			<header>React Floor Planner Ver.0.1</header>
 
 			<FloorPlannerCanvas
-				layerSettings={layerSettings}
 				canvasState={canvasState}
 				continuousWallMode={continuousWallMode}
 				startModifyingOpening={showOpeningTools}
 				wallClicked={handleWallCliked}
 				roomClicked={updateRoomDisplayData}
-				cursor={cursor}
 				setCanvasDimensions={setCanvasDimenions}
 				viewbox={viewbox}
 				// roomMetaData={roomMetaData}
@@ -1378,10 +1378,12 @@ function App() {
 											checked={layerSettings.showMeasurements}
 											onChange={() => {
 												const nextVal = !layerSettings.showMeasurements;
-												setLayerSettings((prev: LayerSettings) => ({
-													...prev,
-													showMeasurements: nextVal
-												}));
+												dispatch(
+													setLayerSettings({
+														...layerSettings,
+														showMeasurements: nextVal
+													})
+												);
 											}}
 										/>
 										<label htmlFor="showRib">Measurement</label>
@@ -1394,10 +1396,12 @@ function App() {
 											id="showArea"
 											checked={layerSettings.showSurfaces}
 											onChange={() => {
-												setLayerSettings((prev) => ({
-													...prev,
-													showSurfaces: !prev.showSurfaces
-												}));
+												dispatch(
+													setLayerSettings({
+														...layerSettings,
+														showSurfaces: !layerSettings.showSurfaces
+													})
+												);
 											}}
 										/>
 										<label htmlFor="showArea">Surface</label>
@@ -1410,10 +1414,12 @@ function App() {
 											id="showLayerRoom"
 											checked={layerSettings.showTexture}
 											onChange={() =>
-												setLayerSettings((prev) => ({
-													...prev,
-													showTexture: !prev.showTexture
-												}))
+												dispatch(
+													setLayerSettings({
+														...layerSettings,
+														showTexture: !layerSettings.showTexture
+													})
+												)
 											}
 										/>
 										<label htmlFor="showLayerRoom">Texture</label>
@@ -1426,10 +1432,10 @@ function App() {
 											id="showLayerDevices"
 											checked={layerSettings.showDevices}
 											onChange={() =>
-												setLayerSettings((prev) => ({
-													...prev,
-													showDevices: !prev.showDevices
-												}))
+												setLayerSettings({
+													...layerSettings,
+													showDevices: !layerSettings.showDevices
+												})
 											}
 										/>
 										<label htmlFor="showLayerDevices">Devices</label>

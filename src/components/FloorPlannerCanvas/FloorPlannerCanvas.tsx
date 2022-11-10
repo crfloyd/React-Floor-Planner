@@ -59,7 +59,6 @@ interface Props {
 	onMouseMove: (p: Point2D) => void;
 	startModifyingOpening: (object: ObjectMetaData) => void;
 	wallClicked: (wall: WallMetaData) => void;
-	cursor: CursorType;
 	setCanvasDimensions: (d: { width: number; height: number }) => void;
 	viewbox: ViewboxData;
 	openingWidth: number | null;
@@ -373,6 +372,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		objectEquationData
 	});
 
+	const PatternsComponent = useMemo(() => <Patterns />, []);
+
 	useEffect(() => {
 		if (dragging) {
 			// dispatch(setCursor('move'));
@@ -417,7 +418,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 				handleMouseUp();
 			}}
 			onMouseMove={(e) => {
-				const throttleMs = 17;
+				const throttleMs = 5;
 				if (!shouldUpdateMouseMove) {
 					return;
 				}
@@ -435,10 +436,11 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 				handleMouseMove();
 			}}>
 			<defs>
-				{gradientData.map((data) => (
+				{/* {gradientData.map((data) => (
 					<LinearGradient key={data.id} id={data.id} color1={data.color1} color2={data.color2} />
-				))}
-				<Patterns />
+				))} */}
+				{/* <Patterns /> */}
+				{PatternsComponent}
 			</defs>
 			<g id="boxgrid">
 				{layerSettings.showGrid && (
@@ -723,8 +725,9 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 						strokeWidth={selectedRoomRenderData.selected ? 7 : 3}></path>
 				)}
 			</g>
-			<g id="boxArea" visibility={layerSettings.showSurfaces ? 'visible' : 'hidden'}>
-				{roomPathData &&
+			<g id="boxArea" visibility={layerSettings.showMeasurements ? 'visible' : 'hidden'}>
+				{!nodeBeingMoved &&
+					roomPathData &&
 					roomPathData
 						.filter((d) => d.centerPoint)
 						.map((data, i) => (
