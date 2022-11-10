@@ -8,11 +8,13 @@ interface Props {
 export const useKeybindings = ({ keyDown, keyUp }: Props) => {
 	useEffect(() => {
 		const onKeyDown = (e: KeyboardEvent) => {
+			e.preventDefault();
 			if (keyDown?.has(e.key)) {
 				keyDown?.get(e.key)?.();
 			}
 		};
 		const onKeyUp = (e: KeyboardEvent) => {
+			e.preventDefault();
 			if (keyUp?.has(e.key)) {
 				keyUp?.get(e.key)?.();
 			}

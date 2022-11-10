@@ -376,7 +376,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 
 	useEffect(() => {
 		if (dragging) {
-			dispatch(setCursor('move'));
+			// dispatch(setCursor('move'));
 			const distX = snapPosition.xMouse - point.x;
 			const distY = snapPosition.yMouse - point.y;
 			dragCamera(distX, distY);

@@ -24,7 +24,7 @@ import {
 	RoomMetaData,
 	WallMetaData
 } from './models/models';
-import { setAction, setDoorType, setMode, setObjectType } from './store/floorPlanSlice';
+import { setAction, setCursor, setDoorType, setMode, setObjectType } from './store/floorPlanSlice';
 import { RootState } from './store/store';
 
 const canvasState = new CanvasState();
@@ -33,7 +33,6 @@ function App() {
 	const dispatch = useDispatch();
 	const action = useSelector((state: RootState) => state.floorPlan.action);
 	const mode = useSelector((state: RootState) => state.floorPlan.mode);
-	const [cursor, setCursor] = useState<CursorType>('default');
 	const [layerSettings, setLayerSettings] = useState<LayerSettings>({
 		showSurfaces: true,
 		showDevices: true,
@@ -188,14 +187,14 @@ function App() {
 	};
 
 	const onDoorTypeClicked = (type: 'simple' | 'opening' | 'double') => {
-		setCursor('crosshair');
+		dispatch(setCursor('crosshair'));
 		setBoxInfoText('Add a door');
 		dispatch(setDoorType(type));
 		applyMode(Mode.Opening);
 	};
 
 	const onWindowTypeClicked = (type: string) => {
-		setCursor('crosshair');
+		dispatch(setCursor('crosshair'));
 		setBoxInfoText('Add a window');
 		setShowDoorList(false);
 		setShowWindowList(false);
@@ -206,7 +205,7 @@ function App() {
 	const onObjectTypeClicked = (type: string) => {
 		setShowSubMenu(false);
 		setShowDoorList(false);
-		setCursor('move');
+		dispatch(setCursor('move'));
 		dispatch(setObjectType(type));
 		setBoxInfoText('Add an object');
 	};
@@ -367,7 +366,7 @@ function App() {
 	};
 
 	const onWallModeClicked = () => {
-		setCursor('crosshair');
+		dispatch(setCursor('crosshair'));
 		setBoxInfoText('Wall creation');
 		applyMode(Mode.Line);
 	};
@@ -375,7 +374,7 @@ function App() {
 	const enterSelectMode = () => {
 		setBoxInfoText('Selection mode');
 		// canvasState.setBinder(null);
-		setCursor('default');
+		dispatch(setCursor('default'));
 		applyMode(Mode.Select);
 	};
 
@@ -400,7 +399,7 @@ function App() {
 		}
 		setShowMainPanel(false);
 		setShowRoomTools(true);
-		setCursor('default');
+		dispatch(setCursor('default'));
 		setBoxInfoText('Configure the room');
 	};
 
@@ -414,7 +413,7 @@ function App() {
 			width: opening.size
 		});
 		setOpeningIdBeingEdited(opening.id);
-		setCursor('default');
+		dispatch(setCursor('default'));
 		setBoxInfoText('Configure the door/window');
 		setShowMainPanel(false);
 		setShowConfigureDoorWindowPanel(true);
@@ -1069,7 +1068,7 @@ function App() {
 								data-placement="right"
 								title="Make partitions wall"
 								onClick={() => {
-									setCursor('crosshair');
+									dispatch(setCursor('crosshair'));
 									setBoxInfoText('Partition creation');
 									applyMode(Mode.Partition);
 								}}>
@@ -1095,7 +1094,7 @@ function App() {
 								id="room_mode"
 								onClick={() => {
 									setBoxInfoText('Configure rooms');
-									setCursor('pointer');
+									dispatch(setCursor('pointer'));
 									setShowRoomTools(true);
 									applyMode(Mode.Room);
 								}}>
@@ -1232,7 +1231,7 @@ function App() {
 								id="stair_mode"
 								onClick={() => {
 									onObjectTypeClicked('stair_mode');
-									setCursor('move');
+									dispatch(setCursor('move'));
 									setBoxInfoText('Add a staircase');
 									applyMode(Mode.Object);
 								}}>
