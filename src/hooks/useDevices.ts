@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { DeviceMetaData, Mode, Point2D } from '../models/models';
+import { DeviceDisplayData, DeviceMetaData, Mode, Point2D } from '../models/models';
 import { setMode } from '../store/floorPlanSlice';
 import { RootState } from '../store/store';
 import { pointInPolygon } from '../utils/svgTools';
 
 export const useDevices = (
 	mousePosition: Point2D,
+	deviceDisplayData: DeviceDisplayData[],
 	deviceBeingMoved: DeviceMetaData | undefined,
 	setDeviceBeingMoved: React.Dispatch<React.SetStateAction<DeviceMetaData | undefined>>
 ) => {
@@ -76,6 +77,18 @@ export const useDevices = (
 			dispatch(setMode(Mode.Device));
 		}
 	}, [deviceBeingMoved, dispatch]);
+
+	/**
+	 * If the device display data changes, update that device's meta data accordingly
+	 */
+	useEffect(() => {
+		setDevices((prev) =>
+			prev.map((d) => ({
+				...d,
+				state: deviceDisplayData.find((dd) => dd.id === d.id)?.status ?? d.state
+			}))
+		);
+	}, [deviceDisplayData]);
 
 	return { devices, setDevices, deviceUnderCursor };
 };

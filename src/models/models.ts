@@ -174,6 +174,15 @@ export interface BoundingBox {
 	left: number;
 	origin: Point2D;
 }
+export type DeviceStatus = 'on' | 'off';
+
+export interface DeviceDisplayData {
+	id: string;
+	locationId: string;
+	name: string;
+	image: string;
+	status: DeviceStatus;
+}
 
 export interface DeviceMetaData {
 	id: string;
@@ -183,6 +192,7 @@ export interface DeviceMetaData {
 	y: number;
 	width: number;
 	height: number;
+	state: 'on' | 'off';
 }
 
 export interface ObjectMetaData {

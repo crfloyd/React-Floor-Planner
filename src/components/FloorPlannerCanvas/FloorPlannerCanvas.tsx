@@ -15,6 +15,7 @@ import {
 import { useHandleCanvasInput } from '../../hooks/useHandleCanvasInput';
 import {
 	CursorType,
+	DeviceDisplayData,
 	DeviceMetaData,
 	LayerSettings,
 	Mode,
@@ -64,6 +65,7 @@ interface Props {
 	openingWidth: number | null;
 	openingIdBeingEdited: string | undefined;
 	selectedRoomColor: string | undefined;
+	deviceDisplayData: DeviceDisplayData[];
 	deviceBeingMoved: DeviceMetaData | undefined;
 	setDeviceBeingMoved: React.Dispatch<React.SetStateAction<DeviceMetaData | undefined>>;
 	zoomCameraIn: () => void;
@@ -88,6 +90,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	openingWidth,
 	openingIdBeingEdited,
 	selectedRoomColor,
+	deviceDisplayData,
 	deviceBeingMoved,
 	setDeviceBeingMoved,
 	zoomCameraIn,
@@ -138,6 +141,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 
 	const { devices, setDevices, deviceUnderCursor } = useDevices(
 		snapPosition,
+		deviceDisplayData,
 		deviceBeingMoved,
 		setDeviceBeingMoved
 	);
@@ -578,8 +582,16 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 									className="device-name"
 									style={{ fill: textColor ?? '' }}
 									display={deviceUnderCursor?.id === device.id ? 'block' : 'none'}>
-									{device.name}
+									{device.name + `-${device.state}`}
 								</text>
+								<circle
+									cx={device.x + device.width / 2 - 20}
+									cy={device.y + device.height / 2}
+									r={device.width / 8}
+									fill={device.state === 'on' ? '#04cf44' : '#e61d07'}
+									stroke={device.state === 'on' ? '#04cf44' : '#e61d07'}
+									// fillOpacity={0}
+								/>
 								<rect
 									x={device.x - device.width / 4}
 									y={device.y - device.height / 4}
