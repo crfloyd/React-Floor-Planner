@@ -1,6 +1,6 @@
 import React, { createContext, PropsWithChildren, useState } from 'react';
 
-import { ObjectMetaData, WallMetaData } from '../models';
+import { ObjectMetaData, RoomMetaData, WallMetaData } from '../models';
 
 interface Props {
 	wallMetaData: WallMetaData[];
@@ -9,6 +9,8 @@ interface Props {
 	setWallUnderCursor: React.Dispatch<React.SetStateAction<WallMetaData | undefined>>;
 	objectMetaData: ObjectMetaData[];
 	setObjectMetaData: React.Dispatch<React.SetStateAction<ObjectMetaData[]>>;
+	roomMetaData: RoomMetaData[];
+	setRoomMetaData: React.Dispatch<React.SetStateAction<RoomMetaData[]>>;
 }
 
 export const FloorPlanContext = React.createContext<Props>({
@@ -23,6 +25,10 @@ export const FloorPlanContext = React.createContext<Props>({
 	},
 	setWallUnderCursor: () => {
 		return;
+	},
+	roomMetaData: [],
+	setRoomMetaData: () => {
+		return;
 	}
 });
 
@@ -30,6 +36,7 @@ export const FloorPlanContextProvider: React.FC<PropsWithChildren> = (props) => 
 	const [wallUnderCursor, setWallUnderCursor] = useState<WallMetaData>();
 	const [wallMetaData, setWallMetaData] = useState<WallMetaData[]>([]);
 	const [objectMetaData, setObjectMetaData] = useState<ObjectMetaData[]>([]);
+	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
 	return (
 		<FloorPlanContext.Provider
 			value={{
@@ -38,7 +45,9 @@ export const FloorPlanContextProvider: React.FC<PropsWithChildren> = (props) => 
 				objectMetaData,
 				setObjectMetaData,
 				wallUnderCursor,
-				setWallUnderCursor
+				setWallUnderCursor,
+				roomMetaData,
+				setRoomMetaData
 			}}>
 			{props.children}
 		</FloorPlanContext.Provider>

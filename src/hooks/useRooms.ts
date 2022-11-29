@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 
+import { FloorPlanContext } from '../context/FloorPlanContext';
 import {
 	DeviceMetaData,
 	Mode,
@@ -22,10 +23,12 @@ export const useRooms = (
 	selectedRoomData: RoomDisplayData | undefined,
 	selectedRoomColor: string | undefined,
 	deviceBeingMoved: DeviceMetaData | undefined,
-	cursorPosition: Point2D
+	cursorPosition: Point2D,
+	save: (roomMeta: RoomMetaData[]) => void
 ) => {
 	const mode = useSelector((state: RootState) => state.floorPlan.mode);
-	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
+	// const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
+	const { roomMetaData, setRoomMetaData } = useContext(FloorPlanContext);
 	const [roomPolygonData, setRoomPolygonData] = useState<RoomPolygonData>({
 		polygons: [],
 		vertex: []
@@ -78,7 +81,7 @@ export const useRooms = (
 		setRoomMetaData((prev) => {
 			return renderRooms(roomPolygonData, prev);
 		});
-	}, [roomPolygonData]);
+	}, [roomPolygonData, setRoomMetaData]);
 
 	/**
 	 * Whenever the selected room data changes, update that room's
@@ -86,26 +89,28 @@ export const useRooms = (
 	 */
 	useEffect(() => {
 		if (!selectedRoomData) return;
+
+		const updateRoomData = (roomData: RoomMetaData[]) => {
+			const selectedRoomMeta = roomData.filter((r) => r.id === selectedRoomData.roomId)[0];
+			if (selectedRoomMeta) {
+				selectedRoomMeta.color = selectedRoomData.background;
+				selectedRoomMeta.name = selectedRoomData.name;
+			}
+			return [...roomData];
+		};
+
 		setRoomsToRender((prev) => {
-			const selectedRoomMeta = prev.roomData.filter((r) => r.id === selectedRoomData.roomId)[0];
-			if (selectedRoomMeta) {
-				selectedRoomMeta.color = selectedRoomData.background;
-				selectedRoomMeta.name = selectedRoomData.name;
-			}
-			return { ...prev };
+			const updatedRoomData = updateRoomData(prev.roomData);
+			return { ...prev, roomData: updatedRoomData };
 		});
+
 		setRoomMetaData((prev) => {
-			const selectedRoomMeta = prev.filter((r) => r.id === selectedRoomData.roomId)[0];
-			if (selectedRoomMeta) {
-				selectedRoomMeta.color = selectedRoomData.background;
-				selectedRoomMeta.name = selectedRoomData.name;
-			}
-			return [...prev];
+			return updateRoomData(prev);
 		});
-	}, [selectedRoomData]);
+	}, [selectedRoomData, setRoomMetaData]);
 
 	/**
-	 * Whenever the room data changes, re-render and set to state
+	 * Whenever the room data changes, re-render, and set to state
 	 */
 	useEffect(() => {
 		const updatedRoomData = renderRooms(roomPolygonData, roomMetaData);

@@ -10,9 +10,8 @@ import WallTools from './components/WallTools';
 import { constants } from './constants';
 import { FloorPlanContext } from './context/FloorPlanContext';
 import { CanvasState } from './engine';
-import { useWalls } from './hooks';
+import { useHistory, useWalls } from './hooks';
 import { useCameraTools } from './hooks/useCameraTools';
-import { useHistory } from './hooks/useHistory';
 import { useKeybindings } from './hooks/useKeybindings';
 import {
 	CursorType,
@@ -41,6 +40,8 @@ function App() {
 	const action = useSelector((state: RootState) => state.floorPlan.action);
 	const mode = useSelector((state: RootState) => state.floorPlan.mode);
 	const layerSettings = useSelector((state: RootState) => state.floorPlan.layerSettings);
+
+	const { createSnapshot, undo, redo } = useHistory();
 
 	const [selectedObject, setSelectedObject] = useState({
 		minWidth: 0,
@@ -97,8 +98,6 @@ function App() {
 
 	const [selectedWall, setSelectedWall] = useState<WallMetaData | null>(null);
 
-	const { save, init, undo, redo, historyIndex } = useHistory();
-
 	const { viewbox, scaleValue, zoomIn, zoomOut, dragCamera, moveCamera, resetCamera } =
 		useCameraTools(canvasDimensions);
 	const [planToRecover, setPlanToRecover] = useState(false);
@@ -147,19 +146,6 @@ function App() {
 		setShowRoomTools(false);
 		setShowMainPanel(true);
 
-		// const roomMetaCopy = [...roomMetaData];
-		// const id = selectedRoomData.roomIndex;
-
-		// const roomMeta = roomMetaCopy[id];
-		// if (!roomMeta) return;
-
-		// roomMeta.color = selectedRoomData.background;
-		// roomMeta.name = selectedRoomData.name;
-		// roomMeta.surface = selectedRoomData.surface;
-		// roomMeta.showSurface = selectedRoomData.showSurface;
-
-		// setRoomMetaData(roomMetaCopy);
-
 		setSelectedRoomColor(undefined);
 
 		setBoxInfoText('Room modified');
@@ -167,25 +153,27 @@ function App() {
 	};
 
 	const onUndoClicked = () => {
-		if (historyIndex - 1 > 0) {
-			const { objects, walls, rooms } = undo(viewbox);
-			apply(objects, walls, rooms);
-			setEnableRedo(true);
-		}
-		if (historyIndex == 1) {
-			setEnableUndo(false);
-		}
+		undo();
+		// if (historyIndex - 1 > 0) {
+		// 	const { objects, walls, rooms } = undo(viewbox);
+		// 	apply(objects, walls, rooms);
+		// 	setEnableRedo(true);
+		// }
+		// if (historyIndex == 1) {
+		// 	setEnableUndo(false);
+		// }
 	};
 
 	const onRedoClicked = () => {
-		if (historyIndex < history.length) {
-			const { objects, walls, rooms } = redo(viewbox);
-			apply(objects, walls, rooms);
-			setEnableUndo(true);
-			if (historyIndex == history.length) {
-				setEnableRedo(false);
-			}
-		}
+		redo();
+		// if (historyIndex < history.length) {
+		// 	const { objects, walls, rooms } = redo(viewbox);
+		// 	apply(objects, walls, rooms);
+		// 	setEnableUndo(true);
+		// 	if (historyIndex == history.length) {
+		// 		setEnableRedo(false);
+		// 	}
+		// }
 	};
 
 	const onDoorTypeClicked = (type: 'simple' | 'opening' | 'double') => {
@@ -213,14 +201,14 @@ function App() {
 	};
 
 	const applyMode = (mode: Mode) => {
-		save(wallMetaData, objectMetaData, roomMetaData);
+		// save(wallMetaData, objectMetaData, roomMetaData);
 		setShowSubMenu(false);
 		dispatch(setMode(mode));
 	};
 
 	const initHistory = (type: string) => {
-		const { objects, walls, rooms } = init(type, viewbox);
-		apply(objects, walls, rooms);
+		// const { objects, walls, rooms } = init(type, viewbox);
+		// apply(objects, walls, rooms);
 	};
 
 	const apply = (
@@ -251,7 +239,7 @@ function App() {
 			throw new Error('No selectedWall was set!');
 		}
 		splitWall(selectedWall);
-		save(wallMetaData, objectMetaData, roomMetaData);
+		createSnapshot(wallMetaData, objectMetaData, roomMetaData);
 		dispatch(setMode(Mode.Select));
 	};
 
@@ -263,7 +251,7 @@ function App() {
 			setBoxInfoText('Walls containing doors or windows cannot be separated!');
 			return;
 		}
-		save(wallMetaData, objectMetaData, roomMetaData);
+		createSnapshot(wallMetaData, objectMetaData, roomMetaData);
 	};
 
 	const onConvertSeparationToWallClicked = () => {
@@ -386,11 +374,28 @@ function App() {
 		}
 	};
 
+	const undoLastAction = () => {
+		const newState = undo();
+		setWallMetaData(newState.wallData);
+		setObjectMetaData(newState.objData);
+		setRoomMetaData(newState.roomData);
+	};
+
+	const redoLastAction = () => {
+		const newState = redo();
+		setWallMetaData(newState.wallData);
+		setObjectMetaData(newState.objData);
+		setRoomMetaData(newState.roomData);
+	};
+
 	useKeybindings({
 		keyDown: new Map([
-			['s', enterSelectMode],
-			['w', onWallModeClicked],
-			['r', () => applyMode(Mode.Room)]
+			['s', { action: enterSelectMode }],
+			['w', { action: onWallModeClicked }],
+			['r', { action: () => applyMode(Mode.Room) }],
+			['z', { action: () => undoLastAction(), modifier: 'ctrl' }],
+			['r', { action: () => redoLastAction(), modifier: 'ctrl' }],
+			['Escape', { action: () => dispatch(setMode(Mode.Select)) }]
 		])
 	});
 
@@ -472,6 +477,8 @@ function App() {
 				zoomCameraOut={zoomOut}
 				dragCamera={dragCamera}
 				defaultRoomColor={'url(#gradientWhite)'}
+				deviceDisplayData={[]}
+				createSnapshot={createSnapshot}
 			/>
 
 			<div id="areaValue"></div>
