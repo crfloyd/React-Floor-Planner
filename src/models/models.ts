@@ -192,6 +192,7 @@ export interface DeviceMetaData {
 	y: number;
 	width: number;
 	height: number;
+	roomName?: string;
 	state: 'on' | 'off';
 }
 

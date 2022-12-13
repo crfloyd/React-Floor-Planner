@@ -26,6 +26,8 @@ interface Props {
 	deviceUnderCursor: DeviceMetaData | undefined;
 	followerData: FollowerData;
 	save: () => void;
+	saveWalls: () => void;
+	saveObjects: (objects: ObjectMetaData[]) => void;
 	roomClicked: (data: RoomDisplayData) => void;
 	continuousWallMode: boolean;
 	startModifyingOpening: (object: ObjectMetaData) => void;
@@ -72,6 +74,8 @@ export const useHandleCanvasInput = ({
 	roomMetaData,
 	roomUnderCursor,
 	save,
+	saveWalls,
+	saveObjects,
 	selectRoomUnderCursor,
 	selectedWallData,
 	setDevices,
@@ -108,6 +112,8 @@ export const useHandleCanvasInput = ({
 		setPoint,
 		followerData,
 		save,
+		saveWalls,
+		saveObjects,
 		roomClicked,
 		continuousWallMode,
 		startModifyingOpening,

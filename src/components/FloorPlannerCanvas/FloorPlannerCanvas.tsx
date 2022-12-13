@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { constants } from '../../constants';
@@ -8,22 +8,20 @@ import {
 	useDevices,
 	useDrawScaleBox,
 	useDrawWalls,
-	useHistory,
 	useRooms,
 	useWallMeasurements
 } from '../../hooks';
 import { useHandleCanvasInput } from '../../hooks/useHandleCanvasInput';
 import {
-	CursorType,
 	DeviceDisplayData,
 	DeviceMetaData,
-	LayerSettings,
 	Mode,
 	NodeMoveData,
 	ObjectEquationData,
 	ObjectMetaData,
 	Point2D,
 	RoomDisplayData,
+	RoomMetaData,
 	SelectedWallData,
 	SnapData,
 	ViewboxData,
@@ -44,8 +42,6 @@ import {
 	getWallsOnPoint,
 	perpendicularEquation
 } from '../../utils/utils';
-import { GradientData } from './GradientData';
-import LinearGradient from './LinearGradient';
 import Patterns from './Patterns';
 import RoomAreaText from './RoomAreaText';
 import WallMeasurementText from './WallMeasurementText';
@@ -75,6 +71,11 @@ interface Props {
 	textColor?: string | undefined;
 	wallColor?: string | undefined;
 	showDebugData?: boolean | undefined;
+	createSnapshot: (
+		wallMeta: WallMetaData[],
+		objectMeta: ObjectMetaData[],
+		roomMeta: RoomMetaData[]
+	) => void;
 }
 
 const FloorPlannerCanvas: React.FC<Props> = ({
@@ -99,7 +100,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	defaultRoomColor,
 	textColor,
 	wallColor,
-	showDebugData
+	showDebugData,
+	createSnapshot
 }) => {
 	const dispatch = useDispatch();
 	const cursor = useSelector((state: RootState) => state.floorPlan.cursor);
@@ -128,12 +130,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	const [objectBeingMoved, setObjectBeingMoved] = useState<ObjectMetaData | null>(null);
 	const [objectEquationData, setObjectEquationData] = useState<ObjectEquationData[]>([]);
 
-	const gradientData = useMemo<{ id: string; color1: string; color2: string }[]>(
-		() => GradientData,
-		[]
-	);
-
-	const { save } = useHistory();
+	const [saveWallsOnNextRender, setSaveWallsOnNextRender] = useState(false);
 
 	const canvasRef = useRef<SVGSVGElement>(null);
 
@@ -174,6 +171,13 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		}
 	}, [objectBeingMoved, setObjectMetaData]);
 
+	const saveRooms = useCallback(
+		(roomMetaData: RoomMetaData[]) => {
+			createSnapshot(wallMetaData, objectMetaData, roomMetaData);
+		},
+		[objectMetaData, createSnapshot, wallMetaData]
+	);
+
 	const {
 		roomsToRender,
 		roomPathData,
@@ -182,7 +186,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		selectedRoomRenderData,
 		roomUnderCursor,
 		setRoomUnderCursor
-	} = useRooms(selectedRoomData, selectedRoomColor, deviceBeingMoved, snapPosition);
+	} = useRooms(selectedRoomData, selectedRoomColor, deviceBeingMoved, snapPosition, saveRooms);
 
 	/**
 	 * If there is a wall under the cursor and that wall has
@@ -250,7 +254,19 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		};
 		refreshWalls(wallMetaData, equationData);
 		setRenderWalls(wallMetaData);
-	}, [selectedWallData?.equationData, wallMetaData]);
+		if (saveWallsOnNextRender) {
+			setSaveWallsOnNextRender(false);
+			createSnapshot(wallMetaData, objectMetaData, roomsToRender.roomData);
+		}
+		// console.log('RENDERING');
+	}, [
+		objectMetaData,
+		roomsToRender.roomData,
+		createSnapshot,
+		saveWallsOnNextRender,
+		selectedWallData?.equationData,
+		wallMetaData
+	]);
 
 	/**
 	 * Whenever the walls change, convert them to
@@ -357,7 +373,10 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 		startModifyingOpening,
 		roomMetaData: roomsToRender.roomData,
 		roomUnderCursor,
-		save: () => save(wallMetaData, objectMetaData, roomsToRender.roomData),
+		save: () => createSnapshot(wallMetaData, objectMetaData, roomsToRender.roomData),
+		saveWalls: () => setSaveWallsOnNextRender(true),
+		saveObjects: (objects: ObjectMetaData[]) =>
+			createSnapshot(wallMetaData, objects, roomsToRender.roomData),
 		selectedWallData,
 		wallEndConstructionData,
 		selectRoomUnderCursor: () => {
@@ -422,7 +441,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 				handleMouseUp();
 			}}
 			onMouseMove={(e) => {
-				const throttleMs = 5;
+				const throttleMs = 0;
 				if (!shouldUpdateMouseMove) {
 					return;
 				}

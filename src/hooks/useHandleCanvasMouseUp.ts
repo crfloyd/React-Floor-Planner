@@ -28,6 +28,8 @@ export const useHandleCanvasMouseUp = (
 	setPoint: (p: Point2D) => void,
 	followerData: FollowerData,
 	save: () => void,
+	saveWalls: () => void,
+	saveObjects: (objects: ObjectMetaData[]) => void,
 	roomClicked: (data: RoomDisplayData) => void,
 	continuousWallMode: boolean,
 	startModifyingOpening: (object: ObjectMetaData) => void,
@@ -65,13 +67,22 @@ export const useHandleCanvasMouseUp = (
 	}, [deviceBeingMoved, save, setDevices, updateMode]);
 
 	const handleObjectMode = useCallback(() => {
+		let objects = objectMetaData;
 		if (objectBeingMoved) {
-			setObjectMetaData([...objectMetaData, objectBeingMoved]);
+			objects = [...objectMetaData, objectBeingMoved];
+			setObjectMetaData(objects);
 			setObjectBeingMoved(null);
 		}
 		updateMode(Mode.Select);
-		save();
-	}, [objectBeingMoved, updateMode, save, setObjectMetaData, objectMetaData, setObjectBeingMoved]);
+		saveObjects(objects);
+	}, [
+		objectMetaData,
+		objectBeingMoved,
+		updateMode,
+		saveObjects,
+		setObjectMetaData,
+		setObjectBeingMoved
+	]);
 
 	const handleRoomMode = useCallback(() => {
 		if (roomUnderCursor == null) {
@@ -91,8 +102,8 @@ export const useHandleCanvasMouseUp = (
 		});
 
 		updateMode(Mode.EditRoom);
-		save();
-	}, [roomClicked, roomMetaData, roomUnderCursor, save, selectRoomUnderCursor, updateMode]);
+		// save();
+	}, [roomClicked, roomMetaData, roomUnderCursor, selectRoomUnderCursor, updateMode]);
 
 	const handleOpeningMode = useCallback(() => {
 		if (!objectBeingMoved) {
@@ -104,8 +115,15 @@ export const useHandleCanvasMouseUp = (
 		setObjectBeingMoved(null);
 		setObjectMetaData(updatedObjects);
 		updateMode(Mode.Select);
-		save();
-	}, [objectBeingMoved, objectMetaData, setObjectBeingMoved, setObjectMetaData, updateMode, save]);
+		saveObjects(updatedObjects);
+	}, [
+		objectBeingMoved,
+		objectMetaData,
+		setObjectBeingMoved,
+		setObjectMetaData,
+		updateMode,
+		saveObjects
+	]);
 
 	const handleLineMode = useCallback(() => {
 		clearWallHelperState();
@@ -135,7 +153,7 @@ export const useHandleCanvasMouseUp = (
 			} else {
 				updateAction(false);
 			}
-			save();
+			saveWalls();
 		} else {
 			updateAction(false);
 			// $('#boxinfo').html('Select mode');
@@ -151,7 +169,7 @@ export const useHandleCanvasMouseUp = (
 		setWallMetaData,
 		continuousWallMode,
 		wallConstructionShouldEnd,
-		save,
+		saveWalls,
 		updateCursor,
 		updateAction,
 		startWallDrawing,
@@ -162,23 +180,6 @@ export const useHandleCanvasMouseUp = (
 	]);
 
 	const handleBindMode = useCallback(() => {
-		// const { updatedMode, updatedObjectMeta } = handleMouseUpBindMode(
-		// 	objectMetaData,
-		// 	startModifyingOpening,
-		// 	selectedWallData,
-		// 	wallClicked,
-		// 	objectBeingMoved,
-		// 	setObjectBeingMoved,
-		// 	() => {
-		// 		if (selectedWallData) {
-		// 			selectedWallData.equationData.equation1 = null;
-		// 			selectedWallData.equationData.equation2 = null;
-		// 			selectedWallData.equationData.equation3 = null;
-		// 			followerData.intersection = undefined;
-		// 		}
-		// 	}
-		// );
-
 		let mode = Mode.Select;
 
 		let objects = [...objectMetaData];
