@@ -1,6 +1,6 @@
-import React, { createContext, PropsWithChildren, useState } from 'react';
+import React, { PropsWithChildren, useState } from 'react';
 
-import { ObjectMetaData, RoomMetaData, WallMetaData } from '../models';
+import { DeviceMetaData, ObjectMetaData, RoomMetaData, WallMetaData } from '../models';
 
 interface Props {
 	wallMetaData: WallMetaData[];
@@ -11,6 +11,8 @@ interface Props {
 	setObjectMetaData: React.Dispatch<React.SetStateAction<ObjectMetaData[]>>;
 	roomMetaData: RoomMetaData[];
 	setRoomMetaData: React.Dispatch<React.SetStateAction<RoomMetaData[]>>;
+	deviceMetaData: DeviceMetaData[];
+	setDeviceMetaData: React.Dispatch<React.SetStateAction<DeviceMetaData[]>>;
 }
 
 export const FloorPlanContext = React.createContext<Props>({
@@ -29,6 +31,10 @@ export const FloorPlanContext = React.createContext<Props>({
 	roomMetaData: [],
 	setRoomMetaData: () => {
 		return;
+	},
+	deviceMetaData: [],
+	setDeviceMetaData: () => {
+		return;
 	}
 });
 
@@ -37,6 +43,7 @@ export const FloorPlanContextProvider: React.FC<PropsWithChildren> = (props) => 
 	const [wallMetaData, setWallMetaData] = useState<WallMetaData[]>([]);
 	const [objectMetaData, setObjectMetaData] = useState<ObjectMetaData[]>([]);
 	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
+	const [deviceMetaData, setDeviceMetaData] = useState<DeviceMetaData[]>([]);
 	return (
 		<FloorPlanContext.Provider
 			value={{
@@ -47,7 +54,9 @@ export const FloorPlanContextProvider: React.FC<PropsWithChildren> = (props) => 
 				wallUnderCursor,
 				setWallUnderCursor,
 				roomMetaData,
-				setRoomMetaData
+				setRoomMetaData,
+				deviceMetaData,
+				setDeviceMetaData
 			}}>
 			{props.children}
 		</FloorPlanContext.Provider>

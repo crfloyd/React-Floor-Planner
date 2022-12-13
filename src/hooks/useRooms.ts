@@ -42,6 +42,7 @@ export const useRooms = (
 	const [selectedRoomRenderData, setSelectedRoomRenderData] = useState<
 		{ path: string; selected: boolean; selectedColor: string | undefined } | undefined
 	>();
+	const { deviceMetaData: devices, setDeviceMetaData: setDevices } = useContext(FloorPlanContext);
 
 	/**
 	 * If there is a device being moved and the device is inside
@@ -56,11 +57,23 @@ export const useRooms = (
 				pointInPolygon({ x: cursorPosition.x, y: cursorPosition.y }, room.coords) &&
 				(targetRoom == null || targetRoom.area >= room.area)
 			) {
+				console.log('Target room set to', room.name);
 				targetRoom = room;
 			}
 		});
+		setDevices((prev) => {
+			const result = [...prev.filter((d) => d.id !== deviceBeingMoved.id)];
+			const updatedDevice = prev.find((d) => d.id === deviceBeingMoved.id);
+			if (updatedDevice) {
+				updatedDevice.roomName = targetRoom?.name ?? '';
+				deviceBeingMoved.roomName = updatedDevice.roomName;
+				result.push(updatedDevice);
+				console.log('updated device to room:', targetRoom?.name);
+			}
+			return result;
+		});
 		setRoomUnderCursor(targetRoom);
-	}, [deviceBeingMoved, roomsToRender.roomData, cursorPosition.x, cursorPosition.y]);
+	}, [deviceBeingMoved, roomsToRender.roomData, cursorPosition.x, cursorPosition.y, setDevices]);
 
 	/**
 	 * If there is not device being moved and not in room mode

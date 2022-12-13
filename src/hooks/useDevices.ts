@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
+import { FloorPlanContext } from '../context/FloorPlanContext';
 import { DeviceDisplayData, DeviceMetaData, Mode, Point2D } from '../models/models';
 import { setMode } from '../store/floorPlanSlice';
 import { RootState } from '../store/store';
@@ -13,8 +14,9 @@ export const useDevices = (
 	setDeviceBeingMoved: React.Dispatch<React.SetStateAction<DeviceMetaData | undefined>>
 ) => {
 	const mode = useSelector((state: RootState) => state.floorPlan.mode);
-	const [devices, setDevices] = useState<DeviceMetaData[]>([]);
 	const [deviceUnderCursor, setDeviceUnderCursor] = useState<DeviceMetaData>();
+
+	const { deviceMetaData: devices, setDeviceMetaData: setDevices } = useContext(FloorPlanContext);
 
 	const dispatch = useDispatch();
 
