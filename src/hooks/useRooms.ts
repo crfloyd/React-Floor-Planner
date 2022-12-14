@@ -57,7 +57,7 @@ export const useRooms = (
 				pointInPolygon({ x: cursorPosition.x, y: cursorPosition.y }, room.coords) &&
 				(targetRoom == null || targetRoom.area >= room.area)
 			) {
-				console.log('Target room set to', room.name);
+				// console.log('Target room set to', room.name);
 				targetRoom = room;
 			}
 		});
@@ -68,12 +68,38 @@ export const useRooms = (
 				updatedDevice.roomName = targetRoom?.name ?? '';
 				deviceBeingMoved.roomName = updatedDevice.roomName;
 				result.push(updatedDevice);
-				console.log('updated device to room:', targetRoom?.name);
+				// console.log('updated device to room:', targetRoom?.name);
 			}
 			return result;
 		});
 		setRoomUnderCursor(targetRoom);
 	}, [deviceBeingMoved, roomsToRender.roomData, cursorPosition.x, cursorPosition.y, setDevices]);
+
+	/**
+	 * If a room updated with a name, ensure all devices in that room are
+	 * assigned that room name
+	 */
+	useEffect(() => {
+		let devicesUpdated = false;
+		roomMetaData
+			.filter((r) => r.name)
+			.forEach((room) => {
+				devices.forEach((device) => {
+					// console.log(device.name, 'coords:', device.x, device.y, 'room:', room.coords);
+					if (
+						device.roomName !== room.name &&
+						pointInPolygon({ x: device.x, y: device.y }, room.coords)
+					) {
+						devicesUpdated = true;
+						device.roomName = room.name;
+						// console.log('setting device room to', room.name);
+					}
+				});
+			});
+		if (devicesUpdated) {
+			setDevices([...devices]);
+		}
+	}, [roomMetaData, setDevices]);
 
 	/**
 	 * If there is not device being moved and not in room mode
@@ -95,6 +121,37 @@ export const useRooms = (
 			return renderRooms(roomPolygonData, prev);
 		});
 	}, [roomPolygonData, setRoomMetaData]);
+
+	/**
+	 * Whenever the room polygon data changes, update the
+	 * device room names assigned to that room
+	 */
+	useEffect(() => {
+		let devicesUpdated = false;
+		roomMetaData.forEach((room) => {
+			devices.forEach((device) => {
+				const insideRoom = pointInPolygon({ x: device.x, y: device.y }, room.coords);
+				if (insideRoom) {
+					if (device.roomName !== room.name) {
+						// console.log('adding device', device.name, 'to room', room.name);
+						devicesUpdated = true;
+						device.roomName = room.name;
+					}
+				} else {
+					if (device.roomName === room.name) {
+						// console.log('removing device', device.name, 'from room', room.name);
+						devicesUpdated = true;
+						device.roomName = '';
+					}
+				}
+			});
+		});
+
+		if (devicesUpdated) {
+			// devices.forEach((d) => console.log(d.name, ':', d.roomName));
+			setDevices([...devices]);
+		}
+	}, [roomMetaData]);
 
 	/**
 	 * Whenever the selected room data changes, update that room's
@@ -152,7 +209,7 @@ export const useRooms = (
 	useEffect(() => {
 		if (selectedRoomColor) {
 			setSelectedRoomRenderData((prev) => {
-				console.log('updating to', prev ? selectedRoomColor : undefined);
+				// console.log('updating to', prev ? selectedRoomColor : undefined);
 				return prev ? { ...prev, selectedColor: selectedRoomColor } : undefined;
 			});
 		} else {
