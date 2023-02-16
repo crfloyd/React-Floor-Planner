@@ -282,16 +282,12 @@ export const computeLimit = (equation: WallEquation, size: number, coords: Point
 };
 
 export const calculateSnap = (
-	event: React.TouchEvent | React.MouseEvent,
+	event: React.MouseEvent,
 	viewbox: ViewboxData
 ): SnapData => {
 	let eY = 0;
 	let eX = 0;
-	if (event.nativeEvent instanceof TouchEvent && event.nativeEvent.touches) {
-		const touches = event.nativeEvent.changedTouches;
-		eX = touches[0].pageX;
-		eY = touches[0].pageY;
-	} else if (event.nativeEvent instanceof MouseEvent) {
+	if (event.nativeEvent instanceof MouseEvent) {
 		eX = event.nativeEvent.pageX;
 		eY = event.nativeEvent.pageY;
 	} else {

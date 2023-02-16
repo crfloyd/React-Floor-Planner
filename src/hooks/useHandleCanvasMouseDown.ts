@@ -380,7 +380,7 @@ export const useHandleCanvasMouseDown = ({
 	);
 
 	const handleMouseDown = useCallback(
-		(event: React.TouchEvent | React.MouseEvent) => {
+		(event: React.MouseEvent) => {
 			const enterBindMode = () => {
 				dispatch(setMode(Mode.Bind));
 				dispatch(setAction(true));
