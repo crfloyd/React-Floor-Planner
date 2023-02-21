@@ -125,59 +125,57 @@ export const useHandleCanvasMouseUp = (
 		saveObjects
 	]);
 
-	const handleLineMode = useCallback(() => {
-		clearWallHelperState();
+	const handleLineMode = useCallback(
+		(wallEndData: { start: Point2D; end: Point2D } | null) => {
+			clearWallHelperState();
 
-		if (!wallEndConstructionData) {
-			console.error('MouseUp in Line/Partition mode but no wallEndConstructionData set!');
-			return;
-		}
+			if (!wallEndData) {
+				updateAction(false);
+				updateMode(Mode.Select);
+				setPoint({ x: snapPosition.x, y: snapPosition.y });
+				return;
+			}
 
-		let sizeWall = distanceBetween(wallEndConstructionData.end, point) / constants.METER_SIZE;
-		if (wallEndConstructionData && sizeWall > 0.3) {
-			sizeWall = mode === Mode.Partition ? constants.PARTITION_SIZE : constants.WALL_SIZE;
-			const wall = new Wall(
-				wallEndConstructionData.start,
-				wallEndConstructionData.end,
-				'normal',
-				sizeWall
-			);
-			const updatedWalls = [...wallMetaData, wall];
-			setWallMetaData(updatedWalls);
+			let sizeWall = distanceBetween(wallEndData.end, point) / constants.METER_SIZE;
+			if (sizeWall > 0.3) {
+				sizeWall = mode === Mode.Partition ? constants.PARTITION_SIZE : constants.WALL_SIZE;
+				const wall = new Wall(wallEndData.start, wallEndData.end, 'normal', sizeWall);
+				const updatedWalls = [...wallMetaData, wall];
+				setWallMetaData(updatedWalls);
 
-			const contiueCreatingWalls = continuousWallMode && !wallConstructionShouldEnd;
-			if (contiueCreatingWalls) {
-				updateCursor('validation');
-				updateAction(true);
-				startWallDrawing(wallEndConstructionData.end);
+				const contiueCreatingWalls = continuousWallMode && !wallConstructionShouldEnd;
+				if (contiueCreatingWalls) {
+					updateCursor('validation');
+					updateAction(true);
+					startWallDrawing(wallEndData.end);
+				} else {
+					updateAction(false);
+				}
+				saveWalls();
 			} else {
 				updateAction(false);
+				updateMode(Mode.Select);
+				setPoint({ x: snapPosition.x, y: snapPosition.y });
 			}
-			saveWalls();
-		} else {
-			updateAction(false);
-			// $('#boxinfo').html('Select mode');
-			updateMode(Mode.Select);
-			setPoint({ x: snapPosition.x, y: snapPosition.y });
-		}
-	}, [
-		clearWallHelperState,
-		wallEndConstructionData,
-		point,
-		mode,
-		wallMetaData,
-		setWallMetaData,
-		continuousWallMode,
-		wallConstructionShouldEnd,
-		saveWalls,
-		updateCursor,
-		updateAction,
-		startWallDrawing,
-		updateMode,
-		setPoint,
-		snapPosition.x,
-		snapPosition.y
-	]);
+		},
+		[
+			clearWallHelperState,
+			point,
+			mode,
+			wallMetaData,
+			setWallMetaData,
+			continuousWallMode,
+			wallConstructionShouldEnd,
+			saveWalls,
+			updateCursor,
+			updateAction,
+			startWallDrawing,
+			updateMode,
+			setPoint,
+			snapPosition.x,
+			snapPosition.y
+		]
+	);
 
 	const handleBindMode = useCallback(() => {
 		let mode = Mode.Select;
@@ -261,7 +259,7 @@ export const useHandleCanvasMouseUp = (
 			}
 			case Mode.Line:
 			case Mode.Partition: {
-				handleLineMode();
+				handleLineMode(wallEndConstructionData ? { ...wallEndConstructionData } : null);
 				break;
 			}
 			case Mode.Bind: {
@@ -278,7 +276,8 @@ export const useHandleCanvasMouseUp = (
 		handleObjectMode,
 		handleOpeningMode,
 		handleRoomMode,
-		mode
+		mode,
+		wallEndConstructionData
 	]);
 
 	return handleMouseUp;
