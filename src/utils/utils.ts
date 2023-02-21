@@ -62,6 +62,8 @@ export const distanceBetween = (p1: Point2D, p2: Point2D) => {
 };
 
 export const pointIsBetween = (p: Point2D, start: Point2D, end: Point2D, round = false) => {
+	if (!p || !start || !end) return false;
+
 	if (round) {
 		p = { x: Math.round(p.x), y: Math.round(p.y) };
 		start = { x: Math.round(start.x), y: Math.round(start.y) };
@@ -281,10 +283,7 @@ export const computeLimit = (equation: WallEquation, size: number, coords: Point
 	return [pos1, pos2];
 };
 
-export const calculateSnap = (
-	event: React.MouseEvent,
-	viewbox: ViewboxData
-): SnapData => {
+export const calculateSnap = (event: React.MouseEvent, viewbox: ViewboxData): SnapData => {
 	let eY = 0;
 	let eX = 0;
 	if (event.nativeEvent instanceof MouseEvent) {

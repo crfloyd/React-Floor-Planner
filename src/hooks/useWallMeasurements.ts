@@ -58,7 +58,7 @@ export const useWallMeasurements = (
 					coords: wall.coords[1],
 					distance: 0
 				});
-				for (const p in wallMeta) {
+				for (const p in wallMeta.filter((w) => w.coords.length == 4)) {
 					if (i === p) continue;
 
 					const comparisonWall = wallMeta[p];
