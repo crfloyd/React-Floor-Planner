@@ -1,6 +1,6 @@
 import './App.scss';
 
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import DoorWindowTools from './components/DoorWindowTools';
@@ -19,6 +19,7 @@ import {
 	LayerSettings,
 	Mode,
 	ObjectMetaData,
+	Point2D,
 	RoomDisplayData,
 	RoomMetaData,
 	WallMetaData
@@ -90,16 +91,15 @@ function App() {
 	const [showLayerList, setShowLayerList] = useState(false);
 	const [canvasDimensions, setCanvasDimenions] = useState({
 		width: 0,
-		height: 0
+		height: 0,
+		top: 0,
+		left: 0
 	});
 	const [roomMetaData, setRoomMetaData] = useState<RoomMetaData[]>([]);
 	const [openingWidth, setOpeningWidth] = useState<number | null>(null);
 	const [openingIdBeingEdited, setOpeningIdBeingEdited] = useState<string | undefined>();
 
 	const [selectedWall, setSelectedWall] = useState<WallMetaData | null>(null);
-
-	const { viewbox, scaleValue, zoomIn, zoomOut, dragCamera, moveCamera, resetCamera } =
-		useCameraTools(canvasDimensions);
 	const [planToRecover, setPlanToRecover] = useState(false);
 	const [deviceBeingMoved, setDeviceBeingMoved] = useState<DeviceMetaData>();
 
@@ -110,6 +110,7 @@ function App() {
 		useWalls();
 
 	const modalRef = useRef<HTMLDivElement>(null);
+	const [canvasRef, setCanvasRef] = useState<SVGSVGElement>();
 
 	useEffect(() => {
 		if (localStorage.getItem('history')) {
@@ -131,6 +132,21 @@ function App() {
 			});
 		});
 	}, []);
+
+	const getLocalCanvasPoint = useCallback(
+		(globalCoords: Point2D): Point2D | undefined => {
+			if (!canvasRef) return;
+			const pt = canvasRef.createSVGPoint();
+			pt.x = globalCoords.x;
+			pt.y = globalCoords.y;
+			const globalPoint = pt.matrixTransform(canvasRef.getScreenCTM()?.inverse());
+			return { x: globalPoint.x, y: globalPoint.y };
+		},
+		[canvasRef]
+	);
+
+	const { viewbox, scaleValue, zoomIn, zoomOut, dragCamera, moveCamera, resetCamera } =
+		useCameraTools(canvasDimensions, getLocalCanvasPoint);
 
 	const dismissModal = () => {
 		modalRef.current?.classList.remove('open');
@@ -464,6 +480,7 @@ function App() {
 				roomClicked={updateRoomDisplayData}
 				setCanvasDimensions={setCanvasDimenions}
 				viewbox={viewbox}
+				setCanvasRef={setCanvasRef}
 				// roomMetaData={roomMetaData}
 				// setRoomMetaData={setRoomMetaData}
 				selectedRoomData={selectedRoomData}
@@ -1644,14 +1661,14 @@ function App() {
 						className="btn btn btn-default zoom"
 						data-zoom="zoomin"
 						style={{ boxShadow: '2px 2px 3px #ccc' }}
-						onClick={() => zoomIn()}>
+						onClick={() => zoomIn(1)}>
 						<i className="fa fa-plus" aria-hidden="true"></i>
 					</button>
 					<button
 						className="btn btn btn-default zoom"
 						data-zoom="zoomout"
 						style={{ boxShadow: '2px 2px 3px #ccc' }}
-						onClick={() => zoomOut()}>
+						onClick={() => zoomOut(-1)}>
 						<i className="fa fa-minus" aria-hidden="true"></i>
 					</button>
 				</div>

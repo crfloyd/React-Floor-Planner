@@ -1,4 +1,13 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { gsap } from 'gsap';
+import React, {
+	useCallback,
+	useContext,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { constants } from '../../constants';
@@ -56,7 +65,8 @@ interface Props {
 	onMouseMove: (p: Point2D) => void;
 	startModifyingOpening: (object: ObjectMetaData) => void;
 	wallClicked: (wall: WallMetaData) => void;
-	setCanvasDimensions: (d: { width: number; height: number }) => void;
+	setCanvasDimensions: (d: { width: number; height: number; top: number; left: number }) => void;
+	setCanvasRef: React.Dispatch<React.SetStateAction<SVGSVGElement | undefined>>;
 	viewbox: ViewboxData;
 	openingWidth: number | null;
 	openingIdBeingEdited: string | undefined;
@@ -64,8 +74,8 @@ interface Props {
 	deviceDisplayData: DeviceDisplayData[];
 	deviceBeingMoved: DeviceMetaData | undefined;
 	setDeviceBeingMoved: React.Dispatch<React.SetStateAction<DeviceMetaData | undefined>>;
-	zoomCameraIn: () => void;
-	zoomCameraOut: () => void;
+	zoomCameraIn: (delta: number, point: Point2D) => void;
+	zoomCameraOut: (delta: number, point: Point2D) => void;
 	dragCamera: (distX: number, distY: number) => void;
 	defaultRoomColor: string;
 	textColor?: string | undefined;
@@ -86,6 +96,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	wallClicked,
 	onMouseMove,
 	setCanvasDimensions,
+	setCanvasRef,
 	viewbox,
 	selectedRoomData,
 	openingWidth,
@@ -133,6 +144,23 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	const [saveWallsOnNextRender, setSaveWallsOnNextRender] = useState(false);
 
 	const canvasRef = useRef<SVGSVGElement>(null);
+	useEffect(() => {
+		if (canvasRef.current) {
+			setCanvasRef(canvasRef.current);
+		}
+	}, [setCanvasRef, canvasRef]);
+
+	useLayoutEffect(() => {
+		if (!canvasRef.current) return;
+		// const ctx = gsap.context(() => {});
+		gsap.to(canvasRef.current, {
+			duration: 0.3,
+			attr: {
+				viewBox: `${viewbox.originX} ${viewbox.originY} ${viewbox.width} ${viewbox.height}`
+			},
+			ease: 'sine.easeInOut'
+		});
+	}, [canvasRef, viewbox]);
 
 	const mode = useSelector((state: RootState) => state.floorPlan.mode);
 
@@ -284,20 +312,22 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 	useEffect(() => {
 		const width = canvasRef.current?.width.baseVal.value ?? 0;
 		const height = canvasRef.current?.height.baseVal.value ?? 0;
+		const top = canvasRef.current?.clientTop ?? 0;
+		const left = canvasRef.current?.clientLeft ?? 0;
 
-		setCanvasDimensions({ width, height });
+		setCanvasDimensions({ width, height, top, left });
 	}, [
 		canvasRef.current?.width.baseVal.value,
 		canvasRef.current?.height.baseVal.value,
 		setCanvasDimensions
 	]);
 
-	const onMouseWheel = (deltaY: number) => {
+	const onMouseWheel = (deltaY: number, point: Point2D) => {
 		// e.preventDefault();
 		if (deltaY > 0) {
-			zoomCameraIn();
+			zoomCameraIn(deltaY, point);
 		} else {
-			zoomCameraOut();
+			zoomCameraOut(deltaY, point);
 		}
 	};
 
@@ -412,7 +442,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			ref={canvasRef}
 			id="lin"
 			// viewBox="0 0 1100 700"
-			viewBox={`${viewbox.originX} ${viewbox.originY} ${viewbox.width} ${viewbox.height}`}
+			// viewBox={`${viewbox.originX} ${viewbox.originY} ${viewbox.width} ${viewbox.height}`}
 			preserveAspectRatio="xMidYMin slice"
 			xmlns="http://www.w3.org/2000/svg"
 			style={{
@@ -430,7 +460,7 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 			cursor={cursorImg}
 			onWheel={(e) => {
 				// e.preventDefault();
-				onMouseWheel(e.deltaY);
+				onMouseWheel(e.deltaY || e.detail || 0, { x: e.clientX, y: e.clientY });
 			}}
 			onClick={(e) => e.preventDefault()}
 			onMouseDown={(event) => {
