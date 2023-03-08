@@ -840,7 +840,8 @@ const FloorPlannerCanvas: React.FC<Props> = ({
 							y={displayData.position.y}
 							transform={displayData.rotation}
 							fill="#555"
-							textAnchor="middle">
+							textAnchor="middle"
+							style={{ userSelect: 'none' }}>
 							{displayData.content}
 						</text>
 					))}

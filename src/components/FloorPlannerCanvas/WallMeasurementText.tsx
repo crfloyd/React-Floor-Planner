@@ -20,7 +20,8 @@ const WallMeasurementText = ({ data, strokeWidth, fill, fontSize }: Props) => {
 					stroke="#fff"
 					strokeWidth={strokeWidth}
 					fill={fill}
-					fontSize={fontSize(content)}>
+					fontSize={fontSize(content)}
+					style={{ userSelect: 'none' }}>
 					{content.toFixed(2)}
 				</text>
 			))}

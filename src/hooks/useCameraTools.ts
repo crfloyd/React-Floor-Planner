@@ -36,50 +36,6 @@ export const useCameraTools = (
 		}));
 	}, [canvasDimensions]);
 
-	const handleCameraChange = useCallback(
-		(lens: string, xmove: number, xview = 0) => {
-			const newZoomFactor = viewbox.width / canvasDimensions.width;
-			if (lens == 'zoomright') {
-				setViewBox((prev) => ({
-					...prev,
-					originX: prev.originX + xview,
-					zoomFactor: newZoomFactor
-				}));
-			} else if (lens == 'zoomleft') {
-				setViewBox((prev) => ({
-					...prev,
-					originX: prev.originX - xview,
-					zoomFactor: newZoomFactor
-				}));
-			} else if (lens == 'zoomtop') {
-				setViewBox((prev) => ({
-					...prev,
-					originY: prev.originY - xview,
-					zoomFactor: newZoomFactor
-				}));
-			} else if (lens == 'zoombottom') {
-				setViewBox((prev) => ({
-					...prev,
-					originY: prev.originY + xview,
-					zoomFactor: newZoomFactor
-				}));
-			} else if (lens == 'zoomdrag') {
-				setViewBox((prev) => ({
-					...prev,
-					originX: prev.originX - xmove,
-					originY: prev.originY - xview,
-					zoomFactor: newZoomFactor
-				}));
-			} else {
-				setViewBox((prev) => ({
-					...prev,
-					zoomFactor: newZoomFactor
-				}));
-			}
-		},
-		[canvasDimensions, viewbox.width, viewbox.zoomLevel]
-	);
-
 	const resetCamera = useCallback(() => {
 		setViewBox({
 			width: canvasDimensions.width,
@@ -120,6 +76,8 @@ export const useCameraTools = (
 					zoomFactor: (prev.width * scaleDelta) / canvasDimensions.width,
 					zoomLevel: direction === 'in' ? prev.zoomLevel - 1 : prev.zoomLevel + 1
 				};
+				const ratioWidthZoom = canvasDimensions.width / newVal.width;
+				setScaleValue(ratioWidthZoom);
 				return newVal;
 			});
 		},
@@ -142,34 +100,42 @@ export const useCameraTools = (
 		zoom(delta, 'out', point);
 	};
 
-	const moveCamera = useCallback(
-		(direction: 'up' | 'down' | 'left' | 'right') => {
-			switch (direction) {
-				case 'up':
-					handleCameraChange('zoomtop', MOVE_AMOUNT, 50);
-					break;
-				case 'down':
-					handleCameraChange('zoombottom', MOVE_AMOUNT, 50);
-					break;
-				case 'left':
-					handleCameraChange('zoomleft', MOVE_AMOUNT, 50);
-					break;
-				case 'right':
-					handleCameraChange('zoomright', MOVE_AMOUNT, 50);
-					break;
-				default:
-					break;
-			}
-		},
-		[handleCameraChange]
-	);
+	const moveCamera = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
+		switch (direction) {
+			case 'up':
+				setViewBox((prev) => ({
+					...prev,
+					originY: prev.originY - MOVE_AMOUNT
+				}));
+				break;
+			case 'down':
+				setViewBox((prev) => ({
+					...prev,
+					originY: prev.originY + MOVE_AMOUNT
+				}));
+				break;
+			case 'left':
+				setViewBox((prev) => ({
+					...prev,
+					originX: prev.originX - MOVE_AMOUNT
+				}));
+				break;
+			case 'right':
+				setViewBox((prev) => ({
+					...prev,
+					originX: prev.originX + MOVE_AMOUNT
+				}));
+				break;
+		}
+	}, []);
 
-	const dragCamera = useCallback(
-		(distX: number, distY: number) => {
-			handleCameraChange('zoomdrag', distX * viewbox.zoomFactor, distY * viewbox.zoomFactor);
-		},
-		[handleCameraChange, viewbox.zoomFactor]
-	);
+	const dragCamera = useCallback((distX: number, distY: number) => {
+		setViewBox((prev) => ({
+			...prev,
+			originX: prev.originX - distX,
+			originY: prev.originY - distY
+		}));
+	}, []);
 
 	return { viewbox, scaleValue, zoomIn, zoomOut, moveCamera, dragCamera, resetCamera };
 };

@@ -19,7 +19,8 @@ const RoomAreaText = ({ room, centerPoint, textColor }: Props) => {
 					fill:
 						room.color == 'gradientBlack' || room.color == 'gradientBlue'
 							? 'white'
-							: textColor ?? '#343938'
+							: textColor ?? '#343938',
+					userSelect: 'none'
 				}}
 				textAnchor="middle">
 				{room.name}
@@ -31,7 +32,8 @@ const RoomAreaText = ({ room, centerPoint, textColor }: Props) => {
 					fill:
 						room.color == 'gradientBlack' || room.color == 'gradientBlue'
 							? 'white'
-							: textColor ?? '#343938'
+							: textColor ?? '#343938',
+					userSelect: 'none'
 				}}
 				fontSize="12.5px"
 				fontWeight={room.surface ? 'normal' : 'bold'}
