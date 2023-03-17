@@ -305,6 +305,7 @@ export interface LayerSettings {
 	showTexture: boolean;
 	showDevices: boolean;
 	showGrid: boolean;
+	invertScroll: boolean;
 }
 
 export interface SnapData {

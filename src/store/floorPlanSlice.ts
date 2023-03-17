@@ -26,7 +26,8 @@ const initialState: FloorPlanState = {
 		showDevices: true,
 		showMeasurements: true,
 		showTexture: true,
-		showGrid: true
+		showGrid: true,
+		invertScroll: false
 	}
 };
 
